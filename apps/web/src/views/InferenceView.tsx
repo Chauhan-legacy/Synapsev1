@@ -215,25 +215,25 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
         <div className="surface-base border p-4 rounded-md space-y-3">
           <div className="flex justify-between items-center text-xs font-mono">
             <span className="font-bold text-primary">Surrogate Null Distribution vs Observed Signal Statistic</span>
-            <span className="text-[#38bdf8] font-bold">Observed Stat: {inferenceData.observedStat} &bull; Null Mean: 4.2</span>
+            <span className="text-[#0F766E] font-bold">Observed Stat: {inferenceData.observedStat} &bull; Null Mean: 4.2</span>
           </div>
-          <div className="h-64 rounded bg-[#0d0e11] border border-[#26282e] p-4 flex flex-col justify-end relative overflow-hidden">
+          <div className="h-64 rounded-md bg-[#FFFFFF] border border-[#DDD6C7] p-4 flex flex-col justify-end relative overflow-hidden shadow-2xs">
             {/* Histogram bars */}
-            <div className="flex items-end justify-between h-44 gap-1">
+            <div className="flex items-end justify-between h-44 gap-1.5 border-b border-[#DDD6C7] pb-1">
               {inferenceData.bins.map((b, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center">
+                <div key={idx} className="flex-1 flex flex-col items-center group">
                   <div
-                    className="w-full bg-[#1f242d] hover:bg-[#38bdf8]/60 rounded-t-sm transition-all"
+                    className="w-full bg-[#EFEBE0] group-hover:bg-[#0F766E]/40 border border-[#DDD6C7] group-hover:border-[#0F766E] rounded-t-sm transition-all"
                     style={{ height: `${(b.count / 30) * 100}%` }}
                   />
-                  <span className="text-[9px] font-mono text-[#78716c] mt-1 truncate">{b.bin}</span>
+                  <span className="text-[9px] font-mono text-[#6B6F7B] mt-1 truncate">{b.bin}</span>
                 </div>
               ))}
             </div>
 
             {/* Observed Statistic Needle */}
-            <div className="absolute top-6 right-8 p-2 rounded bg-status-success/20 border border-status-success/40 text-xs font-mono text-status-success">
-              &darr; Observed Statistic = {inferenceData.observedStat} (p &lt; 0.01)
+            <div className="absolute top-4 right-6 px-3 py-1.5 rounded-md bg-[#E8F5E9] border border-[#2E7D32]/30 text-xs font-mono text-[#2E7D32] shadow-2xs font-semibold">
+              &darr; Observed Statistic = {inferenceData.observedStat} (p &lt; 0.010, H₀ Rejected)
             </div>
           </div>
         </div>

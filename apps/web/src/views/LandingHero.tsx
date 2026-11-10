@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { HalftoneWaveCanvas } from '../components/hero/HalftoneWaveCanvas';
+import { MathFormula } from '../components/common/MathFormula';
 import {
   ArrowRight,
   Compass,
@@ -32,34 +33,63 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   // Live real mathematical signal preview for hero
   const previewPoints = useMemo(() => {
     const pts: Array<{ t: number; v: number }> = [];
-    const n = 120;
-    const dt = 0.008;
+    const n = 140;
+    const dt = 0.007;
 
     for (let i = 0; i < n; i++) {
       const t = i * dt;
       let v = 0;
       if (activeTab === 'periodic') {
-        v = 1.4 * Math.sin(2 * Math.PI * 5.0 * t) +
-            0.8 * Math.sin(2 * Math.PI * 14.0 * t + 0.4) +
-            0.4 * Math.sin(2 * Math.PI * 35.0 * t + 1.2);
+        v = 1.5 * Math.cos(2 * Math.PI * 5.0 * t) +
+            1.0 * Math.cos(2 * Math.PI * 14.0 * t + 0.4) +
+            0.6 * Math.cos(2 * Math.PI * 35.0 * t + 1.2);
       } else if (activeTab === 'chirp') {
-        const phase = 2 * Math.PI * (2.0 * t + 18.0 * Math.pow(t, 2));
-        v = 1.8 * Math.sin(phase);
+        const phase = 2 * Math.PI * (2.0 * t + 16.0 * Math.pow(t, 2));
+        v = 2.0 * Math.sin(phase);
       } else {
-        v = 0.6 * Math.sin(2 * Math.PI * 4.0 * t) + ((i % 13) - 6) / 20.0;
-        if (i === 35) v += 5.8;
-        if (i === 75) v -= 5.2;
-        if (i === 98) v += 6.4;
+        v = 0.5 * Math.sin(2 * Math.PI * 4.0 * t) + ((i % 13) - 6) / 22.0;
+        if (i === 38) v += 5.8;
+        if (i === 82) v -= 5.4;
+        if (i === 114) v += 6.2;
       }
       pts.push({ t: Number(t.toFixed(3)), v: Number(v.toFixed(3)) });
     }
     return pts;
   }, [activeTab]);
 
+  // Scaled SVG coordinates in 640 x 180 coordinate space
+  const svgCoords = useMemo(() => {
+    const w = 640;
+    const h = 180;
+    const padX = 20;
+    const padY = 20;
+    const innerW = w - 2 * padX;
+    const innerH = h - 2 * padY;
+    const midY = h / 2;
+    const maxVal = 7.5;
+
+    return previewPoints.map((p, idx) => {
+      const x = padX + (idx / (previewPoints.length - 1)) * innerW;
+      const y = midY - (p.v / maxVal) * (innerH / 2);
+      return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
+    });
+  }, [previewPoints]);
+
+  const polylineStr = useMemo(() => {
+    return svgCoords.map((pt) => `${pt.x},${pt.y}`).join(' ');
+  }, [svgCoords]);
+
+  const areaPolygonStr = useMemo(() => {
+    if (svgCoords.length === 0) return '';
+    const firstX = svgCoords[0].x;
+    const lastX = svgCoords[svgCoords.length - 1].x;
+    return `${firstX},90 ${polylineStr} ${lastX},90`;
+  }, [svgCoords, polylineStr]);
+
   return (
     <div className="relative min-h-screen w-full bg-[#F6F3EC] text-[#1F2430] flex flex-col justify-between overflow-x-hidden overflow-y-auto font-sans selection:bg-[#EFEBE0]">
       {/* Background Graticule Canvas */}
-      <HalftoneWaveCanvas className="z-0 opacity-60" />
+      <HalftoneWaveCanvas className="z-0 opacity-50" />
 
       {/* 1. ACADEMIC FLOATING NAVBAR */}
       <header className="relative z-10 w-full pt-6 px-4 sm:px-8 flex justify-center shrink-0">
@@ -133,7 +163,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               <button
                 type="button"
                 onClick={onOpenRack}
-                className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full border border-[#DDD6C7] text-xs font-mono text-[#1F2430] hover:bg-[#EFEBE0] transition-colors"
+                className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full border border-[#DDD6C7] text-xs font-mono text-[#1F2430] hover:bg-[#EFEBE0] transition-colors shadow-2xs"
               >
                 <Sliders className="w-3.5 h-3.5 text-[#0F766E]" />
                 <span>Rack</span>
@@ -152,7 +182,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
       </header>
 
       {/* 2. HERO MAIN DISPLAY */}
-      <main className="relative z-10 w-full max-w-6xl mx-auto px-6 sm:px-10 py-12 flex-1 flex flex-col justify-center">
+      <main className="relative z-10 w-full max-w-6xl mx-auto px-6 sm:px-10 py-10 flex-1 flex flex-col justify-center">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Column: Title & Mission Statement */}
           <div className="lg:col-span-6 space-y-4">
@@ -166,11 +196,11 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             </h1>
 
             <p className="font-serif italic text-lg sm:text-2xl text-[#4A5060] max-w-lg leading-snug">
-              &ldquo;Don&rsquo;t just plot raw data. Uncover, model, and statistically verify the structures hidden within physical signals.&rdquo;
+              &ldquo;Don&rsquo;t just plot raw data. Discover, mathematically model, and statistically verify the structures hidden within physical signals.&rdquo;
             </p>
 
             <p className="text-xs sm:text-sm text-[#4A5060] leading-relaxed font-sans max-w-xl">
-              Engineered for rigorous scientific inquiry. Implements 24 analytical engines spanning Thomson
+              Engineered for rigorous scientific inquiry and reproducible discoveries. Integrates 24 analytical engines spanning Thomson
               multitaper spectral estimation, phase-space Poincaré embeddings, ROSNER ESD anomaly isolation,
               and Benjamini-Hochberg False Discovery Rate control.
             </p>
@@ -193,7 +223,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   className="flex items-center gap-2 px-5 py-3 rounded-full bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] font-mono text-xs sm:text-sm font-semibold shadow-2xs transition-colors"
                 >
                   <Sliders className="w-4 h-4 text-[#0F766E]" />
-                  <span>Instrument Rack</span>
+                  <span>Full Instrument Rack</span>
                 </button>
               )}
 
@@ -271,39 +301,89 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 </button>
               </div>
 
-              {/* Live SVG Oscillogram Waveform */}
-              <div className="h-44 w-full bg-[#F6F3EC] rounded-lg border border-[#DDD6C7] p-2 relative overflow-hidden flex items-center justify-center">
-                <svg className="w-full h-full" viewBox="0 -6 1 12" preserveAspectRatio="none">
-                  {/* Zero axis and gridlines */}
-                  <line x1="0" y1="0" x2="1" y2="0" stroke="#DDD6C7" strokeWidth="0.08" />
-                  <line x1="0" y1="-3" x2="1" y2="-3" stroke="#DDD6C7" strokeWidth="0.04" strokeDasharray="0.02 0.02" />
-                  <line x1="0" y1="3" x2="1" y2="3" stroke="#DDD6C7" strokeWidth="0.04" strokeDasharray="0.02 0.02" />
+              {/* Active LaTeX Mathematical Formula Box */}
+              <div className="p-2.5 rounded-md bg-[#EFEBE0] border border-[#DDD6C7] text-center overflow-x-auto text-[11px] text-[#1F2430]">
+                {activeTab === 'periodic' && (
+                  <MathFormula
+                    formula="x(t) = 1.5\cos(10\pi t) + 1.0\cos(28\pi t + 0.4) + 0.6\cos(70\pi t + 1.2) + \eta(t)"
+                    displayMode={false}
+                  />
+                )}
+                {activeTab === 'chirp' && (
+                  <MathFormula
+                    formula="x(t) = 2.0\sin\left(2\pi \left(2.0 t + 16.0 t^2\right)\right), \quad f(t) = 2.0 + 32.0 t\text{ Hz}"
+                    displayMode={false}
+                  />
+                )}
+                {activeTab === 'spikes' && (
+                  <MathFormula
+                    formula="R_i = \frac{\max_i |x_i - \bar{x}|}{s} > \lambda_{\text{Rosner}}(\alpha = 0.001), \quad t \in \{0.27, 0.57, 0.80\}\text{ s}"
+                    displayMode={false}
+                  />
+                )}
+              </div>
 
-                  {/* Plotted Raw Trace */}
+              {/* High-Resolution Razor-Sharp SVG Oscillogram Waveform */}
+              <div className="h-44 w-full bg-[#FBF9F5] rounded-lg border border-[#DDD6C7] p-2 relative overflow-hidden flex items-center justify-center">
+                <svg className="w-full h-full" viewBox="0 0 640 180" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="waveGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0F766E" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="#0F766E" stopOpacity="0.02" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal Graticule Gridlines */}
+                  <line x1="20" y1="30" x2="620" y2="30" stroke="#DDD6C7" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="90" x2="620" y2="90" stroke="#DDD6C7" strokeWidth="1.2" />
+                  <line x1="20" y1="150" x2="620" y2="150" stroke="#DDD6C7" strokeWidth="1" strokeDasharray="3 3" />
+
+                  {/* Vertical Time Markers */}
+                  <line x1="170" y1="20" x2="170" y2="160" stroke="#DDD6C7" strokeWidth="0.8" strokeDasharray="2 2" />
+                  <line x1="320" y1="20" x2="320" y2="160" stroke="#DDD6C7" strokeWidth="0.8" strokeDasharray="2 2" />
+                  <line x1="470" y1="20" x2="470" y2="160" stroke="#DDD6C7" strokeWidth="0.8" strokeDasharray="2 2" />
+
+                  {/* Shaded Area */}
+                  {areaPolygonStr && (
+                    <polygon points={areaPolygonStr} fill="url(#waveGrad)" />
+                  )}
+
+                  {/* Razor-sharp plotted trace */}
                   <polyline
                     fill="none"
-                    stroke="#1F2430"
-                    strokeWidth="0.09"
+                    stroke="#0F766E"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
                     strokeLinejoin="round"
-                    points={previewPoints
-                      .map((p, idx) => `${idx / (previewPoints.length - 1)},${-p.v}`)
-                      .join(' ')}
+                    points={polylineStr}
                   />
+
+                  {/* Live Cursor Ring at End Point */}
+                  {svgCoords.length > 0 && (
+                    <circle
+                      cx={svgCoords[svgCoords.length - 1].x}
+                      cy={svgCoords[svgCoords.length - 1].y}
+                      r="3.5"
+                      fill="#0F766E"
+                      stroke="#FFFFFF"
+                      strokeWidth="1.5"
+                    />
+                  )}
                 </svg>
 
-                {/* Mathematical Annotations */}
-                <div className="absolute top-1.5 left-2 text-[9px] text-[#6B6F7B]">
+                {/* Mathematical Oscillogram Annotations */}
+                <div className="absolute top-2 left-3 text-[9px] text-[#6B6F7B]">
                   fs = 200 Hz &bull; dt = 5 ms
                 </div>
-                <div className="absolute top-1.5 right-2 text-[9px] font-bold text-[#0F766E] bg-[#FFFFFF]/90 px-1.5 py-0.5 rounded border border-[#DDD6C7]">
+                <div className="absolute top-2 right-3 text-[9px] font-bold text-[#0F766E] bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7] shadow-2xs">
                   {activeTab === 'periodic'
                     ? '3 Discrete Sinusoids Detected'
                     : activeTab === 'chirp'
-                    ? 'Frequency Modulation [2 → 38 Hz]'
+                    ? 'Frequency Modulation [2 → 34 Hz]'
                     : '3 Outliers Identified (p < 0.001)'}
                 </div>
-                <div className="absolute bottom-1 right-2 text-[9px] text-[#6B6F7B]">
-                  Domain: [0.00s, 0.96s]
+                <div className="absolute bottom-1.5 right-3 text-[9px] text-[#6B6F7B]">
+                  Window: [0.00s, 0.98s]
                 </div>
               </div>
 
@@ -312,7 +392,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7]">
                   <div className="text-[#6B6F7B]">Primary Peak</div>
                   <div className="text-[#1F2430] font-bold">
-                    {activeTab === 'periodic' ? '5.00 Hz' : activeTab === 'chirp' ? 'Swept Chirp' : '3.98 Hz'}
+                    {activeTab === 'periodic' ? '5.00 Hz' : activeTab === 'chirp' ? 'Dynamic Chirp' : '3.98 Hz'}
                   </div>
                 </div>
                 <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7]">
@@ -322,7 +402,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                   </div>
                 </div>
                 <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7]">
-                  <div className="text-[#6B6F7B]">Machine Provenance</div>
+                  <div className="text-[#6B6F7B]">Cryptographic Hash</div>
                   <div className="text-[#0F766E] font-bold">SHA-256 Validated</div>
                 </div>
               </div>
@@ -330,47 +410,71 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           </div>
         </div>
 
-        {/* 3. FOUR CORE SCIENTIFIC PILLARS */}
+        {/* 3. FOUR CORE SCIENTIFIC PILLARS WITH EXACT LATEX FORMULAS */}
         <section className="mt-14 pt-8 border-t border-[#DDD6C7] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
-          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-1.5 hover:border-[#0F766E]/40 transition-colors">
+          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-2 hover:border-[#0F766E]/40 transition-colors">
             <div className="flex items-center gap-1.5 text-[#0F766E] text-[10px] uppercase font-bold">
               <Zap className="w-3.5 h-3.5" />
               <span>Spectral Rigor</span>
             </div>
             <div className="text-sm font-bold text-[#1F2430]">Thomson Multitaper F-Test</div>
+            <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7] text-center overflow-x-auto text-[10px]">
+              <MathFormula
+                formula="F = \frac{(K-1)|\hat{\mu}(f)|^2 \sum_k U_k(0)^2}{\sum_k |\hat{y}_k(f) - \hat{\mu}(f)U_k(0)|^2}"
+                displayMode={false}
+              />
+            </div>
             <p className="text-[11px] text-[#4A5060] font-sans leading-relaxed">
               Separates discrete sinusoidal harmonic lines from continuous Gaussian noise floors with exact p-value bounds.
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-1.5 hover:border-[#0F766E]/40 transition-colors">
+          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-2 hover:border-[#0F766E]/40 transition-colors">
             <div className="flex items-center gap-1.5 text-[#0F766E] text-[10px] uppercase font-bold">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Statistical Inference</span>
             </div>
             <div className="text-sm font-bold text-[#1F2430]">IAAFT Surrogates &amp; FDR</div>
+            <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7] text-center overflow-x-auto text-[10px]">
+              <MathFormula
+                formula="\mathcal{F}\{x^{(m)}\} = |\mathcal{F}\{x\}| e^{i\psi^{(m)}}, \quad q_{\text{BH}} \le 0.05"
+                displayMode={false}
+              />
+            </div>
             <p className="text-[11px] text-[#4A5060] font-sans leading-relaxed">
               100 iterated amplitude-adjusted phase-randomized surrogate noise realizations with Benjamini-Hochberg error control.
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-1.5 hover:border-[#0F766E]/40 transition-colors">
+          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-2 hover:border-[#0F766E]/40 transition-colors">
             <div className="flex items-center gap-1.5 text-[#0F766E] text-[10px] uppercase font-bold">
               <Layers className="w-3.5 h-3.5" />
               <span>Nonlinear Dynamics</span>
             </div>
-            <div className="text-sm font-bold text-[#10141C]">Takens Phase Embedding</div>
+            <div className="text-sm font-bold text-[#1F2430]">Takens Phase Embedding</div>
+            <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7] text-center overflow-x-auto text-[10px]">
+              <MathFormula
+                formula="\mathbf{v}(t) = [x(t), x(t+\tau), \dots, x(t+(d-1)\tau)]^T"
+                displayMode={false}
+              />
+            </div>
             <p className="text-[11px] text-[#4A5060] font-sans leading-relaxed">
               Reconstructs multi-dimensional attractor trajectories and Poincaré sections via Average Mutual Information and FNN.
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-1.5 hover:border-[#0F766E]/40 transition-colors">
+          <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-2xs space-y-2 hover:border-[#0F766E]/40 transition-colors">
             <div className="flex items-center gap-1.5 text-[#0F766E] text-[10px] uppercase font-bold">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Bitwise Invariants</span>
             </div>
             <div className="text-sm font-bold text-[#1F2430]">Write-Protected Memory</div>
+            <div className="p-2 rounded bg-[#EFEBE0] border border-[#DDD6C7] text-center overflow-x-auto text-[10px]">
+              <MathFormula
+                formula="\Delta \operatorname{SHA256}(\mathbf{X}_{\text{raw}}) \equiv 0, \quad \epsilon \le 10^{-12}"
+                displayMode={false}
+              />
+            </div>
             <p className="text-[11px] text-[#4A5060] font-sans leading-relaxed">
               Raw uploaded buffers are strictly immutable (flags.writeable = False) with SHA-256 cryptographic provenance graphs.
             </p>

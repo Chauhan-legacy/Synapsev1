@@ -224,7 +224,7 @@ export const ReproducibilityView: React.FC = () => {
           <span className="font-bold text-primary">Sealed Manifest Specification (JSON)</span>
           <span className="text-muted">Schema Version 2.0.0</span>
         </div>
-        <pre className="p-4 rounded bg-[#0d0e11] border border-[#26282e] text-[#38bdf8] text-[11px] font-mono overflow-x-auto max-h-72">
+        <pre className="p-4 rounded-md bg-[#FFFFFF] border border-[#DDD6C7] text-[#1F2430] text-[11px] font-mono overflow-x-auto max-h-72 shadow-2xs">
           {JSON.stringify(manifest, null, 2)}
         </pre>
       </div>

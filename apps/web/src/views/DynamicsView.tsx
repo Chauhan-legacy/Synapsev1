@@ -369,16 +369,16 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
             <span className="font-bold text-primary">Recurrence Plot &bull; R(i, j) = &Theta;(&epsilon; - ||x_i - x_j||)</span>
             <span className="text-muted">&epsilon; = 0.4 &sigma; &bull; 120 x 120 Resolution</span>
           </div>
-          <div className="h-72 rounded bg-[#0d0e11] border border-[#26282e] p-2 flex items-center justify-center relative overflow-hidden">
-            <svg className="w-72 h-72" viewBox="0 0 120 120">
+          <div className="h-72 rounded-md bg-[#FFFFFF] border border-[#DDD6C7] p-2 flex items-center justify-center relative overflow-hidden shadow-2xs">
+            <svg className="w-72 h-72 border border-[#DDD6C7]/60 rounded" viewBox="0 0 120 120">
               {recurrencePoints.map((pt, idx) => (
-                <rect key={idx} x={pt.x} y={119 - pt.y} width="0.9" height="0.9" fill="#38bdf8" />
+                <rect key={idx} x={pt.x} y={119 - pt.y} width="0.9" height="0.9" fill="#0F766E" />
               ))}
             </svg>
-            <div className="absolute bottom-2 right-4 text-[10px] font-mono text-[#78716c]">
+            <div className="absolute bottom-2 right-4 text-[10px] font-mono text-[#6B6F7B]">
               Time index i &rarr;
             </div>
-            <div className="absolute top-3 left-4 text-[10px] font-mono text-[#78716c]">
+            <div className="absolute top-3 left-4 text-[10px] font-mono text-[#6B6F7B]">
               &uarr; Time index j
             </div>
           </div>
