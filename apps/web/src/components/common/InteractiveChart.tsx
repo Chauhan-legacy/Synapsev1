@@ -37,7 +37,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const { palette, settings } = useAccessibility();
+  const { palette } = useAccessibility();
 
   // Width state from ResizeObserver
   const [width, setWidth] = useState<number>(600);
@@ -131,7 +131,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
         const py = scaleY(sub[i]);
         d += (i === 0 ? 'M' : 'L') + `${px.toFixed(1)},${py.toFixed(1)} `;
       }
-      const color = s.color || palette[sIdx % palette.length];
+      const color = s.color || (series.length === 1 ? '#1F2430' : palette[sIdx % palette.length]);
       return { d, color, name: s.name, dashed: s.dashed };
     });
   }, [series, startIdx, endIdx, visibleX, decimateStep, scaleX, scaleY, palette]);
@@ -174,12 +174,10 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const xTicks = [0, 0.25, 0.5, 0.75, 1.0].map((frac) => minX + frac * (maxX - minX));
   const yTicks = [0, 0.25, 0.5, 0.75, 1.0].map((frac) => minY + frac * (maxY - minY));
 
-  const isDark = settings.theme === 'dark' || (settings.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
   return (
     <div
       ref={containerRef}
-      className="relative surface-base border rounded-md p-3 my-2 focus-within:ring-1 focus-within:ring-blue-500"
+      className="relative surface-base border rounded-md p-3 my-2 focus-within:ring-1 focus-within:ring-[#0F766E]"
       aria-label={`${title} chart`}
       role="region"
     >
@@ -220,9 +218,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
       </div>
 
       <div
-        className={`relative cursor-crosshair overflow-hidden rounded ${
-          isDark ? 'chart-graticule-dark bg-[#121519]' : 'chart-graticule-light bg-[#fafafa]'
-        }`}
+        className="relative cursor-crosshair overflow-hidden rounded bg-[#FFFFFF] border border-[#DDD6C7] chart-graticule"
         onWheel={handleWheel}
         onDoubleClick={handleResetZoom}
       >
@@ -242,7 +238,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           onMouseLeave={() => setHoverIndex(null)}
         >
           {/* Graticule Grid Lines & Ticks */}
-          <g className="grid-lines" stroke={isDark ? '#262d38' : '#E6E1D6'} strokeWidth="1">
+          <g className="grid-lines" stroke="#DDD6C7" strokeWidth="1">
             {xTicks.map((xVal, i) => {
               const xPos = scaleX(xVal);
               return (
@@ -277,7 +273,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 y1={scaleY(thresholdY)}
                 x2={padding.left + plotWidth}
                 y2={scaleY(thresholdY)}
-                stroke="#964E14"
+                stroke="#B7791F"
                 strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
@@ -285,7 +281,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 <text
                   x={padding.left + plotWidth - 4}
                   y={scaleY(thresholdY) - 4}
-                  fill="#964E14"
+                  fill="#B7791F"
                   fontSize="10"
                   textAnchor="end"
                   fontFamily="monospace"
@@ -320,7 +316,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                   y={my - 4}
                   fontSize="10"
                   fontFamily="monospace"
-                  fill={isDark ? '#f1f5f9' : '#10141C'}
+                  fill="#1F2430"
                   className="font-medium"
                 >
                   {m.label}
@@ -337,7 +333,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 y1={padding.top}
                 x2={scaleX(visibleX[hoverIndex])}
                 y2={padding.top + plotHeight}
-                stroke={isDark ? '#94a3b8' : '#475569'}
+                stroke="#6B6F7B"
                 strokeWidth="1"
                 strokeDasharray="2 2"
               />
@@ -345,15 +341,15 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 cx={scaleX(visibleX[hoverIndex])}
                 cy={scaleY(series[0]?.data[startIdx + hoverIndex] ?? 0)}
                 r="3.5"
-                fill="#2563eb"
-                stroke="#ffffff"
+                fill="#0F766E"
+                stroke="#FFFFFF"
                 strokeWidth="1"
               />
             </g>
           )}
 
           {/* Axis Labels and Values */}
-          <g className="axis-text" fontSize="10" fill={isDark ? '#94a3b8' : '#64748b'} fontFamily="monospace">
+          <g className="axis-text" fontSize="10" fill="#6B6F7B" fontFamily="monospace">
             {xTicks.map((xVal, i) => (
               <text
                 key={`tx-${i}`}

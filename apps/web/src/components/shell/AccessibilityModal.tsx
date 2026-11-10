@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, RotateCcw, Sliders, Eye } from 'lucide-react';
 import { useAccessibility } from '../../context/AccessibilityContext';
-import { AppTheme, TextSize, LineSpacing, Density } from '../../types/accessibility';
+import { TextSize, LineSpacing, Density } from '../../types/accessibility';
 
 interface AccessibilityModalProps {
   isOpen: boolean;
@@ -67,29 +67,6 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
             </div>
           </div>
 
-          {/* Theme Selector */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-primary uppercase text-[10px] tracking-wider">
-              Theme / Appearance
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(['light', 'dark', 'high-contrast', 'system'] as AppTheme[]).map((thm) => (
-                <button
-                  key={thm}
-                  type="button"
-                  onClick={() => updateSettings({ theme: thm })}
-                  className={`py-2 px-3 rounded border text-center font-medium capitalize transition-colors ${
-                    settings.theme === thm
-                      ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
-                      : 'surface-base border text-secondary hover:text-primary'
-                  }`}
-                >
-                  {thm === 'dark' ? 'Dark Charcoal' : thm.replace('-', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Text Size (4 steps) */}
           <div className="space-y-1.5">
             <label className="font-semibold text-primary uppercase text-[10px] tracking-wider">
@@ -103,7 +80,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                   onClick={() => updateSettings({ textSize: sz })}
                   className={`py-2 px-3 rounded border text-center font-medium uppercase font-mono transition-colors ${
                     settings.textSize === sz
-                      ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                      ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
                       : 'surface-base border text-secondary hover:text-primary'
                   }`}
                 >
@@ -127,7 +104,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                     onClick={() => updateSettings({ lineSpacing: ls })}
                     className={`py-1.5 px-3 rounded border text-center capitalize ${
                       settings.lineSpacing === ls
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                        ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
                         : 'surface-base border text-secondary'
                     }`}
                   >
@@ -149,7 +126,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                     onClick={() => updateSettings({ density: den })}
                     className={`py-1.5 px-3 rounded border text-center capitalize ${
                       settings.density === den
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                        ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
                         : 'surface-base border text-secondary'
                     }`}
                   >
@@ -164,13 +141,13 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
           <div className="space-y-3 pt-2 border-t">
             <label className="flex items-center justify-between cursor-pointer">
               <span className="font-medium text-primary">
-                Okabe-Ito 8-Color Colorblind-Safe Chart Palette
+                Section D 8-Color Colorblind-Safe Chart Palette
               </span>
               <input
                 type="checkbox"
                 checked={settings.colorBlindSafe}
                 onChange={(e) => updateSettings({ colorBlindSafe: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 accent-[#0F766E] rounded"
               />
             </label>
 
@@ -180,7 +157,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                 type="checkbox"
                 checked={settings.dyslexiaFont}
                 onChange={(e) => updateSettings({ dyslexiaFont: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 accent-[#0F766E] rounded"
               />
             </label>
 
@@ -190,7 +167,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                 type="checkbox"
                 checked={settings.alwaysShowFocusRings}
                 onChange={(e) => updateSettings({ alwaysShowFocusRings: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 accent-[#0F766E] rounded"
               />
             </label>
 
@@ -200,7 +177,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                 type="checkbox"
                 checked={settings.largeClickTargets}
                 onChange={(e) => updateSettings({ largeClickTargets: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 accent-[#0F766E] rounded"
               />
             </label>
 
@@ -210,7 +187,7 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                 type="checkbox"
                 checked={settings.reduceMotion}
                 onChange={(e) => updateSettings({ reduceMotion: e.target.checked })}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 accent-[#0F766E] rounded"
               />
             </label>
           </div>

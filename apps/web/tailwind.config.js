@@ -13,43 +13,44 @@ export default {
         sans: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       colors: {
-        cream: '#F8F6F1',
-        card: '#FFFDF9',
-        line: '#E6E1D6',
-        ink: '#10141C',
-        amber: {
-          DEFAULT: '#B45F1B',
-          500: '#B45F1B',
-          600: '#964E14',
-        },
-        green: {
-          DEFAULT: '#2F7D4F',
-          500: '#2F7D4F',
-          600: '#25653F',
-        },
+        page: 'var(--color-bg-page)',
+        panel: 'var(--color-bg-panel)',
+        tint: 'var(--color-bg-tint)',
+        line: 'var(--color-border)',
+        ink: 'var(--color-text-ink)',
+        muted: 'var(--color-text-muted)',
         teal: {
-          DEFAULT: '#4F8A8B',
-          500: '#4F8A8B',
+          DEFAULT: 'var(--color-accent)',
+          hover: 'var(--color-accent-hover)',
+          subtle: 'var(--color-accent-subtle)',
+          border: 'var(--color-accent-border)',
         },
-        ember: {
-          DEFAULT: '#E8590C',
-          light: '#FF6B1A',
-          dark: '#C94A06',
+        sage: {
+          DEFAULT: 'var(--color-sage)',
+          dark: 'var(--color-sage-dark)',
         },
-        synapse: {
-          950: '#05070a',
-          900: '#090d14',
-          850: '#0d131d',
-          800: '#121927',
-          700: '#1a2436',
-          600: '#26344d',
-          cyan: '#00f0ff',
-          neon: '#38bdf8',
-          violet: '#818cf8',
-        }
-      }
+        cream: {
+          DEFAULT: 'var(--color-cream)',
+          border: 'var(--color-cream-border)',
+        },
+        status: {
+          success: 'var(--color-status-success)',
+          warning: 'var(--color-status-warning)',
+          error: 'var(--color-status-error)',
+          info: 'var(--color-status-info)',
+        },
+        series: {
+          1: '#0072B2',
+          2: '#E69F00',
+          3: '#009E73',
+          4: '#D55E00',
+          5: '#7B5EA7',
+          6: '#56B4E9',
+          7: '#CC79A7',
+          8: '#B8960C',
+        },
+      },
     },
   },
   plugins: [],
 }
-

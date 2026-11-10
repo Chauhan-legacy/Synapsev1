@@ -53,15 +53,6 @@ export const AccessibilityProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const root = document.documentElement;
 
-    // Theme handling
-    root.classList.remove('theme-light', 'theme-dark', 'theme-high-contrast');
-    if (settings.theme === 'system') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.add(prefersDark ? 'theme-dark' : 'theme-light');
-    } else {
-      root.classList.add(`theme-${settings.theme}`);
-    }
-
     // Text size
     root.setAttribute('data-text-size', settings.textSize);
     root.setAttribute('data-line-spacing', settings.lineSpacing);

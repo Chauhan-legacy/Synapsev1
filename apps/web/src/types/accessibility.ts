@@ -1,10 +1,8 @@
-export type AppTheme = 'light' | 'dark' | 'high-contrast' | 'system';
 export type TextSize = 'sm' | 'md' | 'lg' | 'xl';
 export type LineSpacing = 'normal' | 'relaxed';
 export type Density = 'compact' | 'comfortable';
 
 export interface AccessibilitySettings {
-  theme: AppTheme;
   textSize: TextSize;
   lineSpacing: LineSpacing;
   density: Density;
@@ -16,7 +14,6 @@ export interface AccessibilitySettings {
 }
 
 export const DEFAULT_ACCESSIBILITY_SETTINGS: AccessibilitySettings = {
-  theme: 'light',
   textSize: 'md',
   lineSpacing: 'normal',
   density: 'comfortable',
@@ -27,27 +24,16 @@ export const DEFAULT_ACCESSIBILITY_SETTINGS: AccessibilitySettings = {
   dyslexiaFont: false,
 };
 
-// Scientific Colorblind-Safe Palette (Ink Black Primary, Zero Neon)
+// Strict Section D Colour-Blind Safe Palette (in specified order)
 export const COLORBLIND_PALETTE = [
-  '#10141C', // Ink Black (Primary trace)
-  '#706E6B', // Charcoal Slate
-  '#B45F1B', // Amber Umber
-  '#2F7D4F', // Muted Sage
-  '#4F8A8B', // Slate Teal
-  '#D55E00', // Vermilion Earth
-  '#5C5569', // Muted Plum
-  '#3F5E78', // Slate Navy
+  '#0072B2', // 1: Blue
+  '#E69F00', // 2: Orange
+  '#009E73', // 3: Green
+  '#D55E00', // 4: Vermilion
+  '#7B5EA7', // 5: Purple
+  '#56B4E9', // 6: Sky
+  '#CC79A7', // 7: Pink
+  '#B8960C', // 8: Gold
 ];
 
-// Scholarly Restrained Standard Palette (Ink Black Primary)
-export const STANDARD_PALETTE = [
-  '#10141C', // Ink Black (Primary trace)
-  '#706E6B', // Graphite
-  '#B45F1B', // Amber 500
-  '#2F7D4F', // Forest Green
-  '#4F8A8B', // Slate Teal
-  '#A63A2A', // Brick Earth
-  '#5C5569', // Muted Plum
-  '#3F5E78', // Slate Navy
-];
-
+export const STANDARD_PALETTE = COLORBLIND_PALETTE;

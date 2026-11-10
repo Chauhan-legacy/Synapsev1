@@ -166,7 +166,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const hash = window.location.hash.replace('#/', '').replace('#', '');
     if (hash && hash !== currentView) {
       const validViews: WorkbenchView[] = [
-        'overview', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
+        'overview', 'rack', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
         'anomalies', 'dynamics', 'relations', 'inference', 'findings',
         'evidence', 'reproducibility', 'benchmarks', 'methods'
       ];

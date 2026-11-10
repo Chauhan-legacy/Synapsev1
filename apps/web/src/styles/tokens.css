@@ -1,0 +1,63 @@
+/**
+ * SYNAPSE Central Design Tokens
+ * Fixed Palette: Light Paper Teal
+ * Professional, calm, scientific, WCAG AA compliant. No neon.
+ */
+
+:root {
+  /* Surfaces & Backgrounds */
+  --color-bg-page: #F6F3EC;
+  --color-bg-panel: #FFFFFF;
+  --color-bg-tint: #EFEBE0;
+  --color-border: #DDD6C7;
+  --color-border-subtle: #E8E2D5;
+
+  /* Typography */
+  --color-text-ink: #1F2430;
+  --color-text-secondary: #4A5060;
+  --color-text-muted: #6B6F7B;
+
+  /* Primary Accent: Deep Teal */
+  --color-accent: #0F766E;
+  --color-accent-hover: #0B5E58;
+  --color-accent-subtle: #E6F4F2;
+  --color-accent-border: #99D1CB;
+
+  /* Sage & Cream (Music player and gentle accents) */
+  --color-sage: #8FAE8B;
+  --color-sage-dark: #6C8B68;
+  --color-cream: #F7F0D6;
+  --color-cream-border: #EADBBA;
+
+  /* Semantic Status */
+  --color-status-success: #2E7D32;
+  --color-status-success-bg: #E8F5E9;
+  --color-status-success-border: #C8E6C9;
+
+  --color-status-warning: #B7791F;
+  --color-status-warning-bg: #FEF3C7;
+  --color-status-warning-border: #FDE68A;
+
+  --color-status-error: #C0392B;
+  --color-status-error-bg: #FDEDEC;
+  --color-status-error-border: #FADBD8;
+
+  --color-status-info: #1D6FA5;
+  --color-status-info-bg: #EBF5FB;
+  --color-status-info-border: #D4E6F1;
+
+  /* Chart Series Colors (Colour-blind safe, strict order) */
+  --color-series-1: #0072B2; /* Blue */
+  --color-series-2: #E69F00; /* Orange */
+  --color-series-3: #009E73; /* Green */
+  --color-series-4: #D55E00; /* Vermilion */
+  --color-series-5: #7B5EA7; /* Purple */
+  --color-series-6: #56B4E9; /* Sky */
+  --color-series-7: #CC79A7; /* Pink */
+  --color-series-8: #B8960C; /* Gold */
+
+  /* Primary Graph Trace (Ink Black) */
+  --color-chart-primary: #1F2430;
+  --color-chart-grid: #DDD6C7;
+  --color-chart-cursor: #0F766E;
+}

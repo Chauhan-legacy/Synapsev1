@@ -1,9 +1,20 @@
+@import "./styles/tokens.css";
 @import "tailwindcss";
 
 :root {
   --font-scale: 1rem;
   --line-height-scale: 1.5;
   --density-padding: 0.5rem;
+}
+
+/* Base Body Styling: Single fixed Paper Teal look */
+html, body {
+  background-color: var(--color-bg-page);
+  color: var(--color-text-ink);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 /* Text Size Scalers */
@@ -51,7 +62,7 @@
 
 /* Always show focus rings */
 .always-focus-rings *:focus-visible {
-  outline: 2px solid #2563eb !important;
+  outline: 2px solid var(--color-accent) !important;
   outline-offset: 2px !important;
 }
 
@@ -67,7 +78,7 @@
 /* Visible, elegant scientific parchment scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #D6CFC4 #F8F6F1;
+  scrollbar-color: var(--color-border) var(--color-bg-page);
 }
 
 ::-webkit-scrollbar {
@@ -76,102 +87,48 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #F8F6F1;
+  background: var(--color-bg-page);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D6CFC4;
+  background: var(--color-border);
   border-radius: 4px;
-  border: 2px solid #F8F6F1;
+  border: 2px solid var(--color-bg-page);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #B8B0A2;
+  background: #C4BCAC;
 }
 
-/* Neutral Earthy Cream-and-Ink Theme (Default & Light) */
-.theme-light, :root {
-  background-color: #F8F6F1;
-  color: #10141C;
-}
-.theme-light .surface-base, .surface-base {
-  background-color: #FFFDF9;
-  border-color: #E6E1D6;
-}
-.theme-light .surface-subtle, .surface-subtle {
-  background-color: #F2EFE9;
-  border-color: #E6E1D6;
-}
-.theme-light .text-primary, .text-primary {
-  color: #10141C;
-}
-.theme-light .text-secondary, .text-secondary {
-  color: #44403C;
-}
-.theme-light .text-muted, .text-muted {
-  color: #78716C;
+/* Standardized Semantic Surface Classes (Fixed Single Palette) */
+.surface-base {
+  background-color: var(--color-bg-panel);
+  border-color: var(--color-border);
 }
 
-/* Dark Theme (Oscilloscope Charcoal) */
-.theme-dark {
-  background-color: #101317;
-  color: #f1f5f9;
-}
-.theme-dark .surface-base {
-  background-color: #181c22;
-  border-color: #29303d;
-}
-.theme-dark .surface-subtle {
-  background-color: #13171d;
-  border-color: #242b36;
-}
-.theme-dark .text-primary {
-  color: #f8fafc;
-}
-.theme-dark .text-secondary {
-  color: #cbd5e1;
-}
-.theme-dark .text-muted {
-  color: #8392a5;
+.surface-subtle {
+  background-color: var(--color-bg-tint);
+  border-color: var(--color-border);
 }
 
-/* High Contrast Theme */
-.theme-high-contrast {
-  background-color: #000000;
-  color: #ffffff;
+.text-primary {
+  color: var(--color-text-ink);
 }
-.theme-high-contrast .surface-base {
-  background-color: #000000;
-  border-color: #ffffff;
-  border-width: 2px;
+
+.text-secondary {
+  color: var(--color-text-secondary);
 }
-.theme-high-contrast .surface-subtle {
-  background-color: #121212;
-  border-color: #ffffff;
-}
-.theme-high-contrast .text-primary {
-  color: #ffffff;
-}
-.theme-high-contrast .text-secondary {
-  color: #ffff00;
-}
-.theme-high-contrast .text-muted {
-  color: #ffffff;
+
+.text-muted {
+  color: var(--color-text-muted);
 }
 
 /* Graticule grid pattern for engineering charts */
-.chart-graticule-light {
+.chart-graticule {
   background-image: 
-    linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-.chart-graticule-dark {
-  background-image: 
-    linear-gradient(to right, rgba(71, 85, 105, 0.25) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(71, 85, 105, 0.25) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(to right, rgba(221, 214, 199, 0.5) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(221, 214, 199, 0.5) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 /* Print Stylesheet for Reports */

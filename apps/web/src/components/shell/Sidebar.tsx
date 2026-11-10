@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Compass,
+  Layers,
   Database,
   LineChart,
   BarChart2,
@@ -23,6 +24,7 @@ import {
 
 export type WorkbenchView =
   | 'overview'
+  | 'rack'
   | 'datasets'
   | 'explorer'
   | 'statistics'
@@ -87,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Start',
       items: [
         { id: 'overview', label: 'Overview', icon: Compass },
+        { id: 'rack', label: 'Instrument Rack', icon: Layers },
         { id: 'datasets', label: 'Datasets', icon: Database },
       ],
     },
@@ -165,16 +168,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const content = (
-    <div className="flex flex-col h-full bg-[#FFFDF9] border-r border-[#E6E1D6] select-none text-[#10141C]">
+    <div className="flex flex-col h-full bg-[#FFFFFF] border-r border-[#DDD6C7] select-none text-[#1F2430]">
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between h-14 px-3 border-b border-[#E6E1D6]">
+      <div className="flex items-center justify-between h-14 px-3 border-b border-[#DDD6C7]">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="w-7 h-7 rounded-lg bg-[#10141C] flex items-center justify-center text-[#F8F6F1] font-bold text-xs shrink-0 font-mono shadow-2xs">
+          <div className="w-7 h-7 rounded-lg bg-[#0F766E] flex items-center justify-center text-white font-bold text-xs shrink-0 font-mono shadow-2xs">
             S
           </div>
           {!collapsed && (
-            <div className="truncate font-semibold tracking-wide text-xs text-[#10141C] font-mono uppercase">
-              SYNAPSE <span className="text-[10px] text-[#78716C] font-sans font-normal lowercase">v1 Lite</span>
+            <div className="truncate font-semibold tracking-wide text-xs text-[#1F2430] font-mono uppercase">
+              SYNAPSE <span className="text-[10px] text-[#6B6F7B] font-sans font-normal lowercase">v1</span>
             </div>
           )}
         </div>
@@ -183,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="lg:hidden p-1 rounded text-[#78716C] hover:text-[#10141C]"
+            className="lg:hidden p-1 rounded text-[#6B6F7B] hover:text-[#1F2430]"
             aria-label="Close navigation"
           >
             <X className="w-5 h-5" />
@@ -192,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex p-1 rounded text-[#78716C] hover:text-[#10141C] transition-colors"
+            className="hidden lg:flex p-1 rounded text-[#6B6F7B] hover:text-[#1F2430] transition-colors"
             title={collapsed ? 'Expand sidebar (240px)' : 'Collapse to icon rail (64px)'}
             aria-label="Toggle sidebar width"
           >
@@ -211,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.title)}
-                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider hover:text-[#10141C]"
+                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-semibold text-[#6B6F7B] uppercase tracking-wider hover:text-[#1F2430]"
                 >
                   <span>{group.title}</span>
                   <ChevronDown
@@ -235,8 +238,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                           isActive
-                            ? 'bg-[#2F7D4F] text-white shadow-2xs'
-                            : 'text-[#44403C] hover:text-[#10141C] hover:bg-[#F2EFE9]'
+                            ? 'bg-[#0F766E] text-white shadow-2xs font-semibold'
+                            : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
                         } ${collapsed ? 'justify-center px-1' : ''}`}
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? 'page' : undefined}

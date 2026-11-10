@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Navigation, Play, Database, SunMoon, FileText, BookOpen, X } from 'lucide-react';
+import { Search, Navigation, Play, Database, FileText, BookOpen, X } from 'lucide-react';
 import { WorkbenchView } from './Sidebar';
-import { useAccessibility } from '../../context/AccessibilityContext';
 
 interface CommandItem {
   id: string;
-  category: 'Navigation' | 'Actions' | 'Datasets' | 'Theme' | 'Reference';
+  category: 'Navigation' | 'Actions' | 'Datasets' | 'Reference';
   title: string;
   subtitle?: string;
   icon: React.ElementType;
@@ -34,7 +33,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const { settings, updateSettings } = useAccessibility();
 
   useEffect(() => {
     if (isOpen) {
@@ -187,19 +185,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       subtitle: 'Generate verifiable scientific report with SHA-256 manifest',
       icon: FileText,
       action: onExportReport,
-    },
-
-    // Themes
-    {
-      id: 'theme-toggle',
-      category: 'Theme',
-      title: 'Toggle Theme (Light / Dark Charcoal / High-Contrast)',
-      subtitle: `Current theme: ${settings.theme}`,
-      icon: SunMoon,
-      action: () => {
-        const nextTheme = settings.theme === 'light' ? 'dark' : settings.theme === 'dark' ? 'high-contrast' : 'light';
-        updateSettings({ theme: nextTheme });
-      },
     },
 
     // Datasets

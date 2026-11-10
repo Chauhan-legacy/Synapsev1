@@ -492,10 +492,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           {onOpenAdvancedLab && (
             <button
               type="button"
-              onClick={() => onOpenAdvancedLab('overview')}
-              className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[#10141C] bg-[#FFFDF9] border border-[#E6E1D6] rounded-md hover:bg-[#F2EFE9] transition-colors shadow-2xs"
+              onClick={() => onOpenAdvancedLab('rack')}
+              className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[#1F2430] bg-[#FFFFFF] border border-[#DDD6C7] rounded-md hover:bg-[#EFEBE0] transition-colors shadow-2xs"
             >
-              <Sliders className="w-3.5 h-3.5 text-[#B45F1B]" />
+              <Sliders className="w-3.5 h-3.5 text-[#0F766E]" />
               <span>Full Instrument Rack</span>
             </button>
           )}

@@ -62,6 +62,9 @@ const BenchmarksView = React.lazy(() =>
 const MethodsLibraryView = React.lazy(() =>
   import('./views/MethodsLibraryView').then((m) => ({ default: m.MethodsLibraryView }))
 );
+const InstrumentRackView = React.lazy(() =>
+  import('./views/InstrumentRackView').then((m) => ({ default: m.InstrumentRackView }))
+);
 
 // Minimal Skeleton Loader
 const SkeletonLoader: React.FC = () => (
@@ -263,6 +266,8 @@ const AppInner: React.FC = () => {
     switch (currentView) {
       case 'overview':
         return <OverviewView onOpenMethodCard={handleOpenMethodCard} onNavigate={setCurrentView} />;
+      case 'rack':
+        return <InstrumentRackView />;
       case 'datasets':
         return <DatasetsView onOpenMethodCard={handleOpenMethodCard} />;
       case 'explorer':
@@ -321,12 +326,12 @@ const AppInner: React.FC = () => {
       />
 
       {/* Main Workbench Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8F6F1]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F6F3EC]">
         {/* Switcher Banner back to Paper Workbench */}
-        <div className="h-8 bg-[#F2EFE9] border-b border-[#E6E1D6] px-4 flex items-center justify-between text-xs font-mono shrink-0">
-          <div className="flex items-center gap-2 text-[#57534E]">
-            <span className="w-2 h-2 rounded-full bg-[#2F7D4F]" />
-            <span className="font-semibold text-[#10141C]">SYNAPSE Multi-Tool Instrument Rack (14 Dedicated Labs)</span>
+        <div className="h-8 bg-[#EFEBE0] border-b border-[#DDD6C7] px-4 flex items-center justify-between text-xs font-mono shrink-0">
+          <div className="flex items-center gap-2 text-[#4A5060]">
+            <span className="w-2 h-2 rounded-full bg-[#0F766E]" />
+            <span className="font-semibold text-[#1F2430]">SYNAPSE Multi-Tool Instrument Rack</span>
           </div>
           <button
             type="button"
@@ -334,7 +339,7 @@ const AppInner: React.FC = () => {
               setPageMode('workbench');
               window.location.hash = '#/workbench';
             }}
-            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#FFFDF9] border border-[#E6E1D6] hover:bg-[#E6E1D6]/60 text-[#10141C] font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#DDD6C7]/50 text-[#1F2430] font-semibold transition-colors"
           >
             <span>&larr; Switch to Paper Workbench</span>
           </button>
@@ -356,7 +361,7 @@ const AppInner: React.FC = () => {
         />
 
         {/* View Content Port */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F8F6F1]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F6F3EC]">
           <Suspense fallback={<SkeletonLoader />}>
             {renderCurrentView()}
           </Suspense>
