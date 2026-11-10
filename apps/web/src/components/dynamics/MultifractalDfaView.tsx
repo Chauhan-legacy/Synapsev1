@@ -45,18 +45,16 @@ export const MultifractalDfaView: React.FC<MultifractalDfaViewProps> = ({ signal
           <button
             type="button"
             onClick={() => setActiveTab('singularity')}
-            className={`px-3 py-1 rounded transition-colors ${
-              activeTab === 'singularity' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
-            }`}
+            className={`px-3 py-1 rounded transition-colors ${activeTab === 'singularity' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
+              }`}
           >
             Singularity Spectrum f(α)
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('hurst')}
-            className={`px-3 py-1 rounded transition-colors ${
-              activeTab === 'hurst' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
-            }`}
+            className={`px-3 py-1 rounded transition-colors ${activeTab === 'hurst' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
+              }`}
           >
             Generalized Hurst h(q)
           </button>
@@ -73,11 +71,10 @@ export const MultifractalDfaView: React.FC<MultifractalDfaViewProps> = ({ signal
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span
-            className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${
-              mfResult.isMultifractal
+            className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${mfResult.isMultifractal
                 ? 'bg-[#E6F4F2] text-[#0F766E] border-[#0F766E]/30'
                 : 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]/30'
-            }`}
+              }`}
           >
             {mfResult.isMultifractal ? 'Multifractal Signature Confirmed' : 'Monofractal Process'}
           </span>

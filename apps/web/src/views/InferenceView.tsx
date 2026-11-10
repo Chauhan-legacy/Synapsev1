@@ -212,28 +212,62 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
 
       {/* Main Tab Views */}
       {activeTab === 'surrogates' && (
-        <div className="surface-base border p-4 rounded-md space-y-3">
+        <div className="surface-base border p-4 rounded-md space-y-3 font-sans">
           <div className="flex justify-between items-center text-xs font-mono">
             <span className="font-bold text-primary">Surrogate Null Distribution vs Observed Signal Statistic</span>
-            <span className="text-[#0F766E] font-bold">Observed Stat: {inferenceData.observedStat} &bull; Null Mean: 4.2</span>
+            <span className="text-[#0F766E] font-bold">Observed Stat: {inferenceData.observedStat} &bull; Null Mean: 4.2 &bull; 100 Surrogates</span>
           </div>
-          <div className="h-64 rounded-md bg-[#FFFFFF] border border-[#DDD6C7] p-4 flex flex-col justify-end relative overflow-hidden shadow-2xs">
+          <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-4 flex flex-col justify-end relative overflow-hidden shadow-2xs font-mono">
+            {/* Background Graticule */}
+            <div className="absolute inset-0 chart-graticule pointer-events-none opacity-40" />
+
             {/* Histogram bars */}
-            <div className="flex items-end justify-between h-44 gap-1.5 border-b border-[#DDD6C7] pb-1">
-              {inferenceData.bins.map((b, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center group">
-                  <div
-                    className="w-full bg-[#EFEBE0] group-hover:bg-[#0F766E]/40 border border-[#DDD6C7] group-hover:border-[#0F766E] rounded-t-sm transition-all"
-                    style={{ height: `${(b.count / 30) * 100}%` }}
-                  />
-                  <span className="text-[9px] font-mono text-[#6B6F7B] mt-1 truncate">{b.bin}</span>
-                </div>
-              ))}
+            <div className="flex items-end justify-between h-48 gap-2 border-b border-[#DDD6C7] pb-1 relative z-10">
+              {inferenceData.bins.map((b, idx) => {
+                const heightPct = Math.max(8, (b.count / 30) * 100);
+                return (
+                  <div key={idx} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                    <span className="text-[10px] font-bold text-[#0F766E] mb-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      {b.count}
+                    </span>
+                    <div
+                      className="w-full bg-[#0F766E]/20 group-hover:bg-[#0F766E]/50 border-2 border-[#0F766E] rounded-t-sm transition-all shadow-xs"
+                      style={{ height: `${heightPct}%` }}
+                    />
+                    <span className="text-[9px] font-mono text-[#6B6F7B] mt-1.5 truncate">{b.bin}</span>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Observed Statistic Needle */}
-            <div className="absolute top-4 right-6 px-3 py-1.5 rounded-md bg-[#E8F5E9] border border-[#2E7D32]/30 text-xs font-mono text-[#2E7D32] shadow-2xs font-semibold">
-              &darr; Observed Statistic = {inferenceData.observedStat} (p &lt; 0.010, H₀ Rejected)
+            {/* Theoretical Gaussian Null Bell Curve Overlay */}
+            <svg className="absolute inset-x-4 bottom-7 h-48 w-[calc(100%-2rem)] pointer-events-none z-15" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path
+                d="M 5,95 Q 25,92 35,60 T 50,15 T 65,60 Q 75,92 95,95"
+                fill="none"
+                stroke="#4338CA"
+                strokeWidth="2.0"
+                strokeDasharray="4 3"
+              />
+            </svg>
+
+            {/* Observed Statistic Needle Flag */}
+            <div className="absolute top-4 right-6 px-3 py-1.5 rounded-md bg-[#E8F5E9] border border-[#2E7D32]/40 text-xs font-mono text-[#2E7D32] shadow-2xs font-bold z-20 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#2E7D32]" />
+              <span>Observed T = {inferenceData.observedStat} (p &lt; 0.010, H₀ Rejected)</span>
+            </div>
+
+            {/* Axis labels & legend */}
+            <div className="flex justify-between items-center text-[10px] text-[#6B6F7B] pt-1 z-10">
+              <span>Test Statistic Value (IAAFT Surrogates) &rarr;</span>
+              <span className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-[#0F766E] font-bold">
+                  <span className="w-2.5 h-2 bg-[#0F766E]/30 border border-[#0F766E]" /> Surrogate Counts
+                </span>
+                <span className="flex items-center gap-1 text-[#4338CA] font-bold">
+                  <span className="w-3 h-0.5 bg-[#4338CA]" /> Theoretical Gaussian Fit
+                </span>
+              </span>
             </div>
           </div>
         </div>

@@ -777,7 +777,8 @@ export function computeWignerVilleDistribution(
   signal: number[],
   fs: number,
   nTimeSlices = 24,
-  nFreqBins = 24
+  nFreqBins = 24,
+  sigmaKernel = 2.0
 ): WignerVilleResult {
   const n = signal.length;
   if (n < 32) {
@@ -806,7 +807,6 @@ export function computeWignerVilleDistribution(
   }
 
   const densityMatrix: number[][] = [];
-  const sigmaKernel = 2.0; // Choi-Williams kernel damping parameter
 
   let maxEnergy = 0;
 

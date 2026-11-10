@@ -47,27 +47,24 @@ export const TdaHomologyView: React.FC<TdaHomologyViewProps> = ({ points3D }) =>
           <button
             type="button"
             onClick={() => setSubView('diagram')}
-            className={`px-3 py-1 rounded transition-colors ${
-              subView === 'diagram' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
-            }`}
+            className={`px-3 py-1 rounded transition-colors ${subView === 'diagram' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
+              }`}
           >
             Persistence Diagram (b, d)
           </button>
           <button
             type="button"
             onClick={() => setSubView('barcode')}
-            className={`px-3 py-1 rounded transition-colors ${
-              subView === 'barcode' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
-            }`}
+            className={`px-3 py-1 rounded transition-colors ${subView === 'barcode' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
+              }`}
           >
             Lifespan Barcode
           </button>
           <button
             type="button"
             onClick={() => setSubView('betti')}
-            className={`px-3 py-1 rounded transition-colors ${
-              subView === 'betti' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
-            }`}
+            className={`px-3 py-1 rounded transition-colors ${subView === 'betti' ? 'bg-[#0F766E] text-white font-bold' : 'text-[#4A5060] hover:text-[#1F2430]'
+              }`}
           >
             Betti Curves β(ε)
           </button>

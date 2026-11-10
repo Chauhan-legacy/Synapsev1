@@ -8,7 +8,11 @@ import {
   getGoesSolarFlareData,
   getPulsarFoldingData,
 } from '../services/astronomyService';
-import { Orbit, Compass, Radio, Sun, Download, CheckCircle2 } from 'lucide-react';
+import { Ligo3DSpacetime } from '../components/astronomy/Ligo3DSpacetime';
+import { Exoplanet3DTransit } from '../components/astronomy/Exoplanet3DTransit';
+import { Pulsar3DLighthouse } from '../components/astronomy/Pulsar3DLighthouse';
+import { Solar3DFlare } from '../components/astronomy/Solar3DFlare';
+import { Orbit, Compass, Radio, Sun, Download, CheckCircle2, Box, Activity, Columns } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -28,6 +32,7 @@ interface AstronomyLabViewProps {
 export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethodCard: _onOpenMethodCard }) => {
   const { selectDataset } = useSignal();
   const [activeTab, setActiveTab] = useState<'ligo' | 'kepler' | 'goes' | 'pulsar'>('ligo');
+  const [displayMode, setDisplayMode] = useState<'3d' | 'timeseries' | 'dual'>('3d');
   const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
 
   // Load Astrophysical Data
@@ -70,7 +75,7 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
             </span>
           </div>
           <p className="text-xs text-[#6B6F7B] mt-0.5">
-            Real gravitational-wave strain, exoplanet transit photometry, solar flare irradiance, and pulsar epoch-folding telemetry.
+            Real gravitational-wave strain, exoplanet transit photometry, solar flare irradiance, and pulsar epoch-folding telemetry in interactive 3D.
           </p>
         </div>
 
@@ -91,58 +96,100 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
       </CollapsibleExplainer>
 
       {/* Astrophysical Navigation Tabs (NO EMOJIS, CLEAN PROFESSIONAL STYLE) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[#DDD6C7]">
-        <button
-          type="button"
-          onClick={() => setActiveTab('ligo')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
-            activeTab === 'ligo'
-              ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
-              : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
-          }`}
-        >
-          <Orbit className="w-3.5 h-3.5 text-[#0F766E]" />
-          <span>LIGO GW150914 Strain</span>
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDD6C7] pb-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('ligo')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
+              activeTab === 'ligo'
+                ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+            }`}
+          >
+            <Orbit className="w-3.5 h-3.5 text-[#0F766E]" />
+            <span>LIGO GW150914 Strain</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('kepler')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
-            activeTab === 'kepler'
-              ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
-              : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
-          }`}
-        >
-          <Compass className="w-3.5 h-3.5 text-[#0F766E]" />
-          <span>Kepler-186f Exoplanet Photometry</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('kepler')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
+              activeTab === 'kepler'
+                ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-[#0F766E]" />
+            <span>Kepler-186f Exoplanet Photometry</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('goes')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
-            activeTab === 'goes'
-              ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
-              : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
-          }`}
-        >
-          <Sun className="w-3.5 h-3.5 text-[#0F766E]" />
-          <span>NOAA GOES-16 Solar Flare Flux</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('goes')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
+              activeTab === 'goes'
+                ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+            }`}
+          >
+            <Sun className="w-3.5 h-3.5 text-[#0F766E]" />
+            <span>NOAA GOES-16 Solar Flare Flux</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('pulsar')}
-          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
-            activeTab === 'pulsar'
-              ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
-              : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
-          }`}
-        >
-          <Radio className="w-3.5 h-3.5 text-[#0F766E]" />
-          <span>Crab Pulsar Radio Profile</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('pulsar')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-semibold rounded-t-md transition-colors whitespace-nowrap ${
+              activeTab === 'pulsar'
+                ? 'bg-[#FFFFFF] border-t-2 border-t-[#0F766E] border-x border-[#DDD6C7] text-[#1F2430] shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5 text-[#0F766E]" />
+            <span>Crab Pulsar Radio Profile</span>
+          </button>
+        </div>
+
+        {/* View Mode Switcher (3D vs Time Series vs Dual) */}
+        <div className="flex items-center gap-1 rounded border border-[#DDD6C7] bg-[#F6F3EC] p-0.5 text-xs font-mono shrink-0">
+          <button
+            type="button"
+            onClick={() => setDisplayMode('3d')}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${
+              displayMode === '3d'
+                ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430]'
+            }`}
+          >
+            <Box className="w-3.5 h-3.5" />
+            <span>3D Model</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode('timeseries')}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${
+              displayMode === 'timeseries'
+                ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430]'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>Time-Series</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDisplayMode('dual')}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded transition-colors ${
+              displayMode === 'dual'
+                ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
+                : 'text-[#4A5060] hover:text-[#1F2430]'
+            }`}
+          >
+            <Columns className="w-3.5 h-3.5" />
+            <span>Dual View</span>
+          </button>
+        </div>
       </div>
 
       {/* TAB 1: LIGO GRAVITATIONAL WAVE STRAIN */}
@@ -212,34 +259,51 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
               </div>
             </div>
 
-            {/* Interactive Chart */}
-            <div className="space-y-1">
-              <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={ligoData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="timeMs" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                    <ReferenceLine y={0} stroke="#DDD6C7" />
-                    <ReferenceLine x={380} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Merger (t_c)', fill: '#C0392B', fontSize: 9 }} />
-                    <Line type="monotone" dataKey="strain" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="envelope" stroke="#0F766E" strokeWidth={1.4} strokeDasharray="2 2" dot={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
-                  <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
-                    <span className="w-2.5 h-1 bg-[#1F2430]" /> Strain h(t) [10⁻²¹]
-                  </span>
-                  <span className="flex items-center gap-1.5 text-[#0F766E] font-bold">
-                    <span className="w-2.5 h-1 bg-[#0F766E]" /> Chirp Envelope
-                  </span>
+            {/* 3D Physical Simulation */}
+            {(displayMode === '3d' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Box className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>3D Spacetime Curvature &amp; Binary Black Hole Inspiral Canvas</span>
+                </div>
+                <Ligo3DSpacetime />
+              </div>
+            )}
+
+            {/* Time-Series Observational Waveform */}
+            {(displayMode === 'timeseries' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>Calibrated Hanford (H1) Strain Time-Series &amp; Chirp Envelope</span>
+                </div>
+                <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={ligoData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                      <XAxis dataKey="timeMs" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                      <ReferenceLine y={0} stroke="#DDD6C7" />
+                      <ReferenceLine x={380} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Merger (t_c)', fill: '#C0392B', fontSize: 9 }} />
+                      <Line type="monotone" dataKey="strain" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="envelope" stroke="#0F766E" strokeWidth={1.4} strokeDasharray="2 2" dot={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
+                    <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
+                      <span className="w-2.5 h-1 bg-[#1F2430]" /> Strain h(t) [10⁻²¹]
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[#0F766E] font-bold">
+                      <span className="w-2.5 h-1 bg-[#0F766E]" /> Chirp Envelope
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
+                  <span>Time (milliseconds) &rarr;</span>
+                  <span>GWOSC Open Science Reference: Event GW150914 (Hanford H1 Observatory)</span>
                 </div>
               </div>
-              <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
-                <span>Time (milliseconds) &rarr;</span>
-                <span>GWOSC Open Science Reference: Event GW150914 (Hanford H1 Observatory)</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -308,32 +372,50 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={keplerData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="timeHours" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <YAxis domain={['auto', 'auto']} tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                    <ReferenceLine y={1.0} stroke="#DDD6C7" strokeDasharray="3 3" />
-                    <Line type="monotone" dataKey="observedFlux" stroke="#1F2430" strokeWidth={1.6} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="transitModel" stroke="#0F766E" strokeWidth={2.0} dot={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
-                  <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
-                    <span className="w-2.5 h-1 bg-[#1F2430]" /> Observed Flux (Kepler)
-                  </span>
-                  <span className="flex items-center gap-1.5 text-[#0F766E] font-bold">
-                    <span className="w-2.5 h-1 bg-[#0F766E]" /> Mandel-Agol Model
-                  </span>
+            {/* 3D Model */}
+            {(displayMode === '3d' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Box className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>3D Kepler Star &amp; Planetary Transit Geometric Occultation Simulator</span>
+                </div>
+                <Exoplanet3DTransit />
+              </div>
+            )}
+
+            {/* Observational Lightcurve */}
+            {(displayMode === 'timeseries' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>NASA Kepler Space Telescope Calibrated Photometry</span>
+                </div>
+                <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={keplerData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                      <XAxis dataKey="timeHours" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <YAxis domain={['auto', 'auto']} tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                      <ReferenceLine y={1.0} stroke="#DDD6C7" strokeDasharray="3 3" />
+                      <Line type="monotone" dataKey="observedFlux" stroke="#1F2430" strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="transitModel" stroke="#0F766E" strokeWidth={2.0} dot={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
+                    <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
+                      <span className="w-2.5 h-1 bg-[#1F2430]" /> Observed Flux (Kepler)
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[#0F766E] font-bold">
+                      <span className="w-2.5 h-1 bg-[#0F766E]" /> Mandel-Agol Model
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
+                  <span>Time (hours from transit midpoint) &rarr;</span>
+                  <span>NASA Exoplanet Archive Calibrated Telemetry: Kepler-186f</span>
                 </div>
               </div>
-              <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
-                <span>Time (hours from transit midpoint) &rarr;</span>
-                <span>NASA Exoplanet Archive Calibrated Telemetry: Kepler-186f</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -402,32 +484,50 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={goesData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="timeMin" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                    <ReferenceLine y={10.0} stroke="#D97706" strokeDasharray="3 3" label={{ value: 'M-Class Threshold', fill: '#D97706', fontSize: 9 }} />
-                    <Area type="monotone" dataKey="longChannel" stroke="#1F2430" fill="rgba(15, 118, 110, 0.15)" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="shortChannel" stroke="#D97706" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-                <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
-                  <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
-                    <span className="w-2.5 h-1 bg-[#1F2430]" /> X-Ray (0.1 - 0.8 nm) [μW/m²]
-                  </span>
-                  <span className="flex items-center gap-1.5 text-[#D97706] font-bold">
-                    <span className="w-2.5 h-1 bg-[#D97706]" /> Short Channel (0.05 - 0.4 nm)
-                  </span>
+            {/* 3D Coronal Arcade Simulation */}
+            {(displayMode === '3d' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Box className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>3D Coronal Loop Magnetic Arcade &amp; Reconnection Eruption</span>
+                </div>
+                <Solar3DFlare />
+              </div>
+            )}
+
+            {/* Observational GOES Flux Curve */}
+            {(displayMode === 'timeseries' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>NOAA GOES-16 Dual-Channel Soft X-Ray Irradiance Profile</span>
+                </div>
+                <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={goesData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                      <XAxis dataKey="timeMin" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                      <ReferenceLine y={10.0} stroke="#D97706" strokeDasharray="3 3" label={{ value: 'M-Class Threshold', fill: '#D97706', fontSize: 9 }} />
+                      <Area type="monotone" dataKey="longChannel" stroke="#1F2430" fill="rgba(15, 118, 110, 0.15)" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="shortChannel" stroke="#D97706" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
+                    <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
+                      <span className="w-2.5 h-1 bg-[#1F2430]" /> X-Ray (0.1 - 0.8 nm) [μW/m²]
+                    </span>
+                    <span className="flex items-center gap-1.5 text-[#D97706] font-bold">
+                      <span className="w-2.5 h-1 bg-[#D97706]" /> Short Channel (0.05 - 0.4 nm)
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
+                  <span>Time (minutes) &rarr;</span>
+                  <span>NOAA Space Weather Prediction Center: GOES-16 Geostationary Operational Satellite</span>
                 </div>
               </div>
-              <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
-                <span>Time (minutes) &rarr;</span>
-                <span>NOAA Space Weather Prediction Center: GOES-16 Geostationary Operational Satellite</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -496,28 +596,46 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={pulsarData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
-                    <XAxis dataKey="phase" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                    <ReferenceLine y={0.12} stroke="#6B6F7B" strokeDasharray="3 3" label={{ value: 'Noise Floor', fill: '#6B6F7B', fontSize: 9 }} />
-                    <Line type="monotone" dataKey="intensity" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-                <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
-                  <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
-                    <span className="w-2.5 h-1 bg-[#1F2430]" /> Radio Pulse Intensity (Main &amp; Interpulse)
-                  </span>
+            {/* 3D Relativistic Lighthouse Model */}
+            {(displayMode === '3d' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Box className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>3D Relativistic Neutron Star &amp; Synchrotron Lighthouse Beam Canvas</span>
+                </div>
+                <Pulsar3DLighthouse />
+              </div>
+            )}
+
+            {/* Observational Epoch Folded Curve */}
+            {(displayMode === 'timeseries' || displayMode === 'dual') && (
+              <div className="space-y-1">
+                <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>ATNF Coherently Folded Radio Pulse Intensity Profile</span>
+                </div>
+                <div className="h-72 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-2 relative shadow-2xs">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={pulsarData.series} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                      <XAxis dataKey="phase" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                      <ReferenceLine y={0.12} stroke="#6B6F7B" strokeDasharray="3 3" label={{ value: 'Noise Floor', fill: '#6B6F7B', fontSize: 9 }} />
+                      <Line type="monotone" dataKey="intensity" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="absolute top-2 right-3 flex items-center gap-3 text-[10px] font-mono bg-[#FFFFFF]/90 px-2 py-0.5 rounded border border-[#DDD6C7]">
+                    <span className="flex items-center gap-1.5 text-[#1F2430] font-bold">
+                      <span className="w-2.5 h-1 bg-[#1F2430]" /> Radio Pulse Intensity (Main &amp; Interpulse)
+                    </span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
+                  <span>Rotational Phase Φ ∈ [0, 1] &rarr;</span>
+                  <span>ATNF Pulsar Catalogue: PSR B0531+21 (Crab Nebula, Supernova SN 1054)</span>
                 </div>
               </div>
-              <div className="flex justify-between text-[10px] font-mono text-[#6B6F7B] px-1">
-                <span>Rotational Phase Φ ∈ [0, 1] &rarr;</span>
-                <span>ATNF Pulsar Catalogue: PSR B0531+21 (Crab Nebula, Supernova SN 1054)</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
