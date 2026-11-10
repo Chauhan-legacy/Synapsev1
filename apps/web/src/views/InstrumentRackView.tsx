@@ -43,7 +43,7 @@ export interface PanelConfig {
   fullscreen: boolean;
 }
 
-export const ALL_INSTRUMENT_CATALOG: PanelConfig[] = [
+const ALL_INSTRUMENT_CATALOG: PanelConfig[] = [
   // 1. Time-Domain Oscillogram
   {
     id: 'oscillogram',
