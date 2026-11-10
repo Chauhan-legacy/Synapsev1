@@ -171,12 +171,12 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex gap-2 border-b pb-2">
+      <div className="flex gap-2 border-b border-[#DDD6C7] pb-2 font-mono text-xs">
         <button
           type="button"
           onClick={() => setActiveTab('surrogates')}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'surrogates' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+            activeTab === 'surrogates' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           IAAFT Surrogate Histogram
@@ -185,7 +185,7 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
           type="button"
           onClick={() => setActiveTab('fdr')}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'fdr' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+            activeTab === 'fdr' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           FDR Multiplicity Table
@@ -194,7 +194,7 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
           type="button"
           onClick={() => setActiveTab('models')}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'models' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+            activeTab === 'models' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           Model Comparison (AIC/BIC)
@@ -203,7 +203,7 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
           type="button"
           onClick={() => setActiveTab('calibration')}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'calibration' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+            activeTab === 'calibration' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           2,000-Series Null Calibration

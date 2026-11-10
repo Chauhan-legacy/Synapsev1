@@ -82,13 +82,13 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
       </CollapsibleExplainer>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between border-b pb-2">
+      <div className="flex items-center justify-between border-b border-[#DDD6C7] pb-2">
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'all' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'all' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
             }`}
           >
             All Findings ({allFindings.length})
@@ -97,7 +97,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('supported')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'supported' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'supported' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
             }`}
           >
             Supported ({countSupported})
@@ -106,7 +106,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('inconclusive')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'inconclusive' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'inconclusive' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
             }`}
           >
             Inconclusive ({countInconclusive})
@@ -115,7 +115,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('rejected')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'rejected' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'rejected' ? 'bg-[#0F766E] text-white' : 'bg-[#EFEBE0] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
             }`}
           >
             Rejected ({countRejected})
@@ -130,7 +130,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
       {/* Findings List */}
       <div className="space-y-3 font-mono text-xs">
         {filteredFindings.length === 0 ? (
-          <div className="surface-base border rounded-md p-8 text-center text-muted">
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-md p-8 text-center text-muted">
             No findings currently match the selected status filter. Click "Run analysis" on the top bar to run all engines.
           </div>
         ) : (
@@ -139,7 +139,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             return (
               <div
                 key={`${f.method}_${idx}`}
-                className="surface-base border rounded-md p-4 transition-all hover:border-[#10141C]/40 space-y-3"
+                className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-md p-4 transition-all hover:border-[#0F766E]/40 space-y-3"
               >
                 <div
                   className="flex items-start justify-between cursor-pointer select-none"
@@ -150,10 +150,10 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                           f.status === 'supported'
-                            ? 'bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0] dark:bg-[#1A261D] dark:text-[#6CB582] dark:border-[#2C4232]'
+                            ? 'bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9]'
                             : f.status === 'inconclusive'
-                            ? 'bg-[#FDF3E7] text-[#964E14] border border-[#F5DFC6] dark:bg-[#2A2016] dark:text-[#D48B47] dark:border-[#473420]'
-                            : 'bg-[#FBEAE8] text-[#8C2C1E] border border-[#F5C6C2] dark:bg-[#2B1B19] dark:text-[#D87063] dark:border-[#4A2925]'
+                            ? 'bg-[#FEF3C7] text-[#B7791F] border border-[#FDE68A]'
+                            : 'bg-[#FDEDEC] text-[#C0392B] border border-[#FADBD8]'
                         }`}
                       >
                         {f.status}

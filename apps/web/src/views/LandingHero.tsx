@@ -348,10 +348,10 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                     <polygon points={areaPolygonStr} fill="url(#waveGrad)" />
                   )}
 
-                  {/* Razor-sharp plotted trace */}
+                  {/* Razor-sharp plotted trace in ink black */}
                   <polyline
                     fill="none"
-                    stroke="#0F766E"
+                    stroke="#1F2430"
                     strokeWidth="1.75"
                     strokeLinecap="round"
                     strokeLinejoin="round"

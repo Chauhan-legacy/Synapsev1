@@ -922,14 +922,14 @@ export const InstrumentRackView: React.FC = () => {
                             <circle cx="0" cy="0" r="2.0" fill="none" stroke="#DDD6C7" strokeWidth="0.03" strokeDasharray="0.08 0.08" />
                             <polyline
                               fill="none"
-                              stroke="#009E73"
-                              strokeWidth="0.06"
+                              stroke="#1F2430"
+                              strokeWidth="0.07"
                               strokeLinejoin="round"
-                              opacity={0.88}
+                              opacity={0.92}
                               points={processedData.phaseData.map((p) => `${p.x.toFixed(3)},${(-p.y).toFixed(3)}`).join(' ')}
                             />
                             {processedData.poincareData.map((pt, idx) => (
-                              <circle key={idx} cx={pt.x} cy={-pt.y} r={0.09} fill="#1F2430" opacity={0.8} />
+                              <circle key={idx} cx={pt.x} cy={-pt.y} r={0.09} fill="#0F766E" opacity={0.85} />
                             ))}
                           </svg>
                           <div className="absolute bottom-1 right-2 text-[9px] font-mono text-[#6B6F7B] bg-[#FFFFFF]/90 px-1.5 py-0.5 rounded border border-[#DDD6C7]/50 shadow-2xs">
@@ -985,7 +985,7 @@ export const InstrumentRackView: React.FC = () => {
                               <ReferenceLine x={5.0} stroke="#6B6F7B" strokeDasharray="2 2" />
                               <ReferenceLine x={14.0} stroke="#6B6F7B" strokeDasharray="2 2" />
                               <ReferenceLine x={35.0} stroke="#6B6F7B" strokeDasharray="2 2" />
-                              <Line type="monotone" dataKey="power" stroke="#0072B2" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="power" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
                             </LineChart>
                           ) : panel.id === 'multitaper' ? (
                             <LineChart data={processedData.multitaperData} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
@@ -1050,7 +1050,7 @@ export const InstrumentRackView: React.FC = () => {
                               <ReferenceLine y={0} stroke="#DDD6C7" />
                               <ReferenceLine y={1.96 / Math.sqrt(processedData.stats.n)} stroke="#B7791F" strokeDasharray="3 3" />
                               <ReferenceLine y={-1.96 / Math.sqrt(processedData.stats.n)} stroke="#B7791F" strokeDasharray="3 3" />
-                              <Line type="monotone" dataKey="r" stroke="#7B5EA7" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="r" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
                             </LineChart>
                           ) : panel.id === 'rosner_esd' ? (
                             <AreaChart data={processedData.rosnerData} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
@@ -1092,8 +1092,8 @@ export const InstrumentRackView: React.FC = () => {
                               <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
                               <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                               <ReferenceLine x={25} stroke="#2E7D32" strokeDasharray="2 2" label={{ value: '+25ms', fill: '#2E7D32', fontSize: 9 }} />
-                              <Line type="monotone" dataKey="rxy" stroke="#009E73" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                              <Line type="monotone" dataKey="coherence" stroke="#0072B2" strokeWidth={1.5} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="rxy" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="coherence" stroke="#0F766E" strokeWidth={1.5} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
                             </LineChart>
                           ) : panel.id === 'music_superres' ? (
                             <LineChart data={processedData.musicData} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
@@ -1101,7 +1101,7 @@ export const InstrumentRackView: React.FC = () => {
                               <XAxis dataKey="freq" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
                               <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
                               <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                              <Line type="monotone" dataKey="powerDb" stroke="#7B5EA7" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="powerDb" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
                             </LineChart>
                           ) : (
                             <BarChart data={processedData.surrogateBins} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>

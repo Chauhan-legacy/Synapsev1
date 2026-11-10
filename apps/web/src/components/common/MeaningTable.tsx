@@ -15,30 +15,30 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
     switch (status) {
       case 'supported':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0] dark:bg-[#1A261D] dark:text-[#6CB582] dark:border-[#2C4232]">
-            <CheckCircle2 className="w-3 h-3 text-[#25653F] dark:text-[#6CB582]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9]">
+            <CheckCircle2 className="w-3 h-3 text-[#2E7D32]" />
             <span>supported</span>
           </span>
         );
       case 'inconclusive':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FDF3E7] text-[#964E14] border border-[#F5DFC6] dark:bg-[#2A2016] dark:text-[#D48B47] dark:border-[#473420]">
-            <AlertTriangle className="w-3 h-3 text-[#964E14] dark:text-[#D48B47]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FEF3C7] text-[#B7791F] border border-[#FDE68A]">
+            <AlertTriangle className="w-3 h-3 text-[#B7791F]" />
             <span>inconclusive</span>
           </span>
         );
       case 'rejected':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FBEAE8] text-[#8C2C1E] border border-[#F5C6C2] dark:bg-[#2B1B19] dark:text-[#D87063] dark:border-[#4A2925]">
-            <XCircle className="w-3 h-3 text-[#8C2C1E] dark:text-[#D87063]" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FDEDEC] text-[#C0392B] border border-[#FADBD8]">
+            <XCircle className="w-3 h-3 text-[#C0392B]" />
             <span>rejected</span>
           </span>
         );
       case 'not_run':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#F2EFE9] text-[#57534E] border border-[#E6E1D6] dark:bg-[#1E232B] dark:text-[#94A3B8] dark:border-[#2E3642]">
-            <Clock className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#EFEBE0] text-[#6B6F7B] border border-[#DDD6C7]">
+            <Clock className="w-3 h-3 text-[#6B6F7B]" />
             <span>Not run</span>
           </span>
         );
@@ -68,7 +68,7 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
             <th className="py-2.5 px-3 text-right">Card</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+        <tbody className="divide-y divide-[#DDD6C7] font-mono">
           {results.length === 0 ? (
             <tr>
               <td colSpan={7} className="py-6 text-center text-muted font-sans">
@@ -79,7 +79,7 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
             results.map((row, idx) => (
               <tr
                 key={idx}
-                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                className="hover:bg-[#EFEBE0]/60 transition-colors"
               >
                 <td className="py-2 px-3 font-sans font-medium text-primary">
                   <div>{row.method}</div>
@@ -128,7 +128,7 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
                     <button
                       type="button"
                       onClick={() => onOpenMethodCard(row.method)}
-                      className="inline-flex items-center text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 p-1 rounded"
+                      className="inline-flex items-center text-[#0F766E] hover:text-[#0B5E58] p-1 rounded"
                       title={`Open method card for ${row.method}`}
                       aria-label={`Open method card for ${row.method}`}
                     >

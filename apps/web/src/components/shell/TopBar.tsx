@@ -106,7 +106,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             type="button"
             onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#1F2430] focus:outline-none max-w-[240px] lg:max-w-[320px] truncate"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#1F2430] focus:outline-none max-w-[260px] lg:max-w-[340px] truncate"
             title={currentDataset?.name || 'Select dataset'}
             aria-haspopup="listbox"
             aria-expanded={isDropdownOpen}
@@ -115,24 +115,6 @@ export const TopBar: React.FC<TopBarProps> = ({
             <span className="truncate">{currentDataset?.name || 'Select dataset...'}</span>
             <ChevronDown className={`w-3 h-3 text-[#6B6F7B] shrink-0 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
-
-          {/* Quick Active Item Delete Button (compact inside capsule) */}
-          {onDeleteDataset && datasets.length > 0 && (
-            <div className="flex items-center pr-1.5 border-l border-[#DDD6C7] pl-1 py-0.5">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteDataset(selectedDatasetId);
-                }}
-                className="p-1 rounded text-[#6B6F7B] hover:text-[#C0392B] hover:bg-[#FDEDEC] transition-colors"
-                title={`Delete ${currentDataset?.name || 'active dataset'}`}
-                aria-label="Delete active dataset"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Custom Dropdown Menu with in-row Delete Buttons */}
