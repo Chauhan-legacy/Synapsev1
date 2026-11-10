@@ -20,8 +20,8 @@ import {
   ChevronRight,
   ChevronDown,
   X,
+  Orbit,
 } from 'lucide-react';
-import { MusicPlayer } from '../music/MusicPlayer';
 
 export type WorkbenchView =
   | 'overview'
@@ -34,6 +34,7 @@ export type WorkbenchView =
   | 'anomalies'
   | 'dynamics'
   | 'relations'
+  | 'astronomy'
   | 'inference'
   | 'findings'
   | 'evidence'
@@ -109,6 +110,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'anomalies', label: 'Anomalies & Events', icon: AlertOctagon },
         { id: 'dynamics', label: 'Dynamics & Structure', icon: GitBranch },
         { id: 'relations', label: 'Relations Lab', icon: Network },
+      ],
+    },
+    {
+      title: 'Astronomy',
+      items: [
+        { id: 'astronomy', label: 'Astronomy Lab', icon: Orbit },
       ],
     },
     {
@@ -257,12 +264,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </div>
-
-      {/* Embedded Audio Lab & Music Player */}
-      <MusicPlayer
-        onOpenAnalysis={() => onSelectView('rack')}
-        collapsedSidebar={collapsed}
-      />
 
       {/* Pinned Bottom Actions */}
       <div className="p-2 border-t border-[#E6E1D6] space-y-1">

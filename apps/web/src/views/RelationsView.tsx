@@ -5,6 +5,7 @@ import { MeaningTable } from '../components/common/MeaningTable';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
 import { ExportBar } from '../components/common/ExportBar';
 import { CommonResultSchema } from '../types/analysis';
+import { TransferEntropyView } from '../components/dynamics/TransferEntropyView';
 
 interface RelationsViewProps {
   onOpenMethodCard: (name: string) => void;
@@ -12,7 +13,7 @@ interface RelationsViewProps {
 
 export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }) => {
   const { activeSignal, resultsByModule } = useSignal();
-  const [activeTab, setActiveTab] = useState<'coherence' | 'crosscorr' | 'causality' | 'dtw'>('coherence');
+  const [activeTab, setActiveTab] = useState<'coherence' | 'crosscorr' | 'causality' | 'transfer_entropy' | 'dtw'>('coherence');
 
   const ch1Name = activeSignal.channelNames[0] || 'Channel 1';
   const ch2Name = activeSignal.channelNames[1] || 'Channel 2 (Coupled)';
@@ -216,12 +217,12 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex gap-2 border-b pb-2">
+      <div className="flex gap-2 border-b border-[#DDD6C7] pb-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('coherence')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'coherence' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            activeTab === 'coherence' ? 'bg-[#0F766E] text-white shadow-2xs' : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           Spectral Coherence &amp; Carter Bound
@@ -229,8 +230,8 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
         <button
           type="button"
           onClick={() => setActiveTab('crosscorr')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'crosscorr' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            activeTab === 'crosscorr' ? 'bg-[#0F766E] text-white shadow-2xs' : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           Cross-Correlation Lag Profile
@@ -238,17 +239,26 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
         <button
           type="button"
           onClick={() => setActiveTab('causality')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'causality' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            activeTab === 'causality' ? 'bg-[#0F766E] text-white shadow-2xs' : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           Granger Directionality VAR Matrix
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('transfer_entropy')}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            activeTab === 'transfer_entropy' ? 'bg-[#0F766E] text-white shadow-2xs' : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
+          }`}
+        >
+          Nonlinear Transfer Entropy (T_X→Y)
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('dtw')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-            activeTab === 'dtw' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
+            activeTab === 'dtw' ? 'bg-[#0F766E] text-white shadow-2xs' : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430]'
           }`}
         >
           DTW Non-linear Warping Path
@@ -327,26 +337,35 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
         </div>
       )}
 
+      {activeTab === 'transfer_entropy' && (
+        <TransferEntropyView
+          channel1={s1}
+          channel2={s2}
+          ch1Name={ch1Name}
+          ch2Name={ch2Name}
+        />
+      )}
+
       {activeTab === 'dtw' && (
-        <div className="surface-base border p-4 rounded-md space-y-2">
+        <div className="bg-[#FFFFFF] border border-[#DDD6C7] p-4 rounded-md space-y-2 shadow-2xs">
           <div className="flex justify-between items-center text-xs font-mono">
-            <span className="font-bold text-primary">Dynamic Time Warping (DTW) Optimal Alignment Path</span>
-            <span className="text-muted">Sakoe-Chiba Band Window = 5</span>
+            <span className="font-bold text-[#1F2430]">Dynamic Time Warping (DTW) Optimal Alignment Path</span>
+            <span className="text-[#6B6F7B]">Sakoe-Chiba Band Window = 5</span>
           </div>
-          <div className="h-64 rounded bg-[#FFFDF9] dark:bg-[#13171d] border border-[#E6E1D6] dark:border-[#29303d] p-2 flex items-center justify-center relative overflow-hidden">
+          <div className="h-64 rounded bg-[#FFFDF9] border border-[#DDD6C7] p-2 flex items-center justify-center relative overflow-hidden shadow-2xs">
             <svg className="w-64 h-64" viewBox="0 0 25 25">
               {/* Graticule Diagonal */}
-              <line x1="0" y1="0" x2="25" y2="25" stroke="#E6E1D6" strokeWidth="0.5" strokeDasharray="1 1" />
-              {/* Alignment Path (Pure Ink Black) */}
+              <line x1="0" y1="0" x2="25" y2="25" stroke="#DDD6C7" strokeWidth="0.5" strokeDasharray="1 1" />
+              {/* Alignment Path (Deep Teal) */}
               <polyline
                 fill="none"
-                stroke="#10141C"
-                strokeWidth="1.2"
+                stroke="#0F766E"
+                strokeWidth="1.5"
                 points={relationData.dtwPath.map((p) => `${p.x},${24 - p.y}`).join(' ')}
               />
             </svg>
-            <div className="absolute bottom-2 right-4 text-[10px] font-mono text-[#78716C]">Channel 1 Index &rarr;</div>
-            <div className="absolute top-3 left-4 text-[10px] font-mono text-[#78716C]">&uarr; Channel 2 Index</div>
+            <div className="absolute bottom-2 right-4 text-[10px] font-mono text-[#6B6F7B]">Channel 1 Index &rarr;</div>
+            <div className="absolute top-3 left-4 text-[10px] font-mono text-[#6B6F7B]">&uarr; Channel 2 Index</div>
           </div>
         </div>
       )}

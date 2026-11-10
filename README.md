@@ -1,4 +1,4 @@
-# SYNAPSE: Universal Signal Intelligence & Scientific Discovery Platform
+![alt text](image.png)# SYNAPSE: Universal Signal Intelligence & Scientific Discovery Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.11](https://img.shields.io/badge/Python-3.11-emerald.svg)](https://python.org)

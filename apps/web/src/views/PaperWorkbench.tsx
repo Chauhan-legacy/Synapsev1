@@ -22,7 +22,6 @@ import {
   Waves,
   Cpu,
 } from 'lucide-react';
-import { MusicPlayer } from '../components/music/MusicPlayer';
 
 interface PaperWorkbenchProps {
   onBackToHero: () => void;
@@ -666,11 +665,6 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Audio Lab & Music Player */}
-          <div className="py-2 border-t border-[#E6E1D6]">
-            <MusicPlayer onOpenAnalysis={() => onOpenAdvancedLab?.('rack')} />
           </div>
 
           <div className="pt-4 border-t border-[#E6E1D6] font-mono text-[10px] text-[#78716C] space-y-1">

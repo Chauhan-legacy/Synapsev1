@@ -37,6 +37,7 @@ const VIEW_TITLES: Record<WorkbenchView, string> = {
   anomalies: 'Anomalies & Change-points',
   dynamics: 'Dynamics & Structure',
   relations: 'Relations Lab',
+  astronomy: 'Astronomy & Cosmic Lab',
   inference: 'Inference & Null Models',
   findings: 'Scientific Findings',
   evidence: 'Evidence Graph',

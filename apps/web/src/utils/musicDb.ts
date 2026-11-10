@@ -91,3 +91,4 @@ export async function toggleTrackFavoriteInDB(id: string): Promise<boolean> {
     req.onerror = () => reject(req.error);
   });
 }
+

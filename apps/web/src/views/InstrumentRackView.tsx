@@ -826,7 +826,7 @@ export const InstrumentRackView: React.FC = () => {
               className="px-2 py-1 rounded text-xs text-[#0F766E] font-bold hover:bg-[#FFFFFF] transition-colors"
               title="Astrophysical instruments (LIGO, Kepler, GOES, Pulsars)"
             >
-              🔭 Astronomy
+              Astronomy
             </button>
             <button
               type="button"

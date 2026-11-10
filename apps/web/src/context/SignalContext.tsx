@@ -271,10 +271,10 @@ export function createSignalPreset(code: string): SignalData {
 
 const ALL_BENCHMARK_PRESETS = [
   { id: 'benchmark_ALL', name: 'Dataset Ω: Master All-in-One Multi-Physics (Combined Testing)', isBenchmark: true },
-  { id: 'astro_ligo_gw150914', name: '🔭 Astro: LIGO GW150914 Gravitational Wave Strain', isBenchmark: true },
-  { id: 'astro_kepler_transit', name: '🪐 Astro: Kepler-186f Exoplanet Transit Photometry', isBenchmark: true },
-  { id: 'astro_goes_solar_flare', name: '☀️ Astro: NOAA GOES-16 M5.4 Solar X-Ray Flare', isBenchmark: true },
-  { id: 'astro_crab_pulsar', name: '⚡ Astro: Crab Pulsar PSR B0531+21 Radio Pulses', isBenchmark: true },
+  { id: 'astro_ligo_gw150914', name: 'Astro: LIGO GW150914 Gravitational Wave Strain', isBenchmark: true },
+  { id: 'astro_kepler_transit', name: 'Astro: Kepler-186f Exoplanet Transit Photometry', isBenchmark: true },
+  { id: 'astro_goes_solar_flare', name: 'Astro: NOAA GOES-16 M5.4 Solar X-Ray Flare', isBenchmark: true },
+  { id: 'astro_crab_pulsar', name: 'Astro: Crab Pulsar PSR B0531+21 Radio Pulses', isBenchmark: true },
   { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
   { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
   { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },
@@ -337,17 +337,23 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Sync URL hash with current view
   useEffect(() => {
-    const hash = window.location.hash.replace('#/', '').replace('#', '');
-    if (hash && hash !== currentView) {
-      const validViews: WorkbenchView[] = [
-        'overview', 'rack', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
-        'anomalies', 'dynamics', 'relations', 'inference', 'findings',
-        'evidence', 'reproducibility', 'benchmarks', 'methods'
-      ];
-      if (validViews.includes(hash as WorkbenchView)) {
-        setCurrentView(hash as WorkbenchView);
+    const handleHashSync = () => {
+      const hash = window.location.hash.replace('#/', '').replace('#', '').toLowerCase();
+      if (hash) {
+        const validViews: WorkbenchView[] = [
+          'overview', 'rack', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
+          'anomalies', 'dynamics', 'relations', 'astronomy', 'inference', 'findings',
+          'evidence', 'reproducibility', 'benchmarks', 'methods'
+        ];
+        if (validViews.includes(hash as WorkbenchView)) {
+          setCurrentView(hash as WorkbenchView);
+        }
       }
-    }
+    };
+
+    handleHashSync();
+    window.addEventListener('hashchange', handleHashSync);
+    return () => window.removeEventListener('hashchange', handleHashSync);
   }, []);
 
   const handleSetCurrentView = useCallback((view: WorkbenchView) => {

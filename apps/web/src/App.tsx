@@ -44,6 +44,9 @@ const DynamicsView = React.lazy(() =>
 const RelationsView = React.lazy(() =>
   import('./views/RelationsView').then((m) => ({ default: m.RelationsView }))
 );
+const AstronomyLabView = React.lazy(() =>
+  import('./views/AstronomyLabView').then((m) => ({ default: m.AstronomyLabView }))
+);
 const InferenceView = React.lazy(() =>
   import('./views/InferenceView').then((m) => ({ default: m.InferenceView }))
 );
@@ -92,14 +95,67 @@ const AppInner: React.FC = () => {
     apiConnected,
   } = useSignal();
 
-  // Page Routing: 'hero' (at "/") | 'workbench' (cream paper style) | 'advanced' (14-lab suite)
+  // Page Routing: 'hero' (at "/") | 'workbench' (cream paper style) | 'advanced' (15-lab suite)
   const [pageMode, setPageMode] = useState<'hero' | 'workbench' | 'advanced'>(() => {
     const hash = window.location.hash.toLowerCase();
     const path = window.location.pathname.toLowerCase();
     if (hash.includes('workbench') || path.includes('workbench')) return 'workbench';
-    if (hash.includes('app') || hash.includes('spectra') || hash.includes('benchmarks')) return 'advanced';
+    if (
+      hash.includes('app') ||
+      hash.includes('spectra') ||
+      hash.includes('benchmarks') ||
+      hash.includes('dynamics') ||
+      hash.includes('astronomy') ||
+      hash.includes('methods') ||
+      hash.includes('rack') ||
+      hash.includes('inference') ||
+      hash.includes('relations') ||
+      hash.includes('datasets') ||
+      hash.includes('timefreq') ||
+      hash.includes('explorer') ||
+      hash.includes('statistics') ||
+      hash.includes('anomalies') ||
+      hash.includes('findings') ||
+      hash.includes('evidence') ||
+      hash.includes('reproducibility')
+    ) {
+      return 'advanced';
+    }
     return 'hero';
   });
+
+  // Keep pageMode in sync with URL hash
+  useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash.includes('workbench')) {
+        setPageMode('workbench');
+      } else if (
+        hash.includes('app') ||
+        hash.includes('spectra') ||
+        hash.includes('benchmarks') ||
+        hash.includes('dynamics') ||
+        hash.includes('astronomy') ||
+        hash.includes('methods') ||
+        hash.includes('rack') ||
+        hash.includes('inference') ||
+        hash.includes('relations') ||
+        hash.includes('datasets') ||
+        hash.includes('timefreq') ||
+        hash.includes('explorer') ||
+        hash.includes('statistics') ||
+        hash.includes('anomalies') ||
+        hash.includes('findings') ||
+        hash.includes('evidence') ||
+        hash.includes('reproducibility')
+      ) {
+        setPageMode('advanced');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashSync);
+    return () => window.removeEventListener('hashchange', handleHashSync);
+  }, []);
 
   // Shell Layout State
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
@@ -295,6 +351,8 @@ const AppInner: React.FC = () => {
         return <DynamicsView onOpenMethodCard={handleOpenMethodCard} />;
       case 'relations':
         return <RelationsView onOpenMethodCard={handleOpenMethodCard} />;
+      case 'astronomy':
+        return <AstronomyLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'inference':
         return <InferenceView onOpenMethodCard={handleOpenMethodCard} />;
       case 'findings':

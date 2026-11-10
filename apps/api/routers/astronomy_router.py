@@ -149,3 +149,4 @@ def get_pulsar_profile(pulsar: str = Query("PSR B0531+21", description="Pulsar c
         "chi_square_pdm": 489.2,
         "datapoints": bins
     }
+
