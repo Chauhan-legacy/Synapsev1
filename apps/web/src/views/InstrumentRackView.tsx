@@ -1028,24 +1028,25 @@ export const InstrumentRackView: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={`grid ${isAll3DActive ? 'grid-cols-1 md:grid-cols-2 gap-6' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
           {activePanels.map((panel) => {
             const isFullscreen = panel.fullscreen;
+            const is3DActive = !!panel3DModes[panel.id];
             return (
               <div
                 key={panel.id}
-                className={`rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs transition-all flex flex-col justify-between ${
-                  isFullscreen ? 'fixed inset-4 z-50 overflow-y-auto p-6 bg-[#FFFFFF]' : 'p-4'
+                className={`rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs transition-all flex flex-col justify-between overflow-hidden ${
+                  isFullscreen ? 'fixed inset-4 z-50 overflow-y-auto p-6 bg-[#FFFFFF]' : is3DActive ? 'p-4 min-h-[510px]' : 'p-4'
                 }`}
               >
                 {/* Panel Header */}
                 <div className="space-y-1.5 pb-2 border-b border-[#DDD6C7]/60">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
+                    <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1 mr-2">
                       <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#E8F5E9] text-[#2E7D32] border border-[#2E7D32]/20">
                         {panel.category}
                       </span>
-                      <h3 className="font-mono text-xs font-bold text-[#1F2430] leading-tight" title={panel.title}>
+                      <h3 className="font-mono text-xs font-bold text-[#1F2430] leading-snug whitespace-normal break-words" title={panel.title}>
                         {panel.title}
                       </h3>
                     </div>
@@ -1122,11 +1123,11 @@ export const InstrumentRackView: React.FC = () => {
                 {!panel.collapsed && (
                   <div className="flex-1 flex flex-col justify-between pt-2">
                     {/* Chart Container */}
-                    <div className={`w-full ${isFullscreen ? 'h-[65vh]' : heightClass}`}>
+                    <div className={`w-full ${isFullscreen ? 'h-[75vh]' : is3DActive ? 'h-[440px] min-h-[420px]' : heightClass} overflow-hidden rounded-md transition-all`}>
                       {/* Instrument Specific Renderers */}
                       {panel.id === 'phase_space' && panel3DModes['phase_space'] ? (
-                        <div className="w-full h-full">
-                          <Desmos3DAttractor signal={processedData.rawSignal} delay={5} title="3D Phase-Space Attractor" />
+                        <div className="w-full h-full min-h-[400px] overflow-hidden rounded-md">
+                          <Desmos3DAttractor signal={processedData.rawSignal} delay={5} title="3D Phase-Space Attractor" compact={true} />
                         </div>
                       ) : panel.id === 'phase_space' ? (
                         <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#FFFFFF] rounded-md border border-[#DDD6C7] p-2">
@@ -1169,13 +1170,14 @@ export const InstrumentRackView: React.FC = () => {
                           </div>
                         </div>
                       ) : panel3DModes[panel.id] ? (
-                        <div className="w-full h-full min-h-[240px]">
+                        <div className="w-full h-full min-h-[400px] overflow-hidden rounded-md flex flex-col justify-center items-center">
                           {panel.id === 'stft_spectrogram' && (
                             <WignerVille3DSurface
                               densityMatrix={processedData.stftMatrix}
                               timeLabels={processedData.stftTimes}
                               freqLabels={processedData.stftFreqs}
                               fs={processedData.stats.fs}
+                              compact={true}
                             />
                           )}
                           {panel.id === 'cwt_scalogram' && (
@@ -1184,6 +1186,7 @@ export const InstrumentRackView: React.FC = () => {
                               timeLabels={processedData.cwtTimes}
                               freqLabels={processedData.cwtFreqs}
                               fs={processedData.stats.fs}
+                              compact={true}
                             />
                           )}
                           {panel.id === 'oscillogram' && (
@@ -1191,6 +1194,7 @@ export const InstrumentRackView: React.FC = () => {
                               signal={processedData.rawSignal}
                               envelope={processedData.hilbertEnvelope}
                               fs={processedData.stats.fs}
+                              compact={true}
                             />
                           )}
                           {panel.id === 'ligo_gw_strain' && <Ligo3DSpacetime />}
@@ -1202,6 +1206,7 @@ export const InstrumentRackView: React.FC = () => {
                               signal={processedData.rawSignal}
                               envelope={processedData.hilbertEnvelope}
                               fs={processedData.stats.fs}
+                              compact={true}
                             />
                           )}
                         </div>

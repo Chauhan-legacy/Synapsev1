@@ -6,12 +6,14 @@ interface Hilbert3DHelixProps {
   signal: number[];
   envelope: number[];
   fs: number;
+  compact?: boolean;
 }
 
 export const Hilbert3DHelix: React.FC<Hilbert3DHelixProps> = ({
   signal,
   envelope: _envelope,
   fs: _fs,
+  compact = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -295,7 +297,7 @@ export const Hilbert3DHelix: React.FC<Hilbert3DHelixProps> = ({
 
       {/* Main 3D Canvas Viewport */}
       <div
-        className="w-full h-[380px] sm:h-[420px] min-h-[380px] rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
+        className={`w-full ${compact ? 'h-[310px] min-h-[290px]' : 'h-[380px] sm:h-[420px] min-h-[380px]'} rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

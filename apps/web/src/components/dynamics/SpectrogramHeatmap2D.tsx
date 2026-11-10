@@ -193,3 +193,4 @@ export const SpectrogramHeatmap2D: React.FC<SpectrogramHeatmap2DProps> = ({
     </div>
   );
 };
+

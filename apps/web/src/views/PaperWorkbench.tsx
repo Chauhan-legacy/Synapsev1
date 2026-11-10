@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -28,9 +28,13 @@ import {
   FileText,
   Search,
   Download,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import {
   CURATED_ARXIV_CATALOG,
+  searchArxiv,
+  ArXivPaper,
   generateBibTeX,
   generateApaCitation,
 } from '../services/arxivService';
@@ -64,7 +68,40 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   const [arxivQuery, setArxivQuery] = useState<string>('');
   const [arxivCategory, setArxivCategory] = useState<string>('all');
   const [copiedBibId, setCopiedBibId] = useState<string | null>(null);
-  const [selectedPaperId, setSelectedPaperId] = useState<string>(CURATED_ARXIV_CATALOG[0].id);
+  const [selectedPaperId, setSelectedPaperId] = useState<string>(CURATED_ARXIV_CATALOG[0]?.id || '');
+  const [displayedPapers, setDisplayedPapers] = useState<ArXivPaper[]>(CURATED_ARXIV_CATALOG);
+  const [isSearchingArxiv, setIsSearchingArxiv] = useState<boolean>(false);
+  const [totalFound, setTotalFound] = useState<number>(CURATED_ARXIV_CATALOG.length);
+
+  // Reactive instant search effect
+  useEffect(() => {
+    let active = true;
+    setIsSearchingArxiv(true);
+    const debounceTimer = setTimeout(async () => {
+      try {
+        const res = await searchArxiv(arxivQuery, 1, 30);
+        if (active) {
+          let list = res.papers;
+          if (arxivCategory !== 'all') {
+            list = list.filter((p) => p.category.toLowerCase().includes(arxivCategory.toLowerCase()));
+          }
+          setDisplayedPapers(list);
+          setTotalFound(res.total);
+          setIsSearchingArxiv(false);
+          if (list.length > 0 && (!selectedPaperId || !list.some((p) => p.id === selectedPaperId))) {
+            setSelectedPaperId(list[0].id);
+          }
+        }
+      } catch {
+        if (active) setIsSearchingArxiv(false);
+      }
+    }, 60);
+
+    return () => {
+      active = false;
+      clearTimeout(debounceTimer);
+    };
+  }, [arxivQuery, arxivCategory]);
 
   // Full Mathematical Computation on Active Signal
   const {
@@ -1207,39 +1244,98 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
               </div>
 
               {/* Search & Category Filter Strip */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                <div className="relative w-full md:w-96 font-mono text-xs">
-                  <Search className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    placeholder="Search literature by keyword, author, method, or arXiv ID..."
-                    value={arxivQuery}
-                    onChange={(e) => setArxivQuery(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-[#F8F6F1] border border-[#E6E1D6] rounded-lg text-[#10141C] placeholder:text-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#0F766E]"
-                  />
+              <div className="space-y-3">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                  <div className="relative flex-1 font-mono text-xs">
+                    <Search className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search arXiv papers & PDFs: e.g. black hole, LIGO, exoplanet, Higgs, chaos, tokamak..."
+                      value={arxivQuery}
+                      onChange={(e) => setArxivQuery(e.target.value)}
+                      className="w-full pl-9 pr-24 py-2 text-xs bg-[#FFFFFF] border border-[#DDD6C7] rounded-lg text-[#10141C] placeholder:text-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#0F766E] shadow-2xs"
+                    />
+                    {arxivQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setArxivQuery('')}
+                        className="absolute right-2 top-2 p-0.5 text-[#78716C] hover:text-[#10141C] rounded"
+                        title="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {isSearchingArxiv && (
+                      <div className="absolute right-8 top-2 text-[10px] text-[#0F766E] flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#0F766E] animate-ping" />
+                        <span>Searching...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 overflow-x-auto font-mono text-xs pb-1 md:pb-0">
+                    {[
+                      { id: 'all', label: 'All Fields' },
+                      { id: 'gr-qc', label: 'Astrophysics & Gravitation' },
+                      { id: 'eess.SP', label: 'Signal Processing' },
+                      { id: 'nlin.CD', label: 'Nonlinear Dynamics' },
+                      { id: 'stat', label: 'Statistical Methodology' },
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setArxivCategory(cat.id)}
+                        className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap text-xs ${
+                          arxivCategory === cat.id
+                            ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
+                            : 'bg-[#F8F6F1] border border-[#E6E1D6] text-[#57534E] hover:text-[#10141C] hover:bg-[#EFEBE0]'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto font-mono text-xs pb-1 md:pb-0">
+                {/* Instant Topic Shortcut Pills */}
+                <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] pt-1">
+                  <span className="text-[#78716C] mr-1 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-[#0F766E]" /> Quick Topics:
+                  </span>
                   {[
-                    { id: 'all', label: 'All Literature' },
-                    { id: 'gr-qc', label: 'Astrophysics & Gravitation' },
-                    { id: 'eess.SP', label: 'Signal Processing' },
-                    { id: 'nlin.CD', label: 'Nonlinear Dynamics' },
-                    { id: 'stat', label: 'Statistical Methodology' },
-                  ].map((cat) => (
+                    { label: 'LIGO GW150914', q: 'GW150914' },
+                    { label: 'Kepler-186f Exoplanet', q: 'Kepler-186f' },
+                    { label: 'CERN Higgs Boson', q: 'Higgs Boson' },
+                    { label: 'Planck CMB', q: 'Planck CMB' },
+                    { label: 'Nuclear Reactor Core', q: 'Reactor Kinetics' },
+                    { label: 'Tokamak Fusion', q: 'Tokamak Fusion' },
+                    { label: 'Takens Chaos', q: 'Takens Chaos' },
+                    { label: 'Multitaper F-Test', q: 'Multitaper' },
+                    { label: 'Wigner-Ville', q: 'Wigner-Ville' },
+                    { label: 'Ising Model', q: 'Ising' },
+                  ].map((pill) => (
                     <button
-                      key={cat.id}
+                      key={pill.label}
                       type="button"
-                      onClick={() => setArxivCategory(cat.id)}
-                      className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap text-xs ${
-                        arxivCategory === cat.id
-                          ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
-                          : 'bg-[#F8F6F1] border border-[#E6E1D6] text-[#57534E] hover:text-[#10141C] hover:bg-[#EFEBE0]'
+                      onClick={() => setArxivQuery(pill.q)}
+                      className={`px-2 py-0.5 rounded text-[10px] border transition-all ${
+                        arxivQuery === pill.q
+                          ? 'bg-[#0F766E] text-white border-[#0F766E] font-bold'
+                          : 'bg-[#FFFFFF] border-[#DDD6C7] text-[#4A5060] hover:bg-[#EFEBE0] hover:text-[#1F2430]'
                       }`}
                     >
-                      {cat.label}
+                      {pill.label}
                     </button>
                   ))}
+                  {arxivQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setArxivQuery('')}
+                      className="px-2 py-0.5 rounded text-[10px] bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5] hover:bg-[#FCD34D]"
+                    >
+                      Reset Filter
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1315,134 +1411,154 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
               {/* Filtered Peer-Reviewed Literature Catalog Cards */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="font-bold text-[#10141C]">
-                    Peer-Reviewed Literature Catalog ({CURATED_ARXIV_CATALOG.filter((p) => {
-                      const matchesCat = arxivCategory === 'all' || p.category.toLowerCase().includes(arxivCategory.toLowerCase());
-                      const matchesQ = !arxivQuery.trim() || p.title.toLowerCase().includes(arxivQuery.toLowerCase()) || p.abstract.toLowerCase().includes(arxivQuery.toLowerCase()) || p.authors.some(a => a.toLowerCase().includes(arxivQuery.toLowerCase()));
-                      return matchesCat && matchesQ;
-                    }).length} Verified Articles)
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono border-b border-[#DDD6C7] pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#10141C]">
+                      Verified Preprints &amp; Open-Access Articles ({totalFound} in catalog, showing {displayedPapers.length})
+                    </span>
+                    {arxivQuery && (
+                      <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold">
+                        Matching &ldquo;{arxivQuery}&rdquo;
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[#78716C] text-[11px] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    Direct PDF Downloads Active • DOIs Calibrated
                   </span>
-                  <span className="text-[#78716C]">DOIs &amp; BibTeX Entries Fully Calibrated</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  {CURATED_ARXIV_CATALOG.filter((p) => {
-                    const matchesCat = arxivCategory === 'all' || p.category.toLowerCase().includes(arxivCategory.toLowerCase());
-                    const matchesQ = !arxivQuery.trim() || p.title.toLowerCase().includes(arxivQuery.toLowerCase()) || p.abstract.toLowerCase().includes(arxivQuery.toLowerCase()) || p.authors.some(a => a.toLowerCase().includes(arxivQuery.toLowerCase()));
-                    return matchesCat && matchesQ;
-                  }).map((paper) => (
-                    <div
-                      key={paper.id}
-                      className={`p-5 rounded-xl border transition-all space-y-3 ${
-                        selectedPaperId === paper.id
-                          ? 'border-[#0F766E] bg-[#FFFFFF] shadow-sm ring-1 ring-[#0F766E]/40'
-                          : 'border-[#E6E1D6] bg-[#FFFFFF] hover:border-[#10141C]/30'
-                      }`}
+                {displayedPapers.length === 0 ? (
+                  <div className="p-8 text-center bg-[#FFFFFF] rounded-xl border border-[#DDD6C7] space-y-3 font-mono text-xs">
+                    <div className="text-base text-[#1F2430] font-bold">No papers matched your search query.</div>
+                    <p className="text-[#6B6F7B]">
+                      Try typing terms like <span className="text-[#0F766E] font-bold">LIGO</span>, <span className="text-[#0F766E] font-bold">gravitational</span>, <span className="text-[#0F766E] font-bold">black hole</span>, <span className="text-[#0F766E] font-bold">Higgs</span>, <span className="text-[#0F766E] font-bold">exoplanet</span>, or <span className="text-[#0F766E] font-bold">multitaper</span>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setArxivQuery('')}
+                      className="px-3.5 py-1.5 bg-[#0F766E] text-white rounded-md font-bold hover:bg-[#0D655E]"
                     >
-                      {/* Top Badges & Title */}
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px]">
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
-                              arXiv:{paper.arxiv_id}
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-[#F2EFE9] text-[#57534E] border border-[#E6E1D6]">
-                              {paper.category}
-                            </span>
-                            <span className="text-[#78716C]">
-                              {paper.citationCount} Citations
-                            </span>
+                      Clear Search &amp; View All Papers
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {displayedPapers.map((paper) => (
+                      <div
+                        key={paper.id}
+                        className={`p-5 rounded-xl border transition-all space-y-3 ${
+                          selectedPaperId === paper.id
+                            ? 'border-[#0F766E] bg-[#FFFFFF] shadow-sm ring-1 ring-[#0F766E]/40'
+                            : 'border-[#E6E1D6] bg-[#FFFFFF] hover:border-[#10141C]/30'
+                        }`}
+                      >
+                        {/* Top Badges & Title */}
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
+                                arXiv:{paper.arxiv_id}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-[#F2EFE9] text-[#57534E] border border-[#E6E1D6]">
+                                {paper.category}
+                              </span>
+                              <span className="text-[#78716C]">
+                                {paper.citationCount} Citations
+                              </span>
+                            </div>
+
+                            {paper.semanticMatchScore && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                                {paper.semanticMatchScore}% Semantic Match
+                              </span>
+                            )}
                           </div>
 
-                          {paper.semanticMatchScore && (
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
-                              {paper.semanticMatchScore}% Semantic Match
-                            </span>
-                          )}
-                        </div>
+                          <h3 className="font-serif italic font-bold text-base text-[#10141C] leading-snug">
+                            {paper.title}
+                          </h3>
 
-                        <h3 className="font-serif italic font-bold text-base text-[#10141C] leading-snug">
-                          {paper.title}
-                        </h3>
-
-                        <div className="text-xs font-mono text-[#78716C]">
-                          {paper.authors.join(', ')} • {paper.year} • DOI: {paper.doi}
-                        </div>
-                      </div>
-
-                      {/* Methodology & Relevance to SYNAPSE */}
-                      {paper.relevanceExplanation && (
-                        <div className="p-3 rounded-lg bg-[#F8F6F1] border border-[#E6E1D6] text-xs font-sans space-y-1">
-                          <div className="font-mono text-[10px] uppercase font-bold text-[#0F766E]">
-                            Experimental Linkage to Active Signal:
+                          <div className="text-xs font-mono text-[#78716C]">
+                            {paper.authors.join(', ')} • {paper.year} • DOI: {paper.doi}
                           </div>
-                          <p className="text-[#3D414D] leading-relaxed">
-                            {paper.relevanceExplanation}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Abstract */}
-                      <p className="text-xs text-[#57534E] font-sans leading-relaxed line-clamp-3 hover:line-clamp-none transition-all">
-                        {paper.abstract}
-                      </p>
-
-                      {/* Action Buttons: PDF, BibTeX, APA */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E6E1D6] font-mono text-xs">
-                        <div className="flex items-center gap-2">
-                          <a
-                            href={paper.pdf_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#F2EFE9] text-[#10141C] hover:bg-[#E6E1D6] transition-colors border border-[#E6E1D6]"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>PDF Pre-print</span>
-                          </a>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(generateBibTeX(paper));
-                              setCopiedBibId(paper.id);
-                              setTimeout(() => setCopiedBibId(null), 2500);
-                            }}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#F2EFE9] text-[#10141C] hover:bg-[#E6E1D6] transition-colors border border-[#E6E1D6]"
-                          >
-                            {copiedBibId === paper.id ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                            <span>{copiedBibId === paper.id ? 'Copied BibTeX!' : 'Copy BibTeX'}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(generateApaCitation(paper));
-                              setCopiedBibId(`apa-${paper.id}`);
-                              setTimeout(() => setCopiedBibId(null), 2500);
-                            }}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#F2EFE9] text-[#10141C] hover:bg-[#E6E1D6] transition-colors border border-[#E6E1D6]"
-                          >
-                            {copiedBibId === `apa-${paper.id}` ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <FileText className="w-3.5 h-3.5" />
-                            )}
-                            <span>{copiedBibId === `apa-${paper.id}` ? 'Copied APA!' : 'Copy APA'}</span>
-                          </button>
                         </div>
 
-                        <div className="text-[10px] text-[#A8A29E]">
-                          Method: {paper.methodology || 'Analytical Formulation'}
+                        {/* Methodology & Relevance to SYNAPSE */}
+                        {paper.relevanceExplanation && (
+                          <div className="p-3 rounded-lg bg-[#F8F6F1] border border-[#E6E1D6] text-xs font-sans space-y-1">
+                            <div className="font-mono text-[10px] uppercase font-bold text-[#0F766E]">
+                              Experimental Linkage to Active Signal:
+                            </div>
+                            <p className="text-[#3D414D] leading-relaxed">
+                              {paper.relevanceExplanation}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Abstract */}
+                        <p className="text-xs text-[#57534E] font-sans leading-relaxed line-clamp-3 hover:line-clamp-none transition-all">
+                          {paper.abstract}
+                        </p>
+
+                        {/* Action Buttons: Prominent Ruby Red PDF Button, BibTeX, APA */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E6E1D6] font-mono text-xs">
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={paper.pdf_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-[#C0392B] hover:bg-[#A93226] text-white text-xs font-mono font-bold transition-all shadow-xs shrink-0"
+                              title="Download official arXiv pre-print PDF directly"
+                            >
+                              <FileText className="w-3.5 h-3.5 text-white" />
+                              <span>View PDF</span>
+                              <ExternalLink className="w-3 h-3 text-white/80" />
+                            </a>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(generateBibTeX(paper));
+                                setCopiedBibId(paper.id);
+                                setTimeout(() => setCopiedBibId(null), 2500);
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#F2EFE9] text-[#10141C] hover:bg-[#E6E1D6] transition-colors border border-[#E6E1D6]"
+                            >
+                              {copiedBibId === paper.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                              <span>{copiedBibId === paper.id ? 'Copied BibTeX!' : 'Copy BibTeX'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(generateApaCitation(paper));
+                                setCopiedBibId(`apa-${paper.id}`);
+                                setTimeout(() => setCopiedBibId(null), 2500);
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#F2EFE9] text-[#10141C] hover:bg-[#E6E1D6] transition-colors border border-[#E6E1D6]"
+                            >
+                              {copiedBibId === `apa-${paper.id}` ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5" />
+                              )}
+                              <span>{copiedBibId === `apa-${paper.id}` ? 'Copied APA!' : 'Copy APA'}</span>
+                            </button>
+                          </div>
+
+                          <div className="text-[10px] text-[#A8A29E]">
+                            Method: {paper.methodology || 'Analytical Formulation'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -12,6 +12,7 @@ interface Desmos3DAttractorProps {
   delay: number;
   onDelayChange?: (newDelay: number) => void;
   title?: string;
+  compact?: boolean;
 }
 
 export const Desmos3DAttractor: React.FC<Desmos3DAttractorProps> = ({
@@ -19,6 +20,7 @@ export const Desmos3DAttractor: React.FC<Desmos3DAttractorProps> = ({
   delay,
   onDelayChange,
   title = '3D Phase-Space Attractor Manifold',
+  compact = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -443,7 +445,7 @@ export const Desmos3DAttractor: React.FC<Desmos3DAttractorProps> = ({
 
       {/* Main Interactive Canvas Area */}
       <div
-        className="w-full h-[400px] sm:h-[460px] min-h-[380px] rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
+        className={`w-full ${compact ? 'h-[310px] min-h-[290px]' : 'h-[400px] sm:h-[460px] min-h-[380px]'} rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
