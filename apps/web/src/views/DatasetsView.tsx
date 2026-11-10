@@ -8,7 +8,7 @@ interface DatasetsViewProps {
 }
 
 export const DatasetsView: React.FC<DatasetsViewProps> = () => {
-  const { activeSignal, availableDatasets, selectDataset, loadCustomSignal, deleteDataset } = useSignal();
+  const { activeSignal, availableDatasets, selectDataset, loadCustomSignal, deleteDataset, restoreDefaultDatasets } = useSignal();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Preprocessing reversible pipeline state
@@ -91,10 +91,22 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
         <div className="lg:col-span-8 surface-base border rounded-md p-4 space-y-3">
           <div className="flex items-center justify-between border-b pb-2">
             <div className="flex items-center gap-2 font-semibold text-xs text-primary">
-              <Database className="w-4 h-4 text-[#B45F1B]" />
+              <Database className="w-4 h-4 text-[#0F766E]" />
               <span>Available Scientific &amp; Custom Datasets</span>
             </div>
-            <span className="text-[11px] text-muted font-mono">{availableDatasets.length} total datasets</span>
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-muted font-mono">{availableDatasets.length} total datasets</span>
+              {restoreDefaultDatasets && availableDatasets.length < 10 && (
+                <button
+                  type="button"
+                  onClick={restoreDefaultDatasets}
+                  className="text-[11px] font-mono text-[#0F766E] hover:underline"
+                  title="Restore default benchmark datasets"
+                >
+                  Restore Defaults
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-80 overflow-y-auto pr-1">
@@ -106,30 +118,29 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
                   onClick={() => selectDataset(ds.id)}
                   className={`p-2.5 rounded border text-xs cursor-pointer transition-colors relative group ${
                     isSelected
-                      ? 'border-[#10141C] bg-[#F2EFE9] text-[#10141C] font-semibold dark:border-[#F2EFE9] dark:bg-[#1E232B] dark:text-[#f8fafc]'
-                      : 'surface-subtle hover:border-[#10141C]/40 text-secondary'
+                      ? 'border-[#0F766E] bg-[#EFEBE0] text-[#1F2430] font-semibold'
+                      : 'bg-[#FFFFFF] border-[#DDD6C7] hover:border-[#0F766E]/40 text-[#4A5060]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold truncate">{ds.name.split(':')[0]}</span>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {isSelected && <span className="text-[10px] text-[#25653F] dark:text-[#6CB582] font-bold">ACTIVE</span>}
-                      {ds.isCustom && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteDataset(ds.id);
-                          }}
-                          className="p-1 rounded text-[#8C2C1E] hover:bg-[#FBEAE8] dark:hover:bg-[#2B1B19] transition-colors"
-                          title="Delete this uploaded dataset"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                      {isSelected && <span className="text-[10px] text-[#0F766E] font-bold">ACTIVE</span>}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteDataset(ds.id);
+                        }}
+                        className="p-1 rounded text-[#C0392B] hover:bg-[#FDEDEC] transition-colors"
+                        title={`Delete ${ds.name}`}
+                        aria-label={`Delete ${ds.name}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
-                  <div className="text-[11px] text-muted truncate mt-0.5">
+                  <div className="text-[11px] text-[#6B6F7B] truncate mt-0.5">
                     {ds.name.split(':')[1] || ds.name}
                   </div>
                 </div>

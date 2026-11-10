@@ -55,7 +55,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenCommandPalette,
   apiConnected,
 }) => {
-  const activeIsCustom = datasets.find((d) => d.id === selectedDatasetId)?.isCustom;
+  const currentDataset = datasets.find((d) => d.id === selectedDatasetId);
 
   return (
     <header className="h-14 bg-[#FFFFFF] border-b border-[#DDD6C7] px-4 flex items-center justify-between gap-3 shrink-0 select-none z-10 sticky top-0 text-[#1F2430]">
@@ -77,14 +77,14 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Center: Dataset Selector */}
-      <div className="hidden md:flex items-center gap-2">
+      {/* Center: Dataset Selector & Delete Button */}
+      <div className="hidden md:flex items-center gap-1.5">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#DDD6C7] bg-[#EFEBE0] text-xs font-mono">
-          <Database className="w-3.5 h-3.5 text-[#0F766E]" />
+          <Database className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
           <select
             value={selectedDatasetId}
             onChange={(e) => onSelectDataset(e.target.value)}
-            className="bg-transparent border-none text-xs font-semibold text-[#1F2430] focus:outline-none cursor-pointer pr-4 font-mono"
+            className="bg-transparent border-none text-xs font-semibold text-[#1F2430] focus:outline-none cursor-pointer pr-3 font-mono max-w-[220px] lg:max-w-[290px] truncate"
             aria-label="Active Dataset"
           >
             {datasets.map((ds) => (
@@ -93,17 +93,20 @@ export const TopBar: React.FC<TopBarProps> = ({
               </option>
             ))}
           </select>
-          {activeIsCustom && onDeleteDataset && (
-            <button
-              type="button"
-              onClick={() => onDeleteDataset(selectedDatasetId)}
-              className="p-1 rounded text-[#C0392B] hover:bg-[#FDEDEC] transition-colors ml-1"
-              title="Delete this custom dataset"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
+
+        {onDeleteDataset && datasets.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onDeleteDataset(selectedDatasetId)}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium text-[#C0392B] bg-[#FFFFFF] hover:bg-[#FDEDEC] border border-[#DDD6C7] hover:border-[#C0392B] rounded-md transition-colors shadow-2xs"
+            title={`Delete ${currentDataset?.name || 'selected dataset'}`}
+            aria-label="Delete selected dataset"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-[#C0392B] shrink-0" />
+            <span className="hidden xl:inline">Delete</span>
+          </button>
+        )}
       </div>
 
       {/* Right Controls: Command palette, Upload, Run, API chip */}

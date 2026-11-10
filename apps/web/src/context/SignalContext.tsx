@@ -9,6 +9,7 @@ interface SignalContextType {
   selectDataset: (id: string) => void;
   loadCustomSignal: (signal: SignalData) => void;
   deleteDataset: (id: string) => void;
+  restoreDefaultDatasets: () => void;
   isAnalyzing: boolean;
   runAnalysis: () => Promise<void>;
   currentView: WorkbenchView;
@@ -133,8 +134,41 @@ export function createSignalPreset(code: string): SignalData {
   };
 }
 
+const ALL_BENCHMARK_PRESETS = [
+  { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
+  { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
+  { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },
+  { id: 'benchmark_D', name: 'Dataset D: Regime Changes', isBenchmark: true },
+  { id: 'benchmark_E', name: 'Dataset E: Multichannel Coupling', isBenchmark: true },
+  { id: 'benchmark_F', name: 'Dataset F: Motifs & Recurrence', isBenchmark: true },
+  { id: 'benchmark_G', name: 'Dataset G: Pure Null Challenge', isBenchmark: true },
+  { id: 'benchmark_H', name: 'Dataset H: Irregular Sampling', isBenchmark: true },
+  { id: 'benchmark_I', name: 'Dataset I: Dynamic Range', isBenchmark: true },
+  { id: 'benchmark_J', name: 'Dataset J: Master Discovery Challenge', isBenchmark: true },
+];
+
 export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeSignal, setActiveSignal] = useState<SignalData>(() => createSignalPreset('benchmark_A'));
+  const [deletedDatasetIds, setDeletedDatasetIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('synapse_deleted_datasets_v1');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeSignal, setActiveSignal] = useState<SignalData>(() => {
+    try {
+      const saved = localStorage.getItem('synapse_deleted_datasets_v1');
+      const deleted: string[] = saved ? JSON.parse(saved) : [];
+      const firstAvailable = ALL_BENCHMARK_PRESETS.find((p) => !deleted.includes(p.id));
+      if (firstAvailable) {
+        return createSignalPreset(firstAvailable.id);
+      }
+    } catch {}
+    return createSignalPreset('benchmark_A');
+  });
+
   const [customDatasets, setCustomDatasets] = useState<SignalData[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<WorkbenchView>('overview');
@@ -200,20 +234,9 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isBenchmark: false,
       isCustom: true,
     }));
-    return [
-      ...customs,
-      { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
-      { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
-      { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },
-      { id: 'benchmark_D', name: 'Dataset D: Regime Changes', isBenchmark: true },
-      { id: 'benchmark_E', name: 'Dataset E: Multichannel Coupling', isBenchmark: true },
-      { id: 'benchmark_F', name: 'Dataset F: Motifs & Recurrence', isBenchmark: true },
-      { id: 'benchmark_G', name: 'Dataset G: Pure Null Challenge', isBenchmark: true },
-      { id: 'benchmark_H', name: 'Dataset H: Irregular Sampling', isBenchmark: true },
-      { id: 'benchmark_I', name: 'Dataset I: Dynamic Range', isBenchmark: true },
-      { id: 'benchmark_J', name: 'Dataset J: Master Discovery Challenge', isBenchmark: true },
-    ];
-  }, [customDatasets]);
+    const combined = [...customs, ...ALL_BENCHMARK_PRESETS];
+    return combined.filter((d) => !deletedDatasetIds.includes(d.id));
+  }, [customDatasets, deletedDatasetIds]);
 
   const selectDataset = useCallback((id: string) => {
     const customMatch = customDatasets.find((c) => c.id === id);
@@ -243,13 +266,57 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const deleteDataset = useCallback((id: string) => {
+    // 1. Remove from custom datasets if present
     setCustomDatasets((prev) => prev.filter((s) => s.id !== id));
+
+    // 2. Track deleted ID in state and storage
+    const nextDeleted = deletedDatasetIds.includes(id) ? deletedDatasetIds : [...deletedDatasetIds, id];
+    setDeletedDatasetIds(nextDeleted);
+    try {
+      localStorage.setItem('synapse_deleted_datasets_v1', JSON.stringify(nextDeleted));
+    } catch {}
+
+    // 3. Update activeSignal if deleting the currently selected one
     setActiveSignal((curr) => {
       if (curr.id === id) {
+        // Look for next custom dataset
+        const remainingCustoms = customDatasets.filter((s) => s.id !== id);
+        if (remainingCustoms.length > 0) {
+          return remainingCustoms[0];
+        }
+        // Look for next available benchmark preset
+        const remainingPresets = ALL_BENCHMARK_PRESETS.filter((p) => !nextDeleted.includes(p.id) && p.id !== id);
+        if (remainingPresets.length > 0) {
+          return createSignalPreset(remainingPresets[0].id);
+        }
+        // If all datasets were deleted, reset presets so state is valid
+        setDeletedDatasetIds([]);
+        try {
+          localStorage.removeItem('synapse_deleted_datasets_v1');
+        } catch {}
         return createSignalPreset('benchmark_A');
       }
       return curr;
     });
+
+    // 4. Reset statuses to not_run on dataset switch
+    setModuleStatuses((prev) => {
+      const reset = { ...prev };
+      Object.keys(reset).forEach((k) => {
+        if (k !== 'overview' && k !== 'datasets' && k !== 'explorer') {
+          reset[k] = 'not_run';
+        }
+      });
+      return reset;
+    });
+  }, [customDatasets, deletedDatasetIds]);
+
+  const restoreDefaultDatasets = useCallback(() => {
+    setDeletedDatasetIds([]);
+    try {
+      localStorage.removeItem('synapse_deleted_datasets_v1');
+    } catch {}
+    setActiveSignal(createSignalPreset('benchmark_A'));
   }, []);
 
   // Real numerical execution across modules
@@ -597,6 +664,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         selectDataset,
         loadCustomSignal,
         deleteDataset,
+        restoreDefaultDatasets,
         isAnalyzing,
         runAnalysis,
         currentView,
