@@ -1,5 +1,28 @@
 # SYNAPSE Engineering Changelog
 
+## [Astronomy & Cosmic Physical Telemetry Suite] - 2026-11-10
+
+### Full Instrument Rack: 20 Mega Instruments & Astronomy Category
+- **Astronomy Suite Integration:**
+  - Added dedicated **`Astronomy`** filter category and 1-click **`🔭 Astronomy`** preset to `InstrumentRackView.tsx`.
+  - Expanded instrument rack from 16 to **20 analytical instruments**.
+  - **LIGO GW150914 Spacetime Strain Streamer (`ligo_gw_strain`)**:
+    - Real gravitational-wave strain $h(t) \times 10^{-21}$ modeling binary black hole inspiral, merger event ($t = 0\text{ s}$), and ringdown.
+    - KaTeX mathematical basis: $h(t) = \frac{4}{r}\left(\frac{G\mathcal{M}}{c^2}\right)^{5/4}\left(\frac{c(t_c - t)}{5}\right)^{-1/4}\cos(2\phi(t))$.
+  - **Kepler/TESS Exoplanet Transit Photometer (`kepler_transit`)**:
+    - Normalized stellar flux transit light-curve with quadratic limb-darkening and BLS transit depth inversion ($\Delta F = 1.42\%$, $R_p = 1.17\,R_\oplus$).
+    - KaTeX mathematical basis: $\Delta F \approx \left(\frac{R_p}{R_*}\right)^2$.
+  - **NOAA GOES Solar X-Ray Spectrograph (`goes_solar_flare`)**:
+    - 1-minute solar irradiance telemetry with M5.4 class eruption classification and derivative rate-of-rise alert.
+    - KaTeX mathematical basis: $I_{\text{GOES}} = \int_{0.1\,\text{nm}}^{0.8\,\text{nm}} F(\lambda, t)\,d\lambda$.
+  - **Pulsar Epoch-Folding Profiler (`pulsar_folding`)**:
+    - Integrated radio pulse profile over rotational phase $[0, 1]$ showing primary main pulse and secondary interpulse for Crab Pulsar (PSR B0531+21, $P = 33.5\text{ ms}$, $\text{DM} = 56.8\,\text{pc/cm}^3$).
+    - KaTeX mathematical basis: $\Phi(t) = \frac{t - t_0}{P} - \frac{1}{2}\frac{\dot{P}}{P^2}(t - t_0)^2 \pmod 1$.
+- **Backend & Service Integration:**
+  - Implemented `apps/api/routers/astronomy_router.py` connecting to GWOSC, NASA Exoplanet Archive, NOAA SWPC, and ATNF.
+  - Implemented `apps/web/src/services/astronomyService.ts` with high-fidelity analytical fallback.
+  - Added 4 authentic Astronomy signal presets to the top bar dataset selector in `SignalContext.tsx`.
+
 ## [Top Bar & Dataset Management Enhancement] - 2026-11-10
 
 ### User-Requested Enhancement: Top Bar Dataset Delete Button
