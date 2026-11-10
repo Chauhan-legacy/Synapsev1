@@ -333,20 +333,20 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
             <span className="font-bold text-primary">Dynamic Time Warping (DTW) Optimal Alignment Path</span>
             <span className="text-muted">Sakoe-Chiba Band Window = 5</span>
           </div>
-          <div className="h-64 rounded bg-[#0d0e11] border border-[#26282e] p-2 flex items-center justify-center relative overflow-hidden">
+          <div className="h-64 rounded bg-[#FFFDF9] dark:bg-[#13171d] border border-[#E6E1D6] dark:border-[#29303d] p-2 flex items-center justify-center relative overflow-hidden">
             <svg className="w-64 h-64" viewBox="0 0 25 25">
               {/* Graticule Diagonal */}
-              <line x1="0" y1="0" x2="25" y2="25" stroke="#1f242d" strokeWidth="0.5" strokeDasharray="1 1" />
-              {/* Alignment Path */}
+              <line x1="0" y1="0" x2="25" y2="25" stroke="#E6E1D6" strokeWidth="0.5" strokeDasharray="1 1" />
+              {/* Alignment Path (Pure Ink Black) */}
               <polyline
                 fill="none"
-                stroke="#38bdf8"
+                stroke="#10141C"
                 strokeWidth="1.2"
                 points={relationData.dtwPath.map((p) => `${p.x},${24 - p.y}`).join(' ')}
               />
             </svg>
-            <div className="absolute bottom-2 right-4 text-[10px] font-mono text-[#78716c]">Channel 1 Index &rarr;</div>
-            <div className="absolute top-3 left-4 text-[10px] font-mono text-[#78716c]">&uarr; Channel 2 Index</div>
+            <div className="absolute bottom-2 right-4 text-[10px] font-mono text-[#78716C]">Channel 1 Index &rarr;</div>
+            <div className="absolute top-3 left-4 text-[10px] font-mono text-[#78716C]">&uarr; Channel 2 Index</div>
           </div>
         </div>
       )}

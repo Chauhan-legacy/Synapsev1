@@ -97,3 +97,4 @@ def compute_allan_deviation(
         dominant_noise_type=noise_cls,
         log_log_slope=slope,
     )
+

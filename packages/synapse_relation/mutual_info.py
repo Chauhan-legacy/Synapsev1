@@ -80,3 +80,4 @@ def compute_mutual_information_ksg(
         normalized_mutual_information=min(1.0, max(0.0, nmi)),
         k_nearest_neighbors=k,
     )
+

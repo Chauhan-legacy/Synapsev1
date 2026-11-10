@@ -121,3 +121,4 @@ def fit_candidate_distributions(
         best_distribution=best,
         candidates=tuple(candidates),
     )
+

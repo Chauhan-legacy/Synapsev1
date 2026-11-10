@@ -75,3 +75,4 @@ def compute_hilbert_analytic(
         mean_instantaneous_freq=mean_f,
         max_envelope_peak=max_amp,
     )
+

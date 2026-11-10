@@ -125,3 +125,4 @@ def compute_bocpd(
         hazard_lambda=hazard_lambda,
         n_changepoints=len(changepoints),
     )
+

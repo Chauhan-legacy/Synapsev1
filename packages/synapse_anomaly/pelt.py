@@ -115,3 +115,4 @@ def detect_pelt_changepoints(
         cost_value=float(F[n]),
         n_changepoints=len(cp_tuple),
     )
+

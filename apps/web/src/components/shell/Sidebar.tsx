@@ -165,16 +165,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const content = (
-    <div className="flex flex-col h-full surface-base border-r border-slate-200 dark:border-slate-800 select-none">
+    <div className="flex flex-col h-full bg-[#FFFDF9] border-r border-[#E6E1D6] select-none text-[#10141C]">
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between h-13 px-3 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center justify-between h-14 px-3 border-b border-[#E6E1D6]">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-[#10141C] flex items-center justify-center text-[#F8F6F1] font-bold text-xs shrink-0 font-mono shadow-2xs">
             S
           </div>
           {!collapsed && (
-            <div className="truncate font-semibold tracking-wide text-xs text-primary font-mono uppercase">
-              SYNAPSE <span className="text-[10px] text-muted font-sans font-normal lowercase">v2.0</span>
+            <div className="truncate font-semibold tracking-wide text-xs text-[#10141C] font-mono uppercase">
+              SYNAPSE <span className="text-[10px] text-[#78716C] font-sans font-normal lowercase">v1 Lite</span>
             </div>
           )}
         </div>
@@ -183,7 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="lg:hidden p-1 rounded text-muted hover:text-primary"
+            className="lg:hidden p-1 rounded text-[#78716C] hover:text-[#10141C]"
             aria-label="Close navigation"
           >
             <X className="w-5 h-5" />
@@ -192,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex p-1 rounded text-muted hover:text-primary transition-colors"
+            className="hidden lg:flex p-1 rounded text-[#78716C] hover:text-[#10141C] transition-colors"
             title={collapsed ? 'Expand sidebar (240px)' : 'Collapse to icon rail (64px)'}
             aria-label="Toggle sidebar width"
           >
@@ -211,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.title)}
-                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-semibold text-muted uppercase tracking-wider hover:text-primary"
+                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-semibold text-[#A8A29E] uppercase tracking-wider hover:text-[#10141C]"
                 >
                   <span>{group.title}</span>
                   <ChevronDown
@@ -235,14 +235,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                           isActive
-                            ? 'bg-blue-600 text-white'
-                            : 'text-secondary hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-[#2F7D4F] text-white shadow-2xs'
+                            : 'text-[#44403C] hover:text-[#10141C] hover:bg-[#F2EFE9]'
                         } ${collapsed ? 'justify-center px-1' : ''}`}
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
-                        {!collapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
+                        {!collapsed && <span className="truncate flex-1 text-left font-mono">{item.label}</span>}
                         {!collapsed && renderStatusDot(item.id)}
                       </button>
                     );
@@ -255,32 +255,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Pinned Bottom Actions */}
-      <div className="p-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+      <div className="p-2 border-t border-[#E6E1D6] space-y-1">
         <button
           type="button"
           onClick={onOpenAccessibility}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-secondary hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${
             collapsed ? 'justify-center px-1' : ''
           }`}
           title="Accessibility & Themes"
         >
-          <Sliders className="w-4 h-4 shrink-0 text-blue-600" />
-          {!collapsed && <span>Accessibility</span>}
+          <Sliders className="w-4 h-4 shrink-0 text-[#B45F1B]" />
+          {!collapsed && <span className="font-mono">Accessibility</span>}
         </button>
 
         <button
           type="button"
           onClick={onOpenShortcuts}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-secondary hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${
             collapsed ? 'justify-center px-1' : ''
           }`}
           title="Keyboard shortcuts (?)"
         >
           <HelpCircle className="w-4 h-4 shrink-0" />
           {!collapsed && (
-            <div className="flex items-center justify-between flex-1">
+            <div className="flex items-center justify-between flex-1 font-mono">
               <span>Shortcuts</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-200 dark:bg-slate-800 rounded">?</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#E6E1D6] rounded">?</kbd>
             </div>
           )}
         </button>

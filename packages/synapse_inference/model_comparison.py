@@ -77,3 +77,4 @@ def compare_signal_models(
         "log_bayes_factor_periodic": float(log_bf_per_vs_null),
         "is_periodic_supported": bool(delta_bic_per_null < -10.0), # Strong evidence threshold
     }
+

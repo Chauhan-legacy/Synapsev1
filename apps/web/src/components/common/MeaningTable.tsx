@@ -15,29 +15,29 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
     switch (status) {
       case 'supported':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-            <CheckCircle2 className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0] dark:bg-[#1A261D] dark:text-[#6CB582] dark:border-[#2C4232]">
+            <CheckCircle2 className="w-3 h-3 text-[#25653F] dark:text-[#6CB582]" />
             <span>supported</span>
           </span>
         );
       case 'inconclusive':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-            <AlertTriangle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FDF3E7] text-[#964E14] border border-[#F5DFC6] dark:bg-[#2A2016] dark:text-[#D48B47] dark:border-[#473420]">
+            <AlertTriangle className="w-3 h-3 text-[#964E14] dark:text-[#D48B47]" />
             <span>inconclusive</span>
           </span>
         );
       case 'rejected':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
-            <XCircle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FBEAE8] text-[#8C2C1E] border border-[#F5C6C2] dark:bg-[#2B1B19] dark:text-[#D87063] dark:border-[#4A2925]">
+            <XCircle className="w-3 h-3 text-[#8C2C1E] dark:text-[#D87063]" />
             <span>rejected</span>
           </span>
         );
       case 'not_run':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded bg-[#F2EFE9] text-[#57534E] border border-[#E6E1D6] dark:bg-[#1E232B] dark:text-[#94A3B8] dark:border-[#2E3642]">
             <Clock className="w-3 h-3" />
             <span>Not run</span>
           </span>
@@ -144,3 +144,4 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
     </div>
   );
 };
+

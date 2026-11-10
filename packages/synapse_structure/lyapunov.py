@@ -116,3 +116,4 @@ def compute_largest_lyapunov_exponent(
         mean_log_divergence=mean_log_div,
         fit_status=status_str,
     )
+

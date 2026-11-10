@@ -107,3 +107,4 @@ An exhaustive audit of the entire SYNAPSE repository was conducted across `packa
 6. **Phase 6: Scientific Validation, Power Plots, and CI Verification**
    - Run calibration test scripts and generate power curve plots in `docs/validation/`.
    - Run `pytest` and `npm.cmd run build` to ensure 100% green status.
+

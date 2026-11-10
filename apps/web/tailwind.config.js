@@ -7,10 +7,35 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        mono: ['JetBrains Mono', 'monospace'],
-        sans: ['Inter', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+        playfair: ['"Playfair Display"', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        sans: ['"Inter"', 'system-ui', 'sans-serif'],
       },
       colors: {
+        cream: '#F8F6F1',
+        card: '#FFFDF9',
+        line: '#E6E1D6',
+        ink: '#10141C',
+        amber: {
+          DEFAULT: '#B45F1B',
+          500: '#B45F1B',
+          600: '#964E14',
+        },
+        green: {
+          DEFAULT: '#2F7D4F',
+          500: '#2F7D4F',
+          600: '#25653F',
+        },
+        teal: {
+          DEFAULT: '#4F8A8B',
+          500: '#4F8A8B',
+        },
+        ember: {
+          DEFAULT: '#E8590C',
+          light: '#FF6B1A',
+          dark: '#C94A06',
+        },
         synapse: {
           950: '#05070a',
           900: '#090d14',

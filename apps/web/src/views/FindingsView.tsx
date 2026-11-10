@@ -88,7 +88,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('all')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'all' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'all' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
             }`}
           >
             All Findings ({allFindings.length})
@@ -97,7 +97,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('supported')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'supported' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'supported' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
             }`}
           >
             Supported ({countSupported})
@@ -106,7 +106,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('inconclusive')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'inconclusive' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'inconclusive' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
             }`}
           >
             Inconclusive ({countInconclusive})
@@ -115,7 +115,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             type="button"
             onClick={() => setStatusFilter('rejected')}
             className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-              statusFilter === 'rejected' ? 'bg-[#2563eb] text-white' : 'surface-subtle border text-secondary hover:text-primary'
+              statusFilter === 'rejected' ? 'bg-[#10141C] text-white dark:bg-[#F2EFE9] dark:text-[#10141C]' : 'surface-subtle border text-secondary hover:text-primary'
             }`}
           >
             Rejected ({countRejected})
@@ -139,7 +139,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
             return (
               <div
                 key={`${f.method}_${idx}`}
-                className="surface-base border rounded-md p-4 transition-all hover:border-[#2563eb]/50 space-y-3"
+                className="surface-base border rounded-md p-4 transition-all hover:border-[#10141C]/40 space-y-3"
               >
                 <div
                   className="flex items-start justify-between cursor-pointer select-none"
@@ -150,10 +150,10 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                           f.status === 'supported'
-                            ? 'bg-status-success/10 text-status-success border border-status-success/20'
+                            ? 'bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0] dark:bg-[#1A261D] dark:text-[#6CB582] dark:border-[#2C4232]'
                             : f.status === 'inconclusive'
-                            ? 'bg-status-warning/10 text-status-warning border border-status-warning/20'
-                            : 'bg-status-danger/10 text-status-danger border border-status-danger/20'
+                            ? 'bg-[#FDF3E7] text-[#964E14] border border-[#F5DFC6] dark:bg-[#2A2016] dark:text-[#D48B47] dark:border-[#473420]'
+                            : 'bg-[#FBEAE8] text-[#8C2C1E] border border-[#F5C6C2] dark:bg-[#2B1B19] dark:text-[#D87063] dark:border-[#4A2925]'
                         }`}
                       >
                         {f.status}
@@ -165,7 +165,7 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
                           e.stopPropagation();
                           onOpenMethodCard(f.method);
                         }}
-                        className="text-[10px] text-[#2563eb] hover:underline ml-1"
+                        className="text-[10px] text-[#B45F1B] hover:underline ml-1 font-mono"
                       >
                         [Method Card]
                       </button>

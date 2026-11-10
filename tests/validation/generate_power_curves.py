@@ -115,3 +115,4 @@ def generate_power_curve():
 
 if __name__ == "__main__":
     generate_power_curve()
+

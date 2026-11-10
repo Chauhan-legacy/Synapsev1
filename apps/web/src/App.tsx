@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { SignalProvider, useSignal } from './context/SignalContext';
 import { Sidebar, WorkbenchView } from './components/shell/Sidebar';
@@ -6,24 +6,72 @@ import { TopBar } from './components/shell/TopBar';
 import { CommandPalette } from './components/shell/CommandPalette';
 import { AccessibilityModal } from './components/shell/AccessibilityModal';
 import { ShortcutsModal } from './components/shell/ShortcutsModal';
+import { Compass } from 'lucide-react';
 
-// Views
-import { LandingPage } from './views/LandingPage';
-import { OverviewView } from './views/OverviewView';
-import { DatasetsView } from './views/DatasetsView';
-import { ExplorerView } from './views/ExplorerView';
-import { StatisticsLabView } from './views/StatisticsLabView';
-import { SpectralLabView } from './views/SpectralLabView';
-import { TimeFreqLabView } from './views/TimeFreqLabView';
-import { AnomaliesView } from './views/AnomaliesView';
-import { DynamicsView } from './views/DynamicsView';
-import { RelationsView } from './views/RelationsView';
-import { InferenceView } from './views/InferenceView';
-import { FindingsView } from './views/FindingsView';
-import { EvidenceGraphView } from './views/EvidenceGraphView';
-import { ReproducibilityView } from './views/ReproducibilityView';
-import { BenchmarksView } from './views/BenchmarksView';
-import { MethodsLibraryView } from './views/MethodsLibraryView';
+// Lazy-Loaded Views for Fast Initial Bundle
+const LandingHero = React.lazy(() =>
+  import('./views/LandingHero').then((m) => ({ default: m.LandingHero }))
+);
+const PaperWorkbench = React.lazy(() =>
+  import('./views/PaperWorkbench').then((m) => ({ default: m.PaperWorkbench }))
+);
+
+// Advanced Lab Views (Code-split for under 150 kB initial load)
+const OverviewView = React.lazy(() =>
+  import('./views/OverviewView').then((m) => ({ default: m.OverviewView }))
+);
+const DatasetsView = React.lazy(() =>
+  import('./views/DatasetsView').then((m) => ({ default: m.DatasetsView }))
+);
+const ExplorerView = React.lazy(() =>
+  import('./views/ExplorerView').then((m) => ({ default: m.ExplorerView }))
+);
+const StatisticsLabView = React.lazy(() =>
+  import('./views/StatisticsLabView').then((m) => ({ default: m.StatisticsLabView }))
+);
+const SpectralLabView = React.lazy(() =>
+  import('./views/SpectralLabView').then((m) => ({ default: m.SpectralLabView }))
+);
+const TimeFreqLabView = React.lazy(() =>
+  import('./views/TimeFreqLabView').then((m) => ({ default: m.TimeFreqLabView }))
+);
+const AnomaliesView = React.lazy(() =>
+  import('./views/AnomaliesView').then((m) => ({ default: m.AnomaliesView }))
+);
+const DynamicsView = React.lazy(() =>
+  import('./views/DynamicsView').then((m) => ({ default: m.DynamicsView }))
+);
+const RelationsView = React.lazy(() =>
+  import('./views/RelationsView').then((m) => ({ default: m.RelationsView }))
+);
+const InferenceView = React.lazy(() =>
+  import('./views/InferenceView').then((m) => ({ default: m.InferenceView }))
+);
+const FindingsView = React.lazy(() =>
+  import('./views/FindingsView').then((m) => ({ default: m.FindingsView }))
+);
+const EvidenceGraphView = React.lazy(() =>
+  import('./views/EvidenceGraphView').then((m) => ({ default: m.EvidenceGraphView }))
+);
+const ReproducibilityView = React.lazy(() =>
+  import('./views/ReproducibilityView').then((m) => ({ default: m.ReproducibilityView }))
+);
+const BenchmarksView = React.lazy(() =>
+  import('./views/BenchmarksView').then((m) => ({ default: m.BenchmarksView }))
+);
+const MethodsLibraryView = React.lazy(() =>
+  import('./views/MethodsLibraryView').then((m) => ({ default: m.MethodsLibraryView }))
+);
+
+// Minimal Skeleton Loader
+const SkeletonLoader: React.FC = () => (
+  <div className="w-full h-full min-h-[50vh] p-8 flex flex-col items-center justify-center space-y-4 font-mono text-xs text-[#78716C] bg-[#F8F6F1] animate-pulse">
+    <div className="w-10 h-10 rounded-full bg-[#E6E1D6] flex items-center justify-center text-[#10141C]">
+      <Compass className="w-5 h-5 animate-spin" />
+    </div>
+    <div className="tracking-wide">Initializing SYNAPSE Scientific Core...</div>
+  </div>
+);
 
 const AppInner: React.FC = () => {
   const {
@@ -31,6 +79,7 @@ const AppInner: React.FC = () => {
     availableDatasets,
     selectDataset,
     loadCustomSignal,
+    deleteDataset,
     isAnalyzing,
     runAnalysis,
     currentView,
@@ -39,15 +88,13 @@ const AppInner: React.FC = () => {
     apiConnected,
   } = useSignal();
 
-  // App routing mode: Landing page vs Workbench App shell
-  const [isInApp, setIsInApp] = useState<boolean>(() => {
+  // Page Routing: 'hero' (at "/") | 'workbench' (cream paper style) | 'advanced' (14-lab suite)
+  const [pageMode, setPageMode] = useState<'hero' | 'workbench' | 'advanced'>(() => {
     const hash = window.location.hash.toLowerCase();
     const path = window.location.pathname.toLowerCase();
-    return hash.includes('overview') ||
-           hash.includes('spectra') ||
-           hash.includes('benchmarks') ||
-           hash.includes('app') ||
-           path.startsWith('/app');
+    if (hash.includes('workbench') || path.includes('workbench')) return 'workbench';
+    if (hash.includes('app') || hash.includes('spectra') || hash.includes('benchmarks')) return 'advanced';
+    return 'hero';
   });
 
   // Shell Layout State
@@ -97,7 +144,7 @@ const AppInner: React.FC = () => {
     (name: string) => {
       setSelectedMethodName(name);
       setCurrentView('methods');
-      setIsInApp(true);
+      setPageMode('advanced');
     },
     [setCurrentView]
   );
@@ -165,35 +212,53 @@ const AppInner: React.FC = () => {
           },
         });
 
-        setIsInApp(true);
-        setCurrentView('overview');
+        setPageMode('workbench');
       }
     };
     reader.readAsText(file);
   };
 
-  const handleExportFullReport = () => {
-    setCurrentView('findings');
-  };
-
-  // If on landing page route
-  if (!isInApp) {
+  // Route 1: Landing Hero
+  if (pageMode === 'hero') {
     return (
-      <LandingPage
-        onEnterApp={() => {
-          setIsInApp(true);
-          setCurrentView('overview');
-        }}
-        onOpenBenchmarks={() => {
-          setIsInApp(true);
-          setCurrentView('benchmarks');
-        }}
-        onOpenMethodCard={handleOpenMethodCard}
-      />
+      <Suspense fallback={<SkeletonLoader />}>
+        <LandingHero
+          onLaunchWorkbench={() => {
+            setPageMode('workbench');
+            window.location.hash = '#/workbench';
+          }}
+          onOpenBenchmarks={() => {
+            setPageMode('advanced');
+            setCurrentView('benchmarks');
+            window.location.hash = '#/benchmarks';
+          }}
+          realTestCount={33}
+        />
+      </Suspense>
     );
   }
 
-  // Active View Renderer
+  // Route 2: Paper Workbench (Cream-and-Ink design reference)
+  if (pageMode === 'workbench') {
+    return (
+      <Suspense fallback={<SkeletonLoader />}>
+        <PaperWorkbench
+          onBackToHero={() => {
+            setPageMode('hero');
+            window.location.hash = '';
+          }}
+          onOpenAdvancedLab={(labView) => {
+            setPageMode('advanced');
+            setCurrentView(labView as any);
+            window.location.hash = `#/${labView}`;
+          }}
+          realTestCount={33}
+        />
+      </Suspense>
+    );
+  }
+
+  // Route 3: Advanced Full-Instrument Rack (14 Labs)
   const renderCurrentView = () => {
     switch (currentView) {
       case 'overview':
@@ -232,7 +297,7 @@ const AppInner: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden surface-base text-primary font-sans antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8F6F1] text-[#10141C] font-sans antialiased">
       {/* Hidden Global File Input for CSV Ingestion */}
       <input
         ref={fileInputRef}
@@ -256,7 +321,25 @@ const AppInner: React.FC = () => {
       />
 
       {/* Main Workbench Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F8F6F1]">
+        {/* Switcher Banner back to Paper Workbench */}
+        <div className="h-8 bg-[#F2EFE9] border-b border-[#E6E1D6] px-4 flex items-center justify-between text-xs font-mono shrink-0">
+          <div className="flex items-center gap-2 text-[#57534E]">
+            <span className="w-2 h-2 rounded-full bg-[#2F7D4F]" />
+            <span className="font-semibold text-[#10141C]">SYNAPSE Multi-Tool Instrument Rack (14 Dedicated Labs)</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setPageMode('workbench');
+              window.location.hash = '#/workbench';
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#FFFDF9] border border-[#E6E1D6] hover:bg-[#E6E1D6]/60 text-[#10141C] font-semibold transition-colors"
+          >
+            <span>&larr; Switch to Paper Workbench</span>
+          </button>
+        </div>
+
         {/* Top Bar */}
         <TopBar
           onToggleSidebarMobile={() => setIsMobileOpen(true)}
@@ -264,6 +347,7 @@ const AppInner: React.FC = () => {
           datasets={availableDatasets}
           selectedDatasetId={activeSignal.id}
           onSelectDataset={selectDataset}
+          onDeleteDataset={deleteDataset}
           isAnalyzing={isAnalyzing}
           onRunAnalysis={runAnalysis}
           onUploadClick={() => fileInputRef.current?.click()}
@@ -272,8 +356,10 @@ const AppInner: React.FC = () => {
         />
 
         {/* View Content Port */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 surface-subtle/40">
-          {renderCurrentView()}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F8F6F1]">
+          <Suspense fallback={<SkeletonLoader />}>
+            {renderCurrentView()}
+          </Suspense>
         </main>
       </div>
 
@@ -295,7 +381,7 @@ const AppInner: React.FC = () => {
           setIsCommandPaletteOpen(false);
         }}
         onExportReport={() => {
-          handleExportFullReport();
+          setCurrentView('findings');
           setIsCommandPaletteOpen(false);
         }}
       />

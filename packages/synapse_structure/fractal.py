@@ -78,3 +78,4 @@ def compute_higuchi_fractal_dimension(
         k_scales=k_values,
         curve_lengths=l_arr,
     )
+

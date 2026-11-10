@@ -78,3 +78,4 @@ def compute_autocorr_structure(
         is_white_noise=is_wn,
         first_zero_crossing_lag=zero_cross,
     )
+

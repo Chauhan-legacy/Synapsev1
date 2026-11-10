@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { useSignal } from '../context/SignalContext';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
-import { Upload, Database, CheckCircle2, Filter } from 'lucide-react';
+import { Upload, Database, CheckCircle2, Filter, Trash2 } from 'lucide-react';
 
 interface DatasetsViewProps {
   onOpenMethodCard?: (name: string) => void;
 }
 
 export const DatasetsView: React.FC<DatasetsViewProps> = () => {
-  const { activeSignal, availableDatasets, selectDataset, loadCustomSignal } = useSignal();
+  const { activeSignal, availableDatasets, selectDataset, loadCustomSignal, deleteDataset } = useSignal();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Preprocessing reversible pipeline state
@@ -87,14 +87,14 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
 
       {/* Grid: Upload & Benchmark Library */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Benchmark Library */}
+        {/* Benchmark & Uploaded Library */}
         <div className="lg:col-span-8 surface-base border rounded-md p-4 space-y-3">
           <div className="flex items-center justify-between border-b pb-2">
             <div className="flex items-center gap-2 font-semibold text-xs text-primary">
-              <Database className="w-4 h-4 text-blue-600" />
-              <span>Built-in Synthetic Benchmark Datasets (A–J)</span>
+              <Database className="w-4 h-4 text-[#B45F1B]" />
+              <span>Available Scientific &amp; Custom Datasets</span>
             </div>
-            <span className="text-[11px] text-muted font-mono">Ground truth verified</span>
+            <span className="text-[11px] text-muted font-mono">{availableDatasets.length} total datasets</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-80 overflow-y-auto pr-1">
@@ -104,15 +104,30 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
                 <div
                   key={ds.id}
                   onClick={() => selectDataset(ds.id)}
-                  className={`p-2.5 rounded border text-xs cursor-pointer transition-colors ${
+                  className={`p-2.5 rounded border text-xs cursor-pointer transition-colors relative group ${
                     isSelected
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-primary font-medium'
-                      : 'surface-subtle hover:border-slate-400 text-secondary'
+                      ? 'border-[#10141C] bg-[#F2EFE9] text-[#10141C] font-semibold dark:border-[#F2EFE9] dark:bg-[#1E232B] dark:text-[#f8fafc]'
+                      : 'surface-subtle hover:border-[#10141C]/40 text-secondary'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold">{ds.name.split(':')[0]}</span>
-                    {isSelected && <span className="text-[10px] text-blue-600 font-bold">ACTIVE</span>}
+                    <span className="font-semibold truncate">{ds.name.split(':')[0]}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isSelected && <span className="text-[10px] text-[#25653F] dark:text-[#6CB582] font-bold">ACTIVE</span>}
+                      {ds.isCustom && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteDataset(ds.id);
+                          }}
+                          className="p-1 rounded text-[#8C2C1E] hover:bg-[#FBEAE8] dark:hover:bg-[#2B1B19] transition-colors"
+                          title="Delete this uploaded dataset"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-[11px] text-muted truncate mt-0.5">
                     {ds.name.split(':')[1] || ds.name}
@@ -127,7 +142,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
         <div className="lg:col-span-4 surface-base border rounded-md p-4 space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 font-semibold text-xs text-primary border-b pb-2">
-              <Upload className="w-4 h-4 text-blue-600" />
+              <Upload className="w-4 h-4 text-[#B45F1B]" />
               <span>Upload Custom Signal</span>
             </div>
             <p className="text-xs text-secondary mt-2 leading-relaxed">
@@ -137,7 +152,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
 
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 rounded-md p-6 text-center cursor-pointer transition-colors surface-subtle space-y-2"
+            className="border-2 border-dashed border-[#E6E1D6] hover:border-[#10141C] rounded-md p-6 text-center cursor-pointer transition-colors surface-subtle space-y-2"
           >
             <Upload className="w-6 h-6 text-muted mx-auto" />
             <div className="text-xs font-medium text-primary">Click to select CSV / TSV file</div>
@@ -167,7 +182,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
           </div>
           <div>
             <span className="text-muted block text-[11px]">Timestamp Uniformity</span>
-            <span className="font-semibold text-emerald-600 flex items-center gap-1">
+            <span className="font-semibold text-[#25653F] dark:text-[#6CB582] flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" /> Uniform (dt = {(1.0 / activeSignal.samplingRate).toFixed(4)}s)
             </span>
           </div>
@@ -185,7 +200,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
       {/* Preprocessing Reversible Pipeline */}
       <div className="surface-base border rounded-md p-4 space-y-3">
         <div className="flex items-center gap-2 font-semibold text-xs text-primary border-b pb-2">
-          <Filter className="w-4 h-4 text-blue-600" />
+          <Filter className="w-4 h-4 text-[#B45F1B]" />
           <span>Reversible Preprocessing Pipeline</span>
         </div>
 
@@ -195,7 +210,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
               type="checkbox"
               checked={detrendActive}
               onChange={(e) => setDetrendActive(e.target.checked)}
-              className="w-3.5 h-3.5 text-blue-600 rounded"
+              className="w-3.5 h-3.5 accent-[#10141C] rounded"
             />
             <span className="text-primary font-medium">Constant Mean Detrend</span>
           </label>
@@ -205,7 +220,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
               type="checkbox"
               checked={normalizeActive}
               onChange={(e) => setNormalizeActive(e.target.checked)}
-              className="w-3.5 h-3.5 text-blue-600 rounded"
+              className="w-3.5 h-3.5 accent-[#10141C] rounded"
             />
             <span className="text-primary font-medium">Unit Variance Normalization (Z-score)</span>
           </label>

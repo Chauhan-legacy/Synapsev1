@@ -91,3 +91,4 @@ def compute_dynamic_time_warping(
         warping_path_y=tuple(path_y),
         cost_matrix=D[1:, 1:],
     )
+

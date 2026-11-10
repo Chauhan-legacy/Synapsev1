@@ -242,7 +242,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           onMouseLeave={() => setHoverIndex(null)}
         >
           {/* Graticule Grid Lines & Ticks */}
-          <g className="grid-lines" stroke={isDark ? '#262d38' : '#e2e8f0'} strokeWidth="1">
+          <g className="grid-lines" stroke={isDark ? '#262d38' : '#E6E1D6'} strokeWidth="1">
             {xTicks.map((xVal, i) => {
               const xPos = scaleX(xVal);
               return (
@@ -277,7 +277,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 y1={scaleY(thresholdY)}
                 x2={padding.left + plotWidth}
                 y2={scaleY(thresholdY)}
-                stroke="#dc2626"
+                stroke="#964E14"
                 strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
@@ -285,7 +285,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 <text
                   x={padding.left + plotWidth - 4}
                   y={scaleY(thresholdY) - 4}
-                  fill="#dc2626"
+                  fill="#964E14"
                   fontSize="10"
                   textAnchor="end"
                   fontFamily="monospace"
@@ -296,13 +296,13 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             </g>
           )}
 
-          {/* Series Traces */}
+          {/* Series Traces (Ink Black #10141C Primary) */}
           {paths.map((p, idx) => (
             <path
               key={idx}
               d={p.d}
               fill="none"
-              stroke={p.color}
+              stroke={p.color || '#10141C'}
               strokeWidth="1.6"
               strokeDasharray={p.dashed ? '4 3' : undefined}
             />
@@ -314,13 +314,13 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             const my = scaleY(m.y);
             return (
               <g key={`m-${idx}`}>
-                <circle cx={mx} cy={my} r="4" fill={m.color || '#2563eb'} stroke="#ffffff" strokeWidth="1" />
+                <circle cx={mx} cy={my} r="4" fill={m.color || '#10141C'} stroke="#FFFDF9" strokeWidth="1" />
                 <text
                   x={mx + 6}
                   y={my - 4}
                   fontSize="10"
                   fontFamily="monospace"
-                  fill={isDark ? '#f1f5f9' : '#0f172a'}
+                  fill={isDark ? '#f1f5f9' : '#10141C'}
                   className="font-medium"
                 >
                   {m.label}
@@ -418,3 +418,4 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     </div>
   );
 };
+

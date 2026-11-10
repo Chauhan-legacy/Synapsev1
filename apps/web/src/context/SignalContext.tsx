@@ -5,9 +5,10 @@ import { WorkbenchView, ModuleStatus } from '../components/shell/Sidebar';
 
 interface SignalContextType {
   activeSignal: SignalData;
-  availableDatasets: Array<{ id: string; name: string; isBenchmark?: boolean }>;
+  availableDatasets: Array<{ id: string; name: string; isBenchmark?: boolean; isCustom?: boolean }>;
   selectDataset: (id: string) => void;
   loadCustomSignal: (signal: SignalData) => void;
+  deleteDataset: (id: string) => void;
   isAnalyzing: boolean;
   runAnalysis: () => Promise<void>;
   currentView: WorkbenchView;
@@ -134,6 +135,7 @@ export function createSignalPreset(code: string): SignalData {
 
 export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeSignal, setActiveSignal] = useState<SignalData>(() => createSignalPreset('benchmark_A'));
+  const [customDatasets, setCustomDatasets] = useState<SignalData[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<WorkbenchView>('overview');
   const [apiConnected, setApiConnected] = useState<boolean>(false);
@@ -192,7 +194,14 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const availableDatasets = useMemo(() => {
+    const customs = customDatasets.map((c) => ({
+      id: c.id,
+      name: `Custom: ${c.filename || c.id}`,
+      isBenchmark: false,
+      isCustom: true,
+    }));
     return [
+      ...customs,
       { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
       { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
       { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },
@@ -204,10 +213,15 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       { id: 'benchmark_I', name: 'Dataset I: Dynamic Range', isBenchmark: true },
       { id: 'benchmark_J', name: 'Dataset J: Master Discovery Challenge', isBenchmark: true },
     ];
-  }, []);
+  }, [customDatasets]);
 
   const selectDataset = useCallback((id: string) => {
-    setActiveSignal(createSignalPreset(id));
+    const customMatch = customDatasets.find((c) => c.id === id);
+    if (customMatch) {
+      setActiveSignal(customMatch);
+    } else {
+      setActiveSignal(createSignalPreset(id));
+    }
     // Reset statuses to not_run on dataset switch
     setModuleStatuses((prev) => {
       const reset = { ...prev };
@@ -218,10 +232,24 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
       return reset;
     });
-  }, []);
+  }, [customDatasets]);
 
   const loadCustomSignal = useCallback((signal: SignalData) => {
+    setCustomDatasets((prev) => {
+      const filtered = prev.filter((s) => s.id !== signal.id);
+      return [signal, ...filtered];
+    });
     setActiveSignal(signal);
+  }, []);
+
+  const deleteDataset = useCallback((id: string) => {
+    setCustomDatasets((prev) => prev.filter((s) => s.id !== id));
+    setActiveSignal((curr) => {
+      if (curr.id === id) {
+        return createSignalPreset('benchmark_A');
+      }
+      return curr;
+    });
   }, []);
 
   // Real numerical execution across modules
@@ -568,6 +596,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         availableDatasets,
         selectDataset,
         loadCustomSignal,
+        deleteDataset,
         isAnalyzing,
         runAnalysis,
         currentView,

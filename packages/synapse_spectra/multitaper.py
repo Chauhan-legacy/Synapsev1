@@ -119,3 +119,4 @@ def compute_multitaper_psd(
         degrees_of_freedom=2 * k,
         resolution_half_bandwidth_hz=float(half_bw),
     )
+

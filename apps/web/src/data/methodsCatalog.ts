@@ -519,3 +519,4 @@ export const METHODS_CATALOG: MethodCard[] = [
     ],
   },
 ];
+

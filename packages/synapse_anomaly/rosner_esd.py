@@ -98,3 +98,4 @@ def generalized_esd_test(
         alpha=alpha,
         max_outliers_tested=k_max,
     )
+

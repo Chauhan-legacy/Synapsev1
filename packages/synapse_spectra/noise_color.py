@@ -101,3 +101,4 @@ def estimate_noise_color(
         fit_frequencies=f_valid,
         fit_power=10 ** (intercept + slope * log_f),
     )
+

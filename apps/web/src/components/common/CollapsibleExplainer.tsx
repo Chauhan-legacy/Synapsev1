@@ -41,3 +41,4 @@ export const CollapsibleExplainer: React.FC<CollapsibleExplainerProps> = ({
     </div>
   );
 };
+

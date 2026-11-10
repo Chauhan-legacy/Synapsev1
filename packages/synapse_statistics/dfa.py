@@ -112,3 +112,4 @@ def compute_dfa(
         scale_sizes=s_arr,
         fluctuations=f_arr,
     )
+

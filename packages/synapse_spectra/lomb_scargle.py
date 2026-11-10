@@ -100,3 +100,4 @@ def compute_lomb_scargle(
         is_statistically_significant=bool(fap < alpha),
         alpha_threshold=alpha,
     )
+

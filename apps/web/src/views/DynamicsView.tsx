@@ -332,31 +332,31 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
             <span className="font-bold text-primary">Reconstructed Phase Space &bull; x(t) vs x(t + {embeddingLag}&tau;)</span>
             <span className="text-muted">{phasePoints.length} Phase Trajectory Points</span>
           </div>
-          <div className="h-72 rounded bg-[#0d0e11] border border-[#26282e] p-2 flex items-center justify-center relative overflow-hidden">
+          <div className="h-72 rounded bg-[#FFFDF9] dark:bg-[#13171d] border border-[#E6E1D6] dark:border-[#29303d] p-2 flex items-center justify-center relative overflow-hidden">
             {/* Graticule Grid */}
             <svg className="w-full h-full" viewBox="-3.5 -3.5 7 7" preserveAspectRatio="none">
-              <line x1="-3.5" y1="0" x2="3.5" y2="0" stroke="#1f242d" strokeWidth="0.04" />
-              <line x1="0" y1="-3.5" x2="0" y2="3.5" stroke="#1f242d" strokeWidth="0.04" />
+              <line x1="-3.5" y1="0" x2="3.5" y2="0" stroke="#E6E1D6" strokeWidth="0.04" />
+              <line x1="0" y1="-3.5" x2="0" y2="3.5" stroke="#E6E1D6" strokeWidth="0.04" />
               {[-2, -1, 1, 2].map((g) => (
                 <React.Fragment key={g}>
-                  <line x1="-3.5" y1={g} x2="3.5" y2={g} stroke="#1f242d" strokeWidth="0.02" strokeDasharray="0.1 0.1" />
-                  <line x1={g} y1="-3.5" x2={g} y2="3.5" stroke="#1f242d" strokeWidth="0.02" strokeDasharray="0.1 0.1" />
+                  <line x1="-3.5" y1={g} x2="3.5" y2={g} stroke="#E6E1D6" strokeWidth="0.02" strokeDasharray="0.1 0.1" />
+                  <line x1={g} y1="-3.5" x2={g} y2="3.5" stroke="#E6E1D6" strokeWidth="0.02" strokeDasharray="0.1 0.1" />
                 </React.Fragment>
               ))}
 
-              {/* Trajectory Polyline */}
+              {/* Trajectory Polyline (Pure Ink Black) */}
               <polyline
                 fill="none"
-                stroke="#38bdf8"
-                strokeWidth="0.05"
+                stroke="#10141C"
+                strokeWidth="0.04"
                 opacity={0.85}
                 points={phasePoints.map((p) => `${p.x.toFixed(3)},${(-p.y).toFixed(3)}`).join(' ')}
               />
             </svg>
-            <div className="absolute bottom-2 right-3 text-[10px] font-mono text-[#78716c]">
+            <div className="absolute bottom-2 right-3 text-[10px] font-mono text-[#78716C]">
               x(t + {embeddingLag})
             </div>
-            <div className="absolute top-2 left-3 text-[10px] font-mono text-[#78716c]">
+            <div className="absolute top-2 left-3 text-[10px] font-mono text-[#78716C]">
               x(t)
             </div>
           </div>

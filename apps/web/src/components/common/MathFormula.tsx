@@ -31,3 +31,4 @@ export const MathFormula: React.FC<MathFormulaProps> = ({
     />
   );
 };
+

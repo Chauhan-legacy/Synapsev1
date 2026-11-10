@@ -105,3 +105,4 @@ export const useAccessibility = (): AccessibilityContextType => {
   }
   return ctx;
 };
+

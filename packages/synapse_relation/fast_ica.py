@@ -62,3 +62,4 @@ def compute_fast_ica(
         component_kurtosis=tuple(kurt_list),
         n_components=k,
     )
+

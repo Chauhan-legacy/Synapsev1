@@ -125,3 +125,4 @@ def compute_granger_causality(
         y_causes_x=res_yx,
         directional_summary=summary,
     )
+

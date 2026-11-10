@@ -153,3 +153,4 @@ def test_iaaft_surrogates_distribution_conservation():
     for s in surrs:
         # Sorted values should match exactly
         np.testing.assert_allclose(np.sort(s), np.sort(x), atol=1e-5)
+

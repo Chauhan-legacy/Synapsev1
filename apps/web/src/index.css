@@ -64,27 +64,52 @@
   min-width: 44px;
 }
 
-/* Light Theme (Default) */
-.theme-light {
-  background-color: #f8fafc;
-  color: #0f172a;
+/* Visible, elegant scientific parchment scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #D6CFC4 #F8F6F1;
 }
-.theme-light .surface-base {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
 }
-.theme-light .surface-subtle {
-  background-color: #f1f5f9;
-  border-color: #e2e8f0;
+
+::-webkit-scrollbar-track {
+  background: #F8F6F1;
 }
-.theme-light .text-primary {
-  color: #0f172a;
+
+::-webkit-scrollbar-thumb {
+  background: #D6CFC4;
+  border-radius: 4px;
+  border: 2px solid #F8F6F1;
 }
-.theme-light .text-secondary {
-  color: #475569;
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B8B0A2;
 }
-.theme-light .text-muted {
-  color: #64748b;
+
+/* Neutral Earthy Cream-and-Ink Theme (Default & Light) */
+.theme-light, :root {
+  background-color: #F8F6F1;
+  color: #10141C;
+}
+.theme-light .surface-base, .surface-base {
+  background-color: #FFFDF9;
+  border-color: #E6E1D6;
+}
+.theme-light .surface-subtle, .surface-subtle {
+  background-color: #F2EFE9;
+  border-color: #E6E1D6;
+}
+.theme-light .text-primary, .text-primary {
+  color: #10141C;
+}
+.theme-light .text-secondary, .text-secondary {
+  color: #44403C;
+}
+.theme-light .text-muted, .text-muted {
+  color: #78716C;
 }
 
 /* Dark Theme (Oscilloscope Charcoal) */

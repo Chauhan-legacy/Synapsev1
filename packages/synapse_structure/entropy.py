@@ -143,3 +143,4 @@ def compute_multiscale_entropy(
         embedding_dimension_d=order_d,
         tolerance_r=0.20 * (float(np.std(x)) or 1.0),
     )
+

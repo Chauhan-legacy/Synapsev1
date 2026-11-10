@@ -21,3 +21,4 @@ export interface SignalData {
   duration: number;
   quality: SignalQuality;
 }
+

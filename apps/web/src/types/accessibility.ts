@@ -27,25 +27,27 @@ export const DEFAULT_ACCESSIBILITY_SETTINGS: AccessibilitySettings = {
   dyslexiaFont: false,
 };
 
-// Okabe-Ito 8-color colorblind-safe palette
+// Scientific Colorblind-Safe Palette (Ink Black Primary, Zero Neon)
 export const COLORBLIND_PALETTE = [
-  '#0072B2', // Blue
-  '#E69F00', // Orange
-  '#56B4E9', // Sky Blue
-  '#009E73', // Bluish Green
-  '#F0E442', // Yellow
-  '#D55E00', // Vermilion
-  '#CC79A7', // Reddish Purple
-  '#222222', // Charcoal Dark
+  '#10141C', // Ink Black (Primary trace)
+  '#706E6B', // Charcoal Slate
+  '#B45F1B', // Amber Umber
+  '#2F7D4F', // Muted Sage
+  '#4F8A8B', // Slate Teal
+  '#D55E00', // Vermilion Earth
+  '#5C5569', // Muted Plum
+  '#3F5E78', // Slate Navy
 ];
 
+// Scholarly Restrained Standard Palette (Ink Black Primary)
 export const STANDARD_PALETTE = [
-  '#2563EB', // Blue 600
-  '#0D9488', // Teal 600
-  '#D97706', // Amber 600
-  '#DC2626', // Red 600
-  '#7C3AED', // Violet 600
-  '#059669', // Emerald 600
-  '#DB2777', // Pink 600
-  '#475569', // Slate 600
+  '#10141C', // Ink Black (Primary trace)
+  '#706E6B', // Graphite
+  '#B45F1B', // Amber 500
+  '#2F7D4F', // Forest Green
+  '#4F8A8B', // Slate Teal
+  '#A63A2A', // Brick Earth
+  '#5C5569', // Muted Plum
+  '#3F5E78', // Slate Navy
 ];
+

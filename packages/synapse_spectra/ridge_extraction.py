@@ -79,3 +79,4 @@ def extract_spectral_ridge(
         r_squared=r2,
         is_chirp_statistically_significant=is_sig,
     )
+
