@@ -1,0 +1,114 @@
+{
+ "synthetic_notice": "SYNTHETIC DATA - produced by a mathematical model with a fixed random seed. It is NOT a real astronomical, medical, seismic or experimental observation.",
+ "rng": "numpy.random.default_rng (PCG64)",
+ "numpy": "2.5.4",
+ "scipy": "1.18.1",
+ "pandas": "3.0.6",
+ "datasets": {
+  "A": {
+   "file": "data/A_periodic_multifrequency.csv",
+   "seed": 1001,
+   "sampling_rate_hz": 2.0,
+   "observation_count": 20000,
+   "channels": [
+    "signal"
+   ]
+  },
+  "B": {
+   "file": "data/B_nonstationary_chirp.csv",
+   "seed": 1002,
+   "sampling_rate_hz": 10.0,
+   "observation_count": 20000,
+   "channels": [
+    "signal"
+   ]
+  },
+  "C": {
+   "file": "data/C_anomaly_rich.csv",
+   "seed": 1003,
+   "sampling_rate_hz": 50.0,
+   "observation_count": 20000,
+   "channels": [
+    "signal"
+   ]
+  },
+  "D": {
+   "file": "data/D_regime_changes.csv",
+   "seed": 1004,
+   "sampling_rate_hz": 10.0,
+   "observation_count": 20000,
+   "channels": [
+    "signal"
+   ]
+  },
+  "E": {
+   "file": "data/E_multichannel_coupling.csv",
+   "seed": 1005,
+   "sampling_rate_hz": 20.0,
+   "observation_count": 20000,
+   "channels": [
+    "channel_1",
+    "channel_2",
+    "channel_3",
+    "channel_4",
+    "channel_5",
+    "channel_6",
+    "channel_7",
+    "channel_8"
+   ]
+  },
+  "F": {
+   "file": "data/F_motifs_recurrence.csv",
+   "seed": 1006,
+   "sampling_rate_hz": 10.0,
+   "observation_count": 30000,
+   "channels": [
+    "signal"
+   ]
+  },
+  "G": {
+   "file": "data/G_statistical_inference.csv",
+   "seed": 1007,
+   "sampling_rate_hz": 1.0,
+   "observation_count": 77280,
+   "channels": [
+    "x",
+    "y"
+   ]
+  },
+  "H": {
+   "file": "data/H_irregular_missing.csv",
+   "seed": 1008,
+   "sampling_rate_hz": null,
+   "observation_count": 5125,
+   "channels": [
+    "signal_a",
+    "signal_b",
+    "constant_channel"
+   ]
+  },
+  "I": {
+   "file": "data/I_dynamic_range.csv",
+   "seed": 1009,
+   "sampling_rate_hz": 100.0,
+   "observation_count": 20000,
+   "channels": [
+    "signal",
+    "signal_micro"
+   ]
+  },
+  "J": {
+   "file": "data/J_master_discovery_challenge.csv",
+   "seed": 1010,
+   "sampling_rate_hz": 10.0,
+   "observation_count": 30000,
+   "channels": [
+    "channel_1",
+    "channel_2",
+    "channel_3",
+    "channel_4"
+   ]
+  }
+ },
+ "parameter_details": "full parameters are in metadata/<X>_metadata.json and the generator source"
+}

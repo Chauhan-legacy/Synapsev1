@@ -1,0 +1,158 @@
+{
+ "dataset": "J",
+ "synthetic": true,
+ "sampling_rate_hz": 10.0,
+ "nyquist_hz": 5.0,
+ "frequency_resolution_hz": 0.0003333333333333333,
+ "periodic_components_channel_1": [
+  {
+   "frequency_hz": 0.3,
+   "amplitude": 1.2,
+   "phase_rad": 0.5,
+   "note": "periodic 1 (fundamental)"
+  },
+  {
+   "frequency_hz": 0.34,
+   "amplitude": 0.9,
+   "phase_rad": 1.7,
+   "note": "periodic 2 (overlaps periodic 1; separation 0.04 Hz, resolution 3.3e-4 Hz)"
+  },
+  {
+   "frequency_hz": 0.83,
+   "amplitude": 0.7,
+   "phase_rad": -0.6,
+   "note": "periodic 3"
+  },
+  {
+   "frequency_hz": 0.6,
+   "amplitude": 0.5,
+   "phase_rad": 0.2,
+   "note": "2nd harmonic of 0.30 Hz"
+  },
+  {
+   "frequency_hz": 0.9,
+   "amplitude": 0.3,
+   "phase_rad": 2.0,
+   "note": "3rd harmonic of 0.30 Hz"
+  }
+ ],
+ "harmonic_relationships": {
+  "fundamental_hz": 0.3,
+  "orders": [
+   2,
+   3
+  ],
+  "harmonic_hz": [
+   0.6,
+   0.9
+  ]
+ },
+ "chirp": {
+  "channel": "channel_1",
+  "f_start_hz": 1.0,
+  "f_end_hz": 2.0,
+  "rate_hz_per_s": 0.0003333333333333333,
+  "amplitude": 0.8,
+  "am_depth": 0.3,
+  "am_freq_hz": 0.01,
+  "formula": "0.8*(1+0.3 sin(2pi 0.01 t))*sin(2pi(1.0 t + 0.5*kc*t^2))"
+ },
+ "events": [
+  {
+   "event_type": "transient_anomaly",
+   "start_index": 7000,
+   "end_index": 7079,
+   "duration_samples": 80,
+   "magnitude": 5.0,
+   "magnitude_definition": "peak amplitude of damped 2.5 Hz burst (tau 15 samples)"
+  },
+  {
+   "event_type": "persistent_anomaly",
+   "start_index": 10000,
+   "end_index": 11999,
+   "duration_samples": 2000,
+   "magnitude": 1.0,
+   "magnitude_definition": "amplitude of a 3.7 Hz tone present for 2000 samples (200 s), absent elsewhere",
+   "frequency_hz": 3.7
+  },
+  {
+   "event_type": "sudden_change_point",
+   "start_index": 18000,
+   "end_index": 18000,
+   "duration_samples": 1,
+   "magnitude": 1.5,
+   "magnitude_definition": "permanent mean step added from index 18000 to end of record",
+   "persistent_to_index": 29999
+  },
+  {
+   "event_type": "changing_variance_section",
+   "start_index": 24000,
+   "end_index": 26999,
+   "duration_samples": 3000,
+   "magnitude": 1.5,
+   "magnitude_definition": "peak std dev of extra zero-mean Gaussian noise added (triangular profile, peak at index 25500)"
+  }
+ ],
+ "motifs": {
+  "description": "distorted repeats of a 150-sample Hann-windowed two-tone waveform in channel_1 (also propagate to channels 2 and 3)",
+  "length_samples": 150,
+  "start_indices": [
+   1000,
+   3500,
+   5200,
+   9000,
+   13000,
+   16000,
+   19500,
+   28000
+  ],
+  "end_indices": [
+   1149,
+   3649,
+   5349,
+   9149,
+   13149,
+   16149,
+   19649,
+   28149
+  ]
+ },
+ "discord": {
+  "channel": "channel_1",
+  "start_index": 14000,
+  "end_index": 14199,
+  "length_samples": 200,
+  "description": "non-repeating Hann-windowed sawtooth"
+ },
+ "channel_relationships": [
+  {
+   "pair": [
+    "channel_1",
+    "channel_2"
+   ],
+   "model": "channel_2 = 0.8*channel_1 + independent coloured noise",
+   "lag_samples": 0,
+   "expected_zero_lag_correlation_gt": 0.8
+  },
+  {
+   "pair": [
+    "channel_1",
+    "channel_3"
+   ],
+   "model": "channel_3(t) = 0.7*channel_1(t-4.0 s) + N(0,0.5)",
+   "lag_samples": 40,
+   "lag_seconds": 4.0,
+   "note": "channel_3 lags channel_1; all channel_1 events appear 40 samples later in channel_3"
+  },
+  {
+   "pair": [
+    "channel_1",
+    "channel_4"
+   ],
+   "model": "independent control channel (own 0.13 Hz tone + coloured noise)",
+   "expected_correlation": "~0"
+  }
+ ],
+ "event_propagation": "events/motifs/discord/change point are defined by channel_1 row indices; channel_2 has them at the same index (x0.8), channel_3 at index+40 (x0.7); channel_4 has none",
+ "noise_model": "channel_1: white N(0,0.3) + 0.34*AR(1) phi=0.9 (unit variance)"
+}

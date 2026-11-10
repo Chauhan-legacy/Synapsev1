@@ -1,0 +1,97 @@
+{
+ "dataset": "H",
+ "title": "Irregular and incomplete sampling",
+ "synthetic": true,
+ "synthetic_notice": "SYNTHETIC DATA - produced by a mathematical model with a fixed random seed. It is NOT a real astronomical, medical, seismic or experimental observation.",
+ "generation_seed": 1008,
+ "rng": "numpy.random.default_rng (PCG64)",
+ "sampling_rate_hz": null,
+ "nyquist_hz": null,
+ "frequency_resolution_hz": null,
+ "timestamp_unit": "seconds from start of record",
+ "signal_unit": "arbitrary units (a.u.)",
+ "channel_names": [
+  "signal_a",
+  "signal_b",
+  "constant_channel"
+ ],
+ "observation_count": 5125,
+ "duration_seconds": null,
+ "noise_model": "white Gaussian",
+ "noise_parameters": {
+  "sd_signal_a": 0.3,
+  "sd_signal_b": 0.3
+ },
+ "signal_components": [
+  {
+   "frequency_hz": 0.05,
+   "amplitude": 1.0,
+   "phase_rad": 0.0,
+   "note": ""
+  },
+  {
+   "frequency_hz": 0.31,
+   "amplitude": 0.4,
+   "phase_rad": 0.8,
+   "note": ""
+  }
+ ],
+ "uniform_sampling": false,
+ "value_precision": "float64, written with 17 significant digits",
+ "ground_truth_in_data_file": false,
+ "index_convention": "indices are 0-based data-row numbers (header excluded); CSV line number = index + 2",
+ "sinusoid_convention": "x(t) = sum A_i sin(2*pi*f_i*t + phi_i); phase in radians",
+ "snr_definition": "SNR_dB = 10*log10( mean(clean_signal^2) / mean(noise^2) ) using the realised arrays",
+ "nominal_interval_s": 0.5,
+ "timestamp_jitter": "N(0,0.04 s) clipped to +/-0.12 s",
+ "missing_observations": "3 contiguous gaps (40, 60, 30 nominal samples), ~6% random row drops, rows 2000-2599 nominal decimated by 3 (interval 1.5 s)",
+ "nan_injection": "1.2% of signal_a, 2% of signal_b, plus a 25-row NaN block in signal_b",
+ "constant_channel_value": 42.0,
+ "extra_files": [
+  "H_invalid_duplicate_timestamps.csv",
+  "H_invalid_infinite_values.csv"
+ ],
+ "timestamp_format": "%.9f seconds",
+ "expected_validation": "see ground_truth/H_expected_validation.json",
+ "observed_facts": {
+  "row_count": 5125,
+  "unique_timestamps": 5125,
+  "duplicate_timestamp_pairs": 0,
+  "strictly_increasing": true,
+  "non_decreasing": true,
+  "dt_min": 0.2937715145403672,
+  "dt_median": 0.5073796877266545,
+  "dt_max": 31.055963933094517,
+  "uniformly_sampled": false,
+  "nan_count_by_column": {
+   "signal_a": 62,
+   "signal_b": 126,
+   "constant_channel": 0
+  },
+  "inf_count_by_column": {
+   "signal_a": 0,
+   "signal_b": 0,
+   "constant_channel": 0
+  },
+  "constant_columns": [
+   "constant_channel"
+  ],
+  "large_gaps_over_10x_median_dt": [
+   {
+    "after_row": 1405,
+    "before_row": 1406,
+    "gap_seconds": 20.493830876500283
+   },
+   {
+    "after_row": 2585,
+    "before_row": 2586,
+    "gap_seconds": 31.055963933094517
+   },
+   {
+    "after_row": 3944,
+    "before_row": 3945,
+    "gap_seconds": 15.496586036832468
+   }
+  ]
+ }
+}

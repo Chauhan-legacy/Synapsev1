@@ -1,0 +1,172 @@
+{
+ "dataset": "E",
+ "synthetic": true,
+ "latent_components": {
+  "B": "unit-variance AR(1) phi=0.9 broadband shared latent",
+  "W2": "sin(2pi*1.1 t+1.2) shared oscillation",
+  "S": "0.35 Hz oscillation used by channel_4 (cos) and channel_5 (sin)",
+  "I1_I2_I3": "independent AR(1) latents (phi 0.9, 0.9, 0.7)"
+ },
+ "channel_models": {
+  "channel_1": "B + 0.6*W2 + N(0,0.15)",
+  "channel_2": "B + 0.6*W2 + N(0,0.15)",
+  "channel_3": "0.9*B(t-1.25 s) + N(0,0.3)",
+  "channel_4": "cos(2pi*0.35 t) + N(0,0.2)",
+  "channel_5": "sin(2pi*0.35 t) + 0.35*B + N(0,0.4)",
+  "channel_6": "0.3*B + 0.9*I1 + N(0,0.3)",
+  "channel_7": "a(t)*B + (1-a(t))*I2 + N(0,0.2), a(t)=1/(1+exp(-(t-500)/60))",
+  "channel_8": "I3 + N(0,0.5)"
+ },
+ "relationships": [
+  {
+   "pair": [
+    "channel_1",
+    "channel_2"
+   ],
+   "kind": "strong correlation, zero lag, shared B and W2",
+   "lag_samples": 0
+  },
+  {
+   "pair": [
+    "channel_1",
+    "channel_3"
+   ],
+   "kind": "delayed relationship: channel_3 lags channel_1 (via B)",
+   "lag_samples": 25,
+   "lag_seconds": 1.25
+  },
+  {
+   "pair": [
+    "channel_4",
+    "channel_5"
+   ],
+   "kind": "same 0.35 Hz oscillation, phase shift: channel_5 lags channel_4 by pi/2 (quarter period); near-zero zero-lag correlation, coherence ~1 at 0.35 Hz",
+   "phase_rad_cross_spectrum_arg": -1.5707963267948966,
+   "frequency_hz": 0.35
+  },
+  {
+   "pair": [
+    "channel_1",
+    "channel_6"
+   ],
+   "kind": "weak correlation via 0.3*B"
+  },
+  {
+   "pair": [
+    "channel_1",
+    "channel_5"
+   ],
+   "kind": "weak correlation via 0.35*B"
+  },
+  {
+   "pair": [
+    "channel_1",
+    "channel_7"
+   ],
+   "kind": "time-varying relationship: unrelated early (a~0), strongly related late (a~1)",
+   "transition_centre_s": 500,
+   "transition_width_s": 60
+  },
+  {
+   "pair": [
+    "channel_8",
+    "all others"
+   ],
+   "kind": "independent"
+  }
+ ],
+ "delay_convention": "positive lag means the second channel in the pair lags (is later than) the first",
+ "correlation_realised_pearson_zero_lag": {
+  "channel_1": {
+   "channel_1": 1.0,
+   "channel_2": 0.981519,
+   "channel_3": 0.062189,
+   "channel_4": 0.003576,
+   "channel_5": 0.354618,
+   "channel_6": 0.296865,
+   "channel_7": 0.491177,
+   "channel_8": -0.001581
+  },
+  "channel_2": {
+   "channel_1": 0.981519,
+   "channel_2": 1.0,
+   "channel_3": 0.060403,
+   "channel_4": 0.00582,
+   "channel_5": 0.3548,
+   "channel_6": 0.296389,
+   "channel_7": 0.488556,
+   "channel_8": -0.001121
+  },
+  "channel_3": {
+   "channel_1": 0.062189,
+   "channel_2": 0.060403,
+   "channel_3": 1.0,
+   "channel_4": 0.001619,
+   "channel_5": 0.031883,
+   "channel_6": -0.010453,
+   "channel_7": 0.035551,
+   "channel_8": 0.004808
+  },
+  "channel_4": {
+   "channel_1": 0.003576,
+   "channel_2": 0.00582,
+   "channel_3": 0.001619,
+   "channel_4": 1.0,
+   "channel_5": -0.000398,
+   "channel_6": 0.0181,
+   "channel_7": -0.028014,
+   "channel_8": 0.01991
+  },
+  "channel_5": {
+   "channel_1": 0.354618,
+   "channel_2": 0.3548,
+   "channel_3": 0.031883,
+   "channel_4": -0.000398,
+   "channel_5": 1.0,
+   "channel_6": 0.156979,
+   "channel_7": 0.216507,
+   "channel_8": 0.016524
+  },
+  "channel_6": {
+   "channel_1": 0.296865,
+   "channel_2": 0.296389,
+   "channel_3": -0.010453,
+   "channel_4": 0.0181,
+   "channel_5": 0.156979,
+   "channel_6": 1.0,
+   "channel_7": 0.182306,
+   "channel_8": -0.004532
+  },
+  "channel_7": {
+   "channel_1": 0.491177,
+   "channel_2": 0.488556,
+   "channel_3": 0.035551,
+   "channel_4": -0.028014,
+   "channel_5": 0.216507,
+   "channel_6": 0.182306,
+   "channel_7": 1.0,
+   "channel_8": -0.018457
+  },
+  "channel_8": {
+   "channel_1": -0.001581,
+   "channel_2": -0.001121,
+   "channel_3": 0.004808,
+   "channel_4": 0.01991,
+   "channel_5": 0.016524,
+   "channel_6": -0.004532,
+   "channel_7": -0.018457,
+   "channel_8": 1.0
+  }
+ },
+ "noise_sd_per_channel": {
+  "channel_1": 0.15,
+  "channel_2": 0.15,
+  "channel_3": 0.3,
+  "channel_4": 0.2,
+  "channel_5": 0.4,
+  "channel_6": 0.3,
+  "channel_7": 0.2,
+  "channel_8": 0.5
+ },
+ "coupling_note": "correlation/coherence values are realised from this generated data; theory = shared-variance fraction from the model equations"
+}

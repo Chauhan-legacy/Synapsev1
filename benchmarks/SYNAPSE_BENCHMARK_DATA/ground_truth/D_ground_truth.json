@@ -1,0 +1,125 @@
+{
+ "dataset": "D",
+ "synthetic": true,
+ "change_points": [
+  {
+   "id": 1,
+   "index": 4000,
+   "type": "abrupt",
+   "property": "noise standard deviation",
+   "before": 0.5,
+   "after": 1.5
+  },
+  {
+   "id": 2,
+   "start_index": 7000,
+   "end_index": 7999,
+   "type": "gradual",
+   "property": "noise standard deviation",
+   "before": 1.5,
+   "after": 0.5,
+   "shape": "linear ramp"
+  },
+  {
+   "id": 3,
+   "index": 8000,
+   "type": "abrupt",
+   "property": "mean level",
+   "before": 0.0,
+   "after": 3.0
+  },
+  {
+   "id": 4,
+   "start_index": 11000,
+   "end_index": 11999,
+   "type": "gradual",
+   "property": "mean level",
+   "before": 3.0,
+   "after": 0.0,
+   "shape": "linear ramp"
+  },
+  {
+   "id": 5,
+   "start_index": 12000,
+   "end_index": 12999,
+   "type": "gradual",
+   "property": "frequency composition",
+   "before": "0.8 Hz tone",
+   "after": "1.9 Hz tone",
+   "shape": "linear cross-fade of the two tones"
+  },
+  {
+   "id": 6,
+   "index": 16000,
+   "type": "abrupt",
+   "property": "onset of unstable regime (exponential amplitude growth, sd 0.5->1.0)",
+   "before": "stationary 1.9 Hz",
+   "after": "growing 1.9 Hz"
+  },
+  {
+   "id": 7,
+   "index": 18000,
+   "type": "abrupt",
+   "property": "collapse of unstable regime back to stationary initial regime",
+   "before": "growing 1.9 Hz",
+   "after": "0.8 Hz, sd 0.5"
+  }
+ ],
+ "regimes": [
+  {
+   "name": "R1 initial stationary",
+   "start_index": 0,
+   "end_index": 3999,
+   "mean": 0.0,
+   "noise_sd": 0.5,
+   "tone_hz": 0.8,
+   "tone_amplitude": 1.0
+  },
+  {
+   "name": "R2 increased variance",
+   "start_index": 4000,
+   "end_index": 7999,
+   "mean": 0.0,
+   "noise_sd": "1.5 (ramps to 0.5 over 7000-7999)",
+   "tone_hz": 0.8,
+   "tone_amplitude": 1.0
+  },
+  {
+   "name": "R3 changed mean",
+   "start_index": 8000,
+   "end_index": 11999,
+   "mean": "3.0 (ramps to 0 over 11000-11999)",
+   "noise_sd": 0.5,
+   "tone_hz": 0.8,
+   "tone_amplitude": 1.0
+  },
+  {
+   "name": "R4 changed frequency composition",
+   "start_index": 12000,
+   "end_index": 15999,
+   "mean": 0.0,
+   "noise_sd": 0.5,
+   "tone_hz": "0.8 -> 1.9 cross-fade over 12000-12999, then 1.9",
+   "tone_amplitude": 1.0
+  },
+  {
+   "name": "R5 temporary unstable",
+   "start_index": 16000,
+   "end_index": 17999,
+   "mean": 0.0,
+   "noise_sd": 1.0,
+   "tone_hz": 1.9,
+   "tone_amplitude": "1.5*exp(2*u), u=0..1 (1.5 -> 11.1)"
+  },
+  {
+   "name": "R6 final stationary",
+   "start_index": 18000,
+   "end_index": 19999,
+   "mean": 0.0,
+   "noise_sd": 0.5,
+   "tone_hz": 0.8,
+   "tone_amplitude": 1.0
+  }
+ ],
+ "noise_definition": "noise = sd(t) * (0.8*white N(0,1) + 0.6*unit-variance AR(1) phi=0.9)"
+}

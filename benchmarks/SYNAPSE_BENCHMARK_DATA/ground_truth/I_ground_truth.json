@@ -1,0 +1,74 @@
+{
+ "dataset": "I",
+ "synthetic": true,
+ "components_signal": [
+  {
+   "name": "trend",
+   "model": "2e5 + 5e4*sin(2pi*0.004 t) + 50*t",
+   "scale": 200000.0
+  },
+  {
+   "frequency_hz": 0.5,
+   "amplitude": 1000.0,
+   "phase_rad": 0.0,
+   "note": "large oscillation"
+  },
+  {
+   "frequency_hz": 3.1,
+   "amplitude": 1.0,
+   "phase_rad": 0.4,
+   "note": "small oscillation"
+  },
+  {
+   "frequency_hz": 11.7,
+   "amplitude": 0.001,
+   "phase_rad": 1.1,
+   "note": "tiny component, amplitude below noise sd 5e-3 (buried)"
+  }
+ ],
+ "components_signal_micro": [
+  {
+   "frequency_hz": 0.7,
+   "amplitude": 1e-09,
+   "phase_rad": 0.0,
+   "note": ""
+  },
+  {
+   "frequency_hz": 5.3,
+   "amplitude": 2e-12,
+   "phase_rad": 0.3,
+   "note": ""
+  },
+  {
+   "noise_sd": 5e-13
+  }
+ ],
+ "extreme_transients": [
+  {
+   "start_index": 5000,
+   "end_index": 5199,
+   "peak_amplitude": 50000000.0,
+   "model": "a*exp(-k/20)*cos(2pi*15*k/fs)"
+  },
+  {
+   "start_index": 12000,
+   "end_index": 12199,
+   "peak_amplitude": -200000000.0,
+   "model": "a*exp(-k/20)*cos(2pi*15*k/fs)"
+  },
+  {
+   "start_index": 16000,
+   "end_index": 16199,
+   "peak_amplitude": 1000000000.0,
+   "model": "a*exp(-k/20)*cos(2pi*15*k/fs)"
+  }
+ ],
+ "dynamic_range": {
+  "max_abs": 1000169474.7295393,
+  "min_abs_nonzero": 5124.578046720038,
+  "ratio_max_to_noise_sd": 178601691915.98917,
+  "dB_max_to_noise_sd": 225.03771137395063,
+  "micro_channel_max_abs": 1.0028716754279274e-09
+ },
+ "float64_resolution_note": "spacing between doubles near 3e5 is ~5.8e-11, so the 1e-3 component is representable with ~7 digits"
+}

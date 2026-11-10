@@ -1,0 +1,65 @@
+{
+ "dataset": "J",
+ "title": "MASTER DISCOVERY CHALLENGE (integrated multi-engine dataset)",
+ "synthetic": true,
+ "synthetic_notice": "SYNTHETIC DATA - produced by a mathematical model with a fixed random seed. It is NOT a real astronomical, medical, seismic or experimental observation.",
+ "generation_seed": 1010,
+ "rng": "numpy.random.default_rng (PCG64)",
+ "sampling_rate_hz": 10.0,
+ "nyquist_hz": 5.0,
+ "frequency_resolution_hz": 0.0003333333333333333,
+ "timestamp_unit": "seconds from start of record",
+ "signal_unit": "arbitrary units (a.u.)",
+ "channel_names": [
+  "channel_1",
+  "channel_2",
+  "channel_3",
+  "channel_4"
+ ],
+ "observation_count": 30000,
+ "duration_seconds": 3000.0,
+ "noise_model": "white Gaussian + AR(1) coloured per channel",
+ "noise_parameters": {
+  "channel_1_white_sd": 0.3,
+  "channel_1_ar1_phi": 0.9,
+  "channel_1_ar1_scale": 0.34
+ },
+ "signal_components": [
+  {
+   "frequency_hz": 0.3,
+   "amplitude": 1.2,
+   "phase_rad": 0.5,
+   "note": "periodic 1 (fundamental)"
+  },
+  {
+   "frequency_hz": 0.34,
+   "amplitude": 0.9,
+   "phase_rad": 1.7,
+   "note": "periodic 2 (overlaps periodic 1; separation 0.04 Hz, resolution 3.3e-4 Hz)"
+  },
+  {
+   "frequency_hz": 0.83,
+   "amplitude": 0.7,
+   "phase_rad": -0.6,
+   "note": "periodic 3"
+  },
+  {
+   "frequency_hz": 0.6,
+   "amplitude": 0.5,
+   "phase_rad": 0.2,
+   "note": "2nd harmonic of 0.30 Hz"
+  },
+  {
+   "frequency_hz": 0.9,
+   "amplitude": 0.3,
+   "phase_rad": 2.0,
+   "note": "3rd harmonic of 0.30 Hz"
+  }
+ ],
+ "uniform_sampling": true,
+ "value_precision": "float64, written with 17 significant digits",
+ "ground_truth_in_data_file": false,
+ "index_convention": "indices are 0-based data-row numbers (header excluded); CSV line number = index + 2",
+ "sinusoid_convention": "x(t) = sum A_i sin(2*pi*f_i*t + phi_i); phase in radians",
+ "snr_definition": "SNR_dB = 10*log10( mean(clean_signal^2) / mean(noise^2) ) using the realised arrays"
+}

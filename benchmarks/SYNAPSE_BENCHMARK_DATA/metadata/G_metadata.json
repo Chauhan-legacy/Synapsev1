@@ -1,0 +1,46 @@
+{
+ "dataset": "G",
+ "title": "Statistical inference benchmark (84 controlled experiments, long format)",
+ "synthetic": true,
+ "synthetic_notice": "SYNTHETIC DATA - produced by a mathematical model with a fixed random seed. It is NOT a real astronomical, medical, seismic or experimental observation.",
+ "generation_seed": 1007,
+ "rng": "numpy.random.default_rng (PCG64)",
+ "sampling_rate_hz": 1.0,
+ "nyquist_hz": 0.5,
+ "frequency_resolution_hz": 1.2939958592132505e-05,
+ "timestamp_unit": "seconds from start of record",
+ "signal_unit": "arbitrary units (a.u.)",
+ "channel_names": [
+  "x",
+  "y"
+ ],
+ "observation_count": 77280,
+ "duration_seconds": 77280.0,
+ "noise_model": "white N(0,1) or unit-variance AR(1)",
+ "noise_parameters": {
+  "ar1_phi_frequency_family": 0.7,
+  "ar1_phi_correlation_family": 0.8
+ },
+ "signal_components": [],
+ "uniform_sampling": true,
+ "value_precision": "float64, written with 17 significant digits",
+ "ground_truth_in_data_file": false,
+ "index_convention": "indices are 0-based data-row numbers (header excluded); CSV line number = index + 2",
+ "sinusoid_convention": "x(t) = sum A_i sin(2*pi*f_i*t + phi_i); phase in radians",
+ "snr_definition": "SNR_dB = 10*log10( mean(clean_signal^2) / mean(noise^2) ) using the realised arrays",
+ "experiments": 84,
+ "sample_sizes": {
+  "frequency": [
+   256,
+   512,
+   1024,
+   2048
+  ],
+  "correlation": [
+   100,
+   500,
+   2000
+  ]
+ },
+ "columns_note": "rows grouped by experiment_id; sample_index restarts at 0 for each experiment; observation_count is the total row count"
+}

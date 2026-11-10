@@ -1,0 +1,1798 @@
+{
+ "dataset": "G",
+ "synthetic": true,
+ "number_of_hypotheses_tested": 84,
+ "number_true_nulls": 28,
+ "number_true_alternatives": 56,
+ "note": "one hypothesis per experiment_id; for FDR use all m hypotheses together. Frequency tests are for ONE a-priori frequency f_test, so a fixed-frequency periodogram p-value is valid under white noise; AR(1) noise makes naive parametric p-values anti-conservative (use surrogates/permutation).",
+ "experiments": [
+  {
+   "experiment_id": "G_F_001",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.07848997498435431,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_002",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.26064243990843267,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_003",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.05456167911565726,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_004",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.11747361336666962,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_005",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.3715175693648917,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_006",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.19112633508807775,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_007",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.2658815062601857,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_008",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.4136746600514937,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_009",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.29215572487123914,
+    "true_frequency_hz": 0.29215572487123914,
+    "amplitude": 0.12,
+    "phase_rad": 5.500391401029271
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_010",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.42412659491882837,
+    "true_frequency_hz": 0.42412659491882837,
+    "amplitude": 0.12,
+    "phase_rad": 2.429524400638378
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_011",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.14853687836422502,
+    "true_frequency_hz": 0.14853687836422502,
+    "amplitude": 0.12,
+    "phase_rad": 1.8407316925972876
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_012",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.42752244266819867,
+    "true_frequency_hz": 0.42752244266819867,
+    "amplitude": 0.12,
+    "phase_rad": 2.5067016438652607
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_013",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.11449625069930042,
+    "true_frequency_hz": 0.11449625069930042,
+    "amplitude": 0.12,
+    "phase_rad": 3.9754452906266344
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_014",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.26771747617258684,
+    "true_frequency_hz": 0.26771747617258684,
+    "amplitude": 0.12,
+    "phase_rad": 0.352198003331687
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_015",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.3780410589410785,
+    "true_frequency_hz": 0.3780410589410785,
+    "amplitude": 0.12,
+    "phase_rad": 5.365551608915071
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_016",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.3836628546072024,
+    "true_frequency_hz": 0.3836628546072024,
+    "amplitude": 0.12,
+    "phase_rad": 3.8044782736924225
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_017",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.39135969588013353,
+    "true_frequency_hz": 0.39135969588013353,
+    "amplitude": 0.5,
+    "phase_rad": 4.692538958712878
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_018",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.11724166428789817,
+    "true_frequency_hz": 0.11724166428789817,
+    "amplitude": 0.5,
+    "phase_rad": 5.583771158166464
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_019",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.1633016942287135,
+    "true_frequency_hz": 0.1633016942287135,
+    "amplitude": 0.5,
+    "phase_rad": 1.8683602724014055
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_020",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.08636995684293844,
+    "true_frequency_hz": 0.08636995684293844,
+    "amplitude": 0.5,
+    "phase_rad": 2.557997306690156
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_021",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.25362128861068006,
+    "true_frequency_hz": 0.25362128861068006,
+    "amplitude": 0.5,
+    "phase_rad": 6.27856896655613
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_022",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.24277792601330755,
+    "true_frequency_hz": 0.24277792601330755,
+    "amplitude": 0.5,
+    "phase_rad": 3.4871948365861094
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_023",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.1754575157596598,
+    "true_frequency_hz": 0.1754575157596598,
+    "amplitude": 0.5,
+    "phase_rad": 3.5928361654743446
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_024",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.07719664770028328,
+    "true_frequency_hz": 0.07719664770028328,
+    "amplitude": 0.5,
+    "phase_rad": 1.6881472298581213
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_025",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.14019452412446992,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_026",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.31283829658733303,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_027",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.35158654064806333,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_028",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.08474014532017837,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_029",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.16854960003248345,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_030",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.39951283786674335,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_031",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.4008699485527874,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_032",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.0,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "f_test_hz": 0.4474447558395201,
+    "true_frequency_hz": null,
+    "amplitude": 0.0,
+    "phase_rad": null
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_033",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.1707976394939005,
+    "true_frequency_hz": 0.1707976394939005,
+    "amplitude": 0.12,
+    "phase_rad": 4.425368325972494
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_034",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.26516496317229354,
+    "true_frequency_hz": 0.26516496317229354,
+    "amplitude": 0.12,
+    "phase_rad": 4.851844151924665
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_035",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.3942652884018664,
+    "true_frequency_hz": 0.3942652884018664,
+    "amplitude": 0.12,
+    "phase_rad": 4.9169813414170145
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_036",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.3507147929490984,
+    "true_frequency_hz": 0.3507147929490984,
+    "amplitude": 0.12,
+    "phase_rad": 5.045482360244359
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_037",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.17765103704627377,
+    "true_frequency_hz": 0.17765103704627377,
+    "amplitude": 0.12,
+    "phase_rad": 3.0512900486496224
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_038",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.07888986752290901,
+    "true_frequency_hz": 0.07888986752290901,
+    "amplitude": 0.12,
+    "phase_rad": 2.3782059331165057
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_039",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.3890123169739856,
+    "true_frequency_hz": 0.3890123169739856,
+    "amplitude": 0.12,
+    "phase_rad": 3.9036213779971103
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_040",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.12,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.09197459228260813,
+    "true_frequency_hz": 0.09197459228260813,
+    "amplitude": 0.12,
+    "phase_rad": 1.1358231174924907
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_041",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.12810610428540828,
+    "true_frequency_hz": 0.12810610428540828,
+    "amplitude": 0.5,
+    "phase_rad": 4.709131786606208
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_042",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.30086699343742723,
+    "true_frequency_hz": 0.30086699343742723,
+    "amplitude": 0.5,
+    "phase_rad": 1.900608683810459
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_043",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.08258709946684664,
+    "true_frequency_hz": 0.08258709946684664,
+    "amplitude": 0.5,
+    "phase_rad": 6.029322293349012
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_044",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.2020936793054684,
+    "true_frequency_hz": 0.2020936793054684,
+    "amplitude": 0.5,
+    "phase_rad": 1.6961399026114121
+   },
+   "noise": "white",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_045",
+   "test_family": "frequency",
+   "n_samples": 256,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.1544339858782387,
+    "true_frequency_hz": 0.1544339858782387,
+    "amplitude": 0.5,
+    "phase_rad": 2.869629473518297
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_046",
+   "test_family": "frequency",
+   "n_samples": 512,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.15514931974595586,
+    "true_frequency_hz": 0.15514931974595586,
+    "amplitude": 0.5,
+    "phase_rad": 5.228264052879045
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_047",
+   "test_family": "frequency",
+   "n_samples": 1024,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.22571792639296645,
+    "true_frequency_hz": 0.22571792639296645,
+    "amplitude": 0.5,
+    "phase_rad": 5.490825074096367
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_F_048",
+   "test_family": "frequency",
+   "n_samples": 2048,
+   "sampling_rate_hz": 1.0,
+   "H0": "x contains no sinusoid at f_test",
+   "H1": "x contains a sinusoid at f_test",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "amplitude_over_noise_sd": 0.5,
+    "definition": "A/sigma, sigma=1 marginal noise sd"
+   },
+   "expected_direction": "present (positive amplitude)",
+   "known_parameters": {
+    "f_test_hz": 0.3508019904915757,
+    "true_frequency_hz": 0.3508019904915757,
+    "amplitude": 0.5,
+    "phase_rad": 3.416851780247327
+   },
+   "noise": "ar1_phi0.7",
+   "y_channel": "independent N(0,1) control noise; unrelated to x"
+  },
+  {
+   "experiment_id": "G_C_049",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_050",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_051",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_052",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_053",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_054",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_055",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_056",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_057",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_058",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_059",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_060",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_061",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_062",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_063",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_064",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_065",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_066",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_067",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_068",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_069",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_070",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_071",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_072",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": true,
+   "effect_label": "null",
+   "effect_size": {
+    "population_pearson_rho": 0.0,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "none",
+   "known_parameters": {
+    "rho": 0.0
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_073",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_074",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_075",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_076",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_077",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_078",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "weak",
+   "effect_size": {
+    "population_pearson_rho": 0.15,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "positive",
+   "known_parameters": {
+    "rho": 0.15
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_079",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_080",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_081",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "independent_white"
+  },
+  {
+   "experiment_id": "G_C_082",
+   "test_family": "correlation",
+   "n_samples": 100,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_083",
+   "test_family": "correlation",
+   "n_samples": 500,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  },
+  {
+   "experiment_id": "G_C_084",
+   "test_family": "correlation",
+   "n_samples": 2000,
+   "sampling_rate_hz": 1.0,
+   "H0": "population correlation between x and y is 0",
+   "H1": "population correlation is non-zero",
+   "is_null": false,
+   "effect_label": "strong",
+   "effect_size": {
+    "population_pearson_rho": -0.5,
+    "definition": "Pearson correlation of the innovations; equals correlation of the series (both share the same AR filter)"
+   },
+   "expected_direction": "negative",
+   "known_parameters": {
+    "rho": -0.5
+   },
+   "noise": "serially_correlated_ar1_phi0.8"
+  }
+ ]
+}

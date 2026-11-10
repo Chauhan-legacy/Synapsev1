@@ -1,0 +1,37 @@
+{
+ "dataset": "B",
+ "title": "Non-stationary chirp / AM / FM signal",
+ "synthetic": true,
+ "synthetic_notice": "SYNTHETIC DATA - produced by a mathematical model with a fixed random seed. It is NOT a real astronomical, medical, seismic or experimental observation.",
+ "generation_seed": 1002,
+ "rng": "numpy.random.default_rng (PCG64)",
+ "sampling_rate_hz": 10.0,
+ "nyquist_hz": 5.0,
+ "frequency_resolution_hz": 0.0005,
+ "timestamp_unit": "seconds from start of record",
+ "signal_unit": "arbitrary units (a.u.)",
+ "channel_names": [
+  "signal"
+ ],
+ "observation_count": 20000,
+ "duration_seconds": 2000.0,
+ "noise_model": "white Gaussian + AR(1) coloured",
+ "noise_parameters": {
+  "white_sd": 0.4,
+  "ar1_phi": 0.95,
+  "ar1_marginal_sd": 0.16
+ },
+ "signal_components": [
+  {
+   "type": "chirp+AM+FM carrier",
+   "see": "ground truth"
+  }
+ ],
+ "uniform_sampling": true,
+ "value_precision": "float64, written with 17 significant digits",
+ "ground_truth_in_data_file": false,
+ "index_convention": "indices are 0-based data-row numbers (header excluded); CSV line number = index + 2",
+ "sinusoid_convention": "x(t) = sum A_i sin(2*pi*f_i*t + phi_i); phase in radians",
+ "snr_definition": "SNR_dB = 10*log10( mean(clean_signal^2) / mean(noise^2) ) using the realised arrays",
+ "snr_db": 10.677942675708
+}

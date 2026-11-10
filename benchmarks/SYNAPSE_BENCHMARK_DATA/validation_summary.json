@@ -1,0 +1,841 @@
+{
+ "synthetic_notice": "SYNTHETIC DATA - produced by a mathematical model with a fixed random seed. It is NOT a real astronomical, medical, seismic or experimental observation.",
+ "all_checks_passed": true,
+ "note": "Every entry was computed by this script on the generated data. Checks are tolerance-based and listed with measured values.",
+ "total_checks": 113,
+ "failed": [],
+ "datasets": {
+  "A": [
+   {
+    "check": "peak at 0.0703 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.07030105590820312,
+     "amp_est": 1.48958780895876,
+     "amp_true": 1.5
+    }
+   },
+   {
+    "check": "peak at 0.1907 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.19070053100585938,
+     "amp_est": 1.0030254034657125,
+     "amp_true": 1.0
+    }
+   },
+   {
+    "check": "peak at 0.4311 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.43109893798828125,
+     "amp_est": 0.6037493641418431,
+     "amp_true": 0.6
+    }
+   },
+   {
+    "check": "peak at 0.3814 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.38140106201171875,
+     "amp_est": 0.3988585928531878,
+     "amp_true": 0.4
+    }
+   },
+   {
+    "check": "peak at 0.5721 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.5721015930175781,
+     "amp_est": 0.19606174718590044,
+     "amp_true": 0.2
+    }
+   },
+   {
+    "check": "SNR matches realised arrays",
+    "passed": true,
+    "detail": 8.034548168456102
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 20000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1001
+   }
+  ],
+  "B": [
+   {
+    "check": "STFT ridge near t=300s",
+    "passed": true,
+    "detail": {
+     "measured_hz": 0.851593017578125,
+     "expected_mean_inst_hz": 0.8356224238778881
+    }
+   },
+   {
+    "check": "STFT ridge near t=600s",
+    "passed": true,
+    "detail": {
+     "measured_hz": 1.213226318359375,
+     "expected_mean_inst_hz": 1.195622423877888
+    }
+   },
+   {
+    "check": "STFT ridge near t=1300s",
+    "passed": true,
+    "detail": {
+     "measured_hz": 2.91168212890625,
+     "expected_mean_inst_hz": 2.895712423877888
+    }
+   },
+   {
+    "check": "STFT ridge near t=1700s",
+    "passed": true,
+    "detail": {
+     "measured_hz": 2.672576904296875,
+     "expected_mean_inst_hz": 2.6557124238778886
+    }
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 20000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1002
+   }
+  ],
+  "C": [
+   {
+    "check": "event 1 impulse robust-z>5",
+    "passed": true,
+    "detail": 9.693507092188877
+   },
+   {
+    "check": "event 2 impulse robust-z>5",
+    "passed": true,
+    "detail": 11.705279725945081
+   },
+   {
+    "check": "event 3 impulse robust-z>5",
+    "passed": true,
+    "detail": 11.07555364486864
+   },
+   {
+    "check": "event 4 impulse robust-z>5",
+    "passed": true,
+    "detail": 9.701223118265755
+   },
+   {
+    "check": "event 5 impulse robust-z>5",
+    "passed": true,
+    "detail": 17.239699105648512
+   },
+   {
+    "check": "event 6 transient_burst stands out",
+    "passed": true,
+    "detail": {
+     "std_ratio": 1.7925201909989164,
+     "max_dev": 5.509287450200449
+    }
+   },
+   {
+    "check": "event 7 transient_burst stands out",
+    "passed": true,
+    "detail": {
+     "std_ratio": 1.7003966448160859,
+     "max_dev": 6.357867584406864
+    }
+   },
+   {
+    "check": "event 8 transient_burst stands out",
+    "passed": true,
+    "detail": {
+     "std_ratio": 1.9243128516535555,
+     "max_dev": 6.5560721795962955
+    }
+   },
+   {
+    "check": "event 9 local_amplitude_spike stands out",
+    "passed": true,
+    "detail": {
+     "std_ratio": 2.438789752714477,
+     "max_dev": 7.85943606284508
+    }
+   },
+   {
+    "check": "event 10 local_amplitude_spike stands out",
+    "passed": true,
+    "detail": {
+     "std_ratio": 1.9104370375891968,
+     "max_dev": 6.679120665725295
+    }
+   },
+   {
+    "check": "event 11 local_amplitude_spike stands out",
+    "passed": true,
+    "detail": {
+     "std_ratio": 2.7512901395472493,
+     "max_dev": 9.427142093999821
+    }
+   },
+   {
+    "check": "drift peak ~2.5 (tol 1.0)",
+    "passed": true,
+    "detail": 2.464132676114492
+   },
+   {
+    "check": "level shift ~3.0 (tol 1.0)",
+    "passed": true,
+    "detail": 3.1133743080403913
+   },
+   {
+    "check": "long anomaly variance ratio >1.6",
+    "passed": true,
+    "detail": 2.416751816323806
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 20000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1003
+   },
+   {
+    "check": "all ground-truth indices are valid CSV row indices (0..n-1)",
+    "passed": true,
+    "detail": {
+     "count": 28,
+     "min": 1200,
+     "max": 19999
+    }
+   }
+  ],
+  "D": [
+   {
+    "check": "residual sd per regime",
+    "passed": true,
+    "detail": {
+     "R1": 0.48278270083366837,
+     "R2": 1.4710809460679688,
+     "R5": 1.005793427814993
+    }
+   },
+   {
+    "check": "independent mean-step detector at 8000 (~+3)",
+    "passed": true,
+    "detail": 3.0176923224280126
+   },
+   {
+    "check": "independent variance detector at 4000 (expected ratio ~1.9)",
+    "passed": true,
+    "detail": 1.9492224314016537
+   },
+   {
+    "check": "dominant tone 0.8 Hz before / 1.9 Hz after composition change",
+    "passed": true,
+    "detail": {
+     "early": 0.7999992370605469,
+     "late": 1.8999671936035156
+    }
+   },
+   {
+    "check": "unstable regime amplitude growth",
+    "passed": true,
+    "detail": {
+     "late_max": 12.88971424907356,
+     "early_max": 4.762132374319573
+    }
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 20000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1004
+   },
+   {
+    "check": "all ground-truth indices are valid CSV row indices (0..n-1)",
+    "passed": true,
+    "detail": {
+     "count": 22,
+     "min": 0,
+     "max": 19999
+    }
+   }
+  ],
+  "E": [
+   {
+    "check": "strong pair ch1-ch2 r>0.9",
+    "passed": true,
+    "detail": 0.9815186241315768
+   },
+   {
+    "check": "delay ch1->ch3 = +25 samples",
+    "passed": true,
+    "detail": 25
+   },
+   {
+    "check": "ch4-ch5 coherence@0.35Hz>0.9, phase~-pi/2, zero-lag r small",
+    "passed": true,
+    "detail": {
+     "coherence": 0.9917485095939579,
+     "phase": -1.5735400949651108,
+     "r0": -0.00039755021117079877
+    }
+   },
+   {
+    "check": "ch1-ch2 coherence@1.1Hz>0.9",
+    "passed": true,
+    "detail": 0.998825280592793
+   },
+   {
+    "check": "independent ch8: |r|<0.05 with ch1,ch2,ch3",
+    "passed": true,
+    "detail": [
+     -0.0015811751372566954,
+     -0.00112134576535667,
+     0.004807875825278514
+    ]
+   },
+   {
+    "check": "time-varying ch7: weak early, strong late",
+    "passed": true,
+    "detail": {
+     "early": 0.05684790877485082,
+     "late": 0.89731533271373
+    }
+   },
+   {
+    "check": "weak pairs 0.05<|r|<0.6 (ch1-ch5, ch1-ch6)",
+    "passed": true,
+    "detail": [
+     0.3546182354994302,
+     0.29686457291055396
+    ]
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 20000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "channel_1",
+     "channel_2",
+     "channel_3",
+     "channel_4",
+     "channel_5",
+     "channel_6",
+     "channel_7",
+     "channel_8"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1005
+   }
+  ],
+  "F": [
+   {
+    "check": "motif A instances closer to template than random windows",
+    "passed": true,
+    "detail": {
+     "max_motif_dist": 10.393482376315072,
+     "min_random_dist": 10.730926224241925
+    }
+   },
+   {
+    "check": "motif B instances closer than 90% of random windows",
+    "passed": true,
+    "detail": {
+     "max_motif_dist": 4.044373925613121,
+     "p10_random": 6.496627852143548
+    }
+   },
+   {
+    "check": "discord has largest nearest-neighbour distance",
+    "passed": true,
+    "detail": {
+     "discord_nn": 12.362007378555752,
+     "max_other_nn": 6.183000896762797
+    }
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 30000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1006
+   },
+   {
+    "check": "all ground-truth indices are valid CSV row indices (0..n-1)",
+    "passed": true,
+    "detail": {
+     "count": 30,
+     "min": 1500,
+     "max": 27499
+    }
+   }
+  ],
+  "G": [
+   {
+    "check": "strong white-noise frequency effects detected (p<0.01)",
+    "passed": true,
+    "detail": [
+     5.7881361587212886e-05,
+     3.490029903128497e-20,
+     6.36050121686177e-20,
+     6.826578302395361e-64,
+     1.8710667493554918e-10,
+     5.409118674853042e-12,
+     1.0554294750887949e-36,
+     9.589235158908825e-76
+    ]
+   },
+   {
+    "check": "white-noise null false positives <=25% at p<0.05",
+    "passed": true,
+    "detail": {
+     "n_null": 8,
+     "rate": 0.0
+    }
+   },
+   {
+    "check": "sample r near rho for n=2000 white (tol 0.08)",
+    "passed": true,
+    "detail": [
+     [
+      0.0,
+      -0.016
+     ],
+     [
+      0.15,
+      0.158
+     ],
+     [
+      -0.5,
+      -0.509
+     ],
+     [
+      0.0,
+      0.035
+     ],
+     [
+      0.15,
+      0.126
+     ],
+     [
+      -0.5,
+      -0.534
+     ]
+    ]
+   },
+   {
+    "check": "hypothesis count consistent",
+    "passed": true,
+    "detail": 84
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 77280
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "experiment_id",
+     "sample_index",
+     "timestamp_s",
+     "x",
+     "y"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1007
+   },
+   {
+    "check": "timestamps ordered within each experiment",
+    "passed": true,
+    "detail": null
+   }
+  ],
+  "I": [
+   {
+    "check": "all values finite",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "buried 1e-3 component recovered at 11.7 Hz (Hann periodogram, transients excluded)",
+    "passed": true,
+    "detail": {
+     "peak_hz": 11.700820922851562
+    }
+   },
+   {
+    "check": "dynamic range >= 1e10 (max / noise sd)",
+    "passed": true,
+    "detail": 178601691915.98917
+   },
+   {
+    "check": "micro-scale channel 2e-12 tone recovered at 5.3 Hz",
+    "passed": true,
+    "detail": 5.300140380859375
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 20000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal",
+     "signal_micro"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1009
+   }
+  ],
+  "J": [
+   {
+    "check": "channel_1 peak at 0.3 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.3000068664550781,
+     "amp": 1.1999291856719012,
+     "local_median": 0.010757437157588347
+    }
+   },
+   {
+    "check": "channel_1 peak at 0.34 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.34000396728515625,
+     "amp": 0.9080787914342725,
+     "local_median": 0.010757437157588347
+    }
+   },
+   {
+    "check": "channel_1 peak at 0.83 Hz",
+    "passed": true,
+    "detail": {
+     "f_est": 0.8300018310546875,
+     "amp": 0.6996140769109603,
+     "local_median": 0.010757437157588347
+    }
+   },
+   {
+    "check": "ch1->ch3 delay = +40 samples",
+    "passed": true,
+    "detail": 40
+   },
+   {
+    "check": "ch1-ch2 r>0.8; |ch1-ch4|<0.15",
+    "passed": true,
+    "detail": [
+     0.9575407762934203,
+     -0.017167274228086185
+    ]
+   },
+   {
+    "check": "transient burst located at 7000-7079",
+    "passed": true,
+    "detail": 7005
+   },
+   {
+    "check": "change-point mean step ~1.5 (tol 0.4)",
+    "passed": true,
+    "detail": 1.508779697891362
+   },
+   {
+    "check": "persistent 3.7 Hz anomaly present only in 10000-11999",
+    "passed": true,
+    "detail": {
+     "inside": 1.000534102525612,
+     "outside": 0.03712974661860277
+    }
+   },
+   {
+    "check": "variance section std ratio >1.3",
+    "passed": true,
+    "detail": 1.3223784176395945
+   },
+   {
+    "check": "discord NN distance exceeds other windows",
+    "passed": true,
+    "detail": {
+     "discord": 11.350643559236419,
+     "max_other": 9.334016356000735
+    }
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 30000
+   },
+   {
+    "check": "timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no NaN/inf in data file",
+    "passed": true,
+    "detail": null
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "channel_1",
+     "channel_2",
+     "channel_3",
+     "channel_4"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1010
+   },
+   {
+    "check": "all ground-truth indices are valid CSV row indices (0..n-1)",
+    "passed": true,
+    "detail": {
+     "count": 26,
+     "min": 1000,
+     "max": 28149
+    }
+   }
+  ],
+  "H": [
+   {
+    "check": "H_irregular_missing.csv: re-read file reproduces expected validation facts",
+    "passed": true,
+    "detail": {
+     "expected_outcome": "ACCEPT_WITH_WARNINGS",
+     "row_count": 5125,
+     "nan": {
+      "signal_a": 62,
+      "signal_b": 126,
+      "constant_channel": 0
+     },
+     "inf": {
+      "signal_a": 0,
+      "signal_b": 0,
+      "constant_channel": 0
+     },
+     "dup_pairs": 0
+    }
+   },
+   {
+    "check": "H_invalid_duplicate_timestamps.csv: re-read file reproduces expected validation facts",
+    "passed": true,
+    "detail": {
+     "expected_outcome": "REJECT",
+     "row_count": 2000,
+     "nan": {
+      "signal_a": 0,
+      "signal_b": 0,
+      "constant_channel": 0
+     },
+     "inf": {
+      "signal_a": 0,
+      "signal_b": 0,
+      "constant_channel": 0
+     },
+     "dup_pairs": 6
+    }
+   },
+   {
+    "check": "H_invalid_infinite_values.csv: re-read file reproduces expected validation facts",
+    "passed": true,
+    "detail": {
+     "expected_outcome": "REJECT",
+     "row_count": 2000,
+     "nan": {
+      "signal_a": 0,
+      "signal_b": 0,
+      "constant_channel": 0
+     },
+     "inf": {
+      "signal_a": 3,
+      "signal_b": 2,
+      "constant_channel": 0
+     },
+     "dup_pairs": 0
+    }
+   },
+   {
+    "check": "CSV row count equals observation_count in metadata",
+    "passed": true,
+    "detail": 5125
+   },
+   {
+    "check": "no ground-truth column inside data file",
+    "passed": true,
+    "detail": [
+     "timestamp",
+     "signal_a",
+     "signal_b",
+     "constant_channel"
+    ]
+   },
+   {
+    "check": "deterministic regeneration with same seed (data + truth identical)",
+    "passed": true,
+    "detail": 1008
+   },
+   {
+    "check": "main file timestamps strictly increasing",
+    "passed": true,
+    "detail": null
+   }
+  ]
+ }
+}

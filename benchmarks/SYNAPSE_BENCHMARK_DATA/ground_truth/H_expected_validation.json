@@ -1,0 +1,347 @@
+{
+ "dataset": "H",
+ "synthetic": true,
+ "policy": "The generator never repairs data. A correct ingestion layer must report the outcomes below and must not silently repair, interpolate, drop or resample.",
+ "files": {
+  "H_irregular_missing.csv": {
+   "expected_outcome": "ACCEPT_WITH_WARNINGS",
+   "reasons": [
+    "non-uniform sampling",
+    "NaN values present",
+    "constant channel",
+    "large gaps (missing observations)"
+   ],
+   "expected_facts": {
+    "row_count": 5125,
+    "unique_timestamps": 5125,
+    "duplicate_timestamp_pairs": 0,
+    "strictly_increasing": true,
+    "non_decreasing": true,
+    "dt_min": 0.2937715145403672,
+    "dt_median": 0.5073796877266545,
+    "dt_max": 31.055963933094517,
+    "uniformly_sampled": false,
+    "nan_count_by_column": {
+     "signal_a": 62,
+     "signal_b": 126,
+     "constant_channel": 0
+    },
+    "inf_count_by_column": {
+     "signal_a": 0,
+     "signal_b": 0,
+     "constant_channel": 0
+    },
+    "constant_columns": [
+     "constant_channel"
+    ],
+    "large_gaps_over_10x_median_dt": [
+     {
+      "after_row": 1405,
+      "before_row": 1406,
+      "gap_seconds": 20.493830876500283
+     },
+     {
+      "after_row": 2585,
+      "before_row": 2586,
+      "gap_seconds": 31.055963933094517
+     },
+     {
+      "after_row": 3944,
+      "before_row": 3945,
+      "gap_seconds": 15.496586036832468
+     }
+    ]
+   },
+   "nan_row_indices": {
+    "signal_a": [
+     131,
+     132,
+     161,
+     204,
+     226,
+     335,
+     440,
+     731,
+     733,
+     867,
+     1129,
+     1262,
+     1293,
+     1306,
+     1365,
+     1371,
+     1556,
+     1587,
+     1787,
+     1923,
+     2098,
+     2169,
+     2275,
+     2483,
+     2498,
+     2520,
+     2558,
+     2619,
+     2707,
+     2893,
+     3060,
+     3124,
+     3141,
+     3222,
+     3229,
+     3503,
+     3608,
+     3658,
+     3691,
+     3768,
+     3784,
+     3799,
+     3809,
+     3872,
+     3977,
+     4152,
+     4204,
+     4222,
+     4227,
+     4396,
+     4500,
+     4518,
+     4553,
+     4745,
+     4773,
+     4901,
+     4955,
+     4964,
+     5002,
+     5075,
+     5100,
+     5103
+    ],
+    "signal_b": [
+     32,
+     108,
+     109,
+     113,
+     306,
+     308,
+     323,
+     386,
+     423,
+     447,
+     483,
+     551,
+     620,
+     705,
+     719,
+     768,
+     778,
+     840,
+     894,
+     1030,
+     1078,
+     1089,
+     1187,
+     1204,
+     1349,
+     1478,
+     1493,
+     1506,
+     1624,
+     1649,
+     1660,
+     1695,
+     1733,
+     1791,
+     1861,
+     2038,
+     2076,
+     2285,
+     2313,
+     2320,
+     2329,
+     2374,
+     2467,
+     2479,
+     2517,
+     2562,
+     2563,
+     2564,
+     2565,
+     2566,
+     2567,
+     2568,
+     2569,
+     2570,
+     2571,
+     2572,
+     2573,
+     2574,
+     2575,
+     2576,
+     2577,
+     2578,
+     2579,
+     2580,
+     2581,
+     2582,
+     2583,
+     2584,
+     2585,
+     2586,
+     2588,
+     2737,
+     2782,
+     2913,
+     3006,
+     3009,
+     3019,
+     3039,
+     3044,
+     3078,
+     3284,
+     3297,
+     3384,
+     3385,
+     3446,
+     3625,
+     3630,
+     3640,
+     3647,
+     3683,
+     3789,
+     3803,
+     3961,
+     3983,
+     3989,
+     4117,
+     4118,
+     4181,
+     4264,
+     4293,
+     4316,
+     4341,
+     4365,
+     4370,
+     4398,
+     4454,
+     4481,
+     4485,
+     4491,
+     4493,
+     4552,
+     4571,
+     4575,
+     4663,
+     4694,
+     4702,
+     4748,
+     4853,
+     4885,
+     4899,
+     4950,
+     4951,
+     5025,
+     5037,
+     5044,
+     5071
+    ]
+   }
+  },
+  "H_invalid_duplicate_timestamps.csv": {
+   "expected_outcome": "REJECT",
+   "reasons": [
+    "duplicate timestamps"
+   ],
+   "expected_facts": {
+    "row_count": 2000,
+    "unique_timestamps": 1994,
+    "duplicate_timestamp_pairs": 6,
+    "strictly_increasing": false,
+    "non_decreasing": true,
+    "dt_min": 0.0,
+    "dt_median": 0.5121992817756826,
+    "dt_max": 20.493830876500283,
+    "uniformly_sampled": false,
+    "nan_count_by_column": {
+     "signal_a": 0,
+     "signal_b": 0,
+     "constant_channel": 0
+    },
+    "inf_count_by_column": {
+     "signal_a": 0,
+     "signal_b": 0,
+     "constant_channel": 0
+    },
+    "constant_columns": [
+     "constant_channel"
+    ],
+    "large_gaps_over_10x_median_dt": [
+     {
+      "after_row": 1405,
+      "before_row": 1406,
+      "gap_seconds": 20.493830876500283
+     }
+    ]
+   },
+   "duplicate_row_indices": [
+    200,
+    500,
+    900,
+    1200,
+    1500,
+    1800
+   ],
+   "note": "row index j has the same timestamp as row j-1"
+  },
+  "H_invalid_infinite_values.csv": {
+   "expected_outcome": "REJECT",
+   "reasons": [
+    "non-finite (inf) values"
+   ],
+   "expected_facts": {
+    "row_count": 2000,
+    "unique_timestamps": 2000,
+    "duplicate_timestamp_pairs": 0,
+    "strictly_increasing": true,
+    "non_decreasing": true,
+    "dt_min": 0.2937715145403672,
+    "dt_median": 0.5120528411048326,
+    "dt_max": 20.493830876500283,
+    "uniformly_sampled": false,
+    "nan_count_by_column": {
+     "signal_a": 0,
+     "signal_b": 0,
+     "constant_channel": 0
+    },
+    "inf_count_by_column": {
+     "signal_a": 3,
+     "signal_b": 2,
+     "constant_channel": 0
+    },
+    "constant_columns": [
+     "constant_channel"
+    ],
+    "large_gaps_over_10x_median_dt": [
+     {
+      "after_row": 1405,
+      "before_row": 1406,
+      "gap_seconds": 20.493830876500283
+     }
+    ]
+   },
+   "positive_inf": {
+    "signal_a": [
+     150,
+     700,
+     1300
+    ]
+   },
+   "negative_inf": {
+    "signal_b": [
+     1000,
+     1700
+    ]
+   }
+  }
+ }
+}

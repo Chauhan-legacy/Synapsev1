@@ -1,0 +1,56 @@
+{
+ "dataset": "F",
+ "synthetic": true,
+ "motif_A": {
+  "description": "Hann-windowed two-tone waveform (4 and 9 cycles per 200 samples), amplitude 3, with per-instance amplitude scale U(0.9,1.1), time-stretch U(0.99,1.01) and N(0,0.1) noise",
+  "length_samples": 200,
+  "start_indices": [
+   1500,
+   4800,
+   8200,
+   11800,
+   15500,
+   18900,
+   24000,
+   27300
+  ],
+  "end_indices": [
+   1699,
+   4999,
+   8399,
+   11999,
+   15699,
+   19099,
+   24199,
+   27499
+  ]
+ },
+ "motif_B": {
+  "description": "Repeated transient: double-exponential pulse (tau 12 and 3 samples), peak 4, with same distortion model",
+  "length_samples": 60,
+  "start_indices": [
+   3000,
+   6500,
+   10000,
+   13500,
+   17000,
+   25500
+  ],
+  "end_indices": [
+   3059,
+   6559,
+   10059,
+   13559,
+   17059,
+   25559
+  ]
+ },
+ "discord": {
+  "description": "non-repeating asymmetric sawtooth segment (Hann-windowed, amplitude 4)",
+  "start_index": 21000,
+  "end_index": 21299,
+  "length_samples": 300
+ },
+ "quasi_periodic_background": "sin(phase), instantaneous frequency 0.2 Hz + 0.002*AR(1)(phi=0.999) jitter",
+ "distance_definition": "z-normalised Euclidean distance between windows"
+}

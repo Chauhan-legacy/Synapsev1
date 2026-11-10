@@ -1,0 +1,54 @@
+{
+ "dataset": "A",
+ "synthetic": true,
+ "expected_spectral_peaks": [
+  {
+   "frequency_hz": 0.0703,
+   "amplitude": 1.5,
+   "phase_rad": 0.6,
+   "note": "fundamental 1"
+  },
+  {
+   "frequency_hz": 0.1907,
+   "amplitude": 1.0,
+   "phase_rad": 2.1,
+   "note": "fundamental 2"
+  },
+  {
+   "frequency_hz": 0.4311,
+   "amplitude": 0.6,
+   "phase_rad": -1.0,
+   "note": "fundamental 3"
+  },
+  {
+   "frequency_hz": 0.3814,
+   "amplitude": 0.4,
+   "phase_rad": 0.3,
+   "note": "2nd harmonic of 0.1907 Hz"
+  },
+  {
+   "frequency_hz": 0.5721,
+   "amplitude": 0.2,
+   "phase_rad": -2.4,
+   "note": "3rd harmonic of 0.1907 Hz"
+  }
+ ],
+ "number_of_peaks": 5,
+ "sampling_rate_hz": 2.0,
+ "nyquist_hz": 1.0,
+ "frequency_resolution_hz": 0.0001,
+ "snr_db": 8.034548168456102,
+ "harmonic_relationships": [
+  {
+   "fundamental_hz": 0.1907,
+   "harmonic_orders": [
+    2,
+    3
+   ],
+   "harmonic_hz": [
+    0.3814,
+    0.5721
+   ]
+  }
+ ]
+}
