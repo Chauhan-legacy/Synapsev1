@@ -43,6 +43,8 @@ import { Pulsar3DLighthouse } from '../components/astronomy/Pulsar3DLighthouse';
 import { Solar3DFlare } from '../components/astronomy/Solar3DFlare';
 import { Desmos3DAttractor } from '../components/dynamics/Desmos3DAttractor';
 import { Hilbert3DHelix } from '../components/dynamics/Hilbert3DHelix';
+import { WignerVille3DSurface } from '../components/dynamics/WignerVille3DSurface';
+import { SpectrogramHeatmap2D } from '../components/dynamics/SpectrogramHeatmap2D';
 
 export interface PanelConfig {
   id: string;
@@ -369,8 +371,33 @@ export const InstrumentRackView: React.FC = () => {
   const [layoutPreset, setLayoutPreset] = useState<'compact' | 'comfortable' | 'presentation'>('comfortable');
   const [panel3DModes, setPanel3DModes] = useState<Record<string, boolean>>({});
 
+  const compatible3DIds = [
+    'oscillogram',
+    'stft_spectrogram',
+    'cwt_scalogram',
+    'phase_space',
+    'hilbert',
+    'ligo_gw_strain',
+    'kepler_transit',
+    'goes_solar_flare',
+    'pulsar_folding',
+  ];
+
+  const isAll3DActive = compatible3DIds.every((id) => panel3DModes[id]);
+
   const togglePanel3D = (id: string) => {
     setPanel3DModes((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleToggleAll3D = () => {
+    const nextState = !isAll3DActive;
+    setPanel3DModes((prev) => {
+      const updated = { ...prev };
+      compatible3DIds.forEach((id) => {
+        updated[id] = nextState;
+      });
+      return updated;
+    });
   };
 
   // Shared Linked Cursor (Hover time in seconds across time panels)
@@ -488,21 +515,43 @@ export const InstrumentRackView: React.FC = () => {
       };
     });
 
-    // 4. STFT Time-Frequency Data (8 time slices)
+    // 4. STFT Time-Frequency Data & Continuous Matrix
     const stftData: Array<{ time: string; f5: number; f14: number; f35: number; chirp: number }> = [];
-    for (let sIdx = 0; sIdx < 8; sIdx++) {
-      const tSec = (sIdx * (n * dt)) / 8;
+    const nTimeSlices = 24;
+    const nFreqBins = 16;
+    const stftTimes: string[] = [];
+    const stftFreqs: string[] = Array.from({ length: nFreqBins }, (_, i) => `${((i / (nFreqBins - 1)) * 50).toFixed(0)} Hz`);
+    const stftMatrix: number[][] = [];
+
+    for (let sIdx = 0; sIdx < nTimeSlices; sIdx++) {
+      const tSec = (sIdx * (n * dt)) / nTimeSlices;
+      stftTimes.push(`${tSec.toFixed(1)}s`);
       const chirpVal = tSec >= 3.0 && tSec <= 6.5 ? 2.8 : 0.4;
-      stftData.push({
-        time: `${tSec.toFixed(1)}s`,
-        f5: 3.2,
-        f14: 2.1,
-        f35: 1.4,
-        chirp: chirpVal,
-      });
+      if (sIdx % 3 === 0) {
+        stftData.push({
+          time: `${tSec.toFixed(1)}s`,
+          f5: 3.2,
+          f14: 2.1,
+          f35: 1.4,
+          chirp: chirpVal,
+        });
+      }
+
+      const row: number[] = [];
+      const tFrac = sIdx / nTimeSlices;
+      for (let f = 0; f < nFreqBins; f++) {
+        const freqHz = (f / (nFreqBins - 1)) * 50;
+        let energy = 0.08 + 0.05 * Math.sin(sIdx * 0.4 + f);
+        if (Math.abs(freqHz - 5.0) < 3.0) energy += 2.8;
+        if (Math.abs(freqHz - 14.0) < 3.0) energy += 2.2;
+        const chirpCenter = 8 + 27 * tFrac;
+        if (Math.abs(freqHz - chirpCenter) < 3.5) energy += 3.4;
+        row.push(Number(energy.toFixed(3)));
+      }
+      stftMatrix.push(row);
     }
 
-    // 5. CWT Wavelet Scalogram (8 scale octaves)
+    // 5. CWT Wavelet Scalogram Matrix (8 scale octaves)
     const cwtData = [
       { scale: 'Scale 1 (2 Hz)', power: 0.42, entropy: 1.1 },
       { scale: 'Scale 2 (5 Hz)', power: 3.85, entropy: 0.3 },
@@ -513,6 +562,22 @@ export const InstrumentRackView: React.FC = () => {
       { scale: 'Scale 7 (35 Hz)', power: 1.95, entropy: 0.5 },
       { scale: 'Scale 8 (50 Hz)', power: 0.31, entropy: 1.2 },
     ];
+    const cwtTimes = stftTimes;
+    const cwtFreqs = ['2 Hz', '5 Hz', '10 Hz', '14 Hz', '20 Hz', '28 Hz', '35 Hz', '50 Hz'];
+    const cwtMatrix: number[][] = [];
+    for (let t = 0; t < nTimeSlices; t++) {
+      const row: number[] = [];
+      const tFrac = t / nTimeSlices;
+      for (let o = 0; o < 8; o++) {
+        let p = 0.3 + 0.1 * Math.cos(t * 0.5 + o);
+        if (o === 1) p += 3.2; // 5 Hz
+        if (o === 3) p += 2.5; // 14 Hz
+        if (o === 6) p += 1.8; // 35 Hz
+        if (Math.abs(o - Math.floor(tFrac * 7)) <= 1) p += 2.9; // transient ridge
+        row.push(Number(p.toFixed(3)));
+      }
+      cwtMatrix.push(row);
+    }
 
     // 6. Takens Embedding (tau = 5)
     const tau = 5;
@@ -639,7 +704,13 @@ export const InstrumentRackView: React.FC = () => {
       spectrumData,
       multitaperData,
       stftData,
+      stftMatrix,
+      stftTimes,
+      stftFreqs,
       cwtData,
+      cwtMatrix,
+      cwtTimes,
+      cwtFreqs,
       phaseData,
       poincareData,
       hilbertData,
@@ -885,6 +956,21 @@ export const InstrumentRackView: React.FC = () => {
             </button>
           </div>
 
+          {/* Global 3D Multi-Rack Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleAll3D}
+            className={`px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 border transition-all ${
+              isAll3DActive
+                ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-2xs'
+                : 'bg-[#FFFFFF] text-[#4A5060] border-[#DDD6C7] hover:bg-[#EFEBE0]'
+            }`}
+            title="Toggle 3D Viewport on all compatible instruments simultaneously"
+          >
+            <Box className="w-3.5 h-3.5" />
+            <span>{isAll3DActive ? '3D Rack: ON' : '3D Rack: OFF'}</span>
+          </button>
+
           {/* Reset Rack */}
           <button
             type="button"
@@ -955,18 +1041,28 @@ export const InstrumentRackView: React.FC = () => {
                 {/* Panel Header */}
                 <div className="space-y-1.5 pb-2 border-b border-[#DDD6C7]/60">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#E8F5E9] text-[#2E7D32] border border-[#2E7D32]/20">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
+                      <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-[#E8F5E9] text-[#2E7D32] border border-[#2E7D32]/20">
                         {panel.category}
                       </span>
-                      <h3 className="font-mono text-xs font-bold text-[#1F2430] truncate" title={panel.title}>
+                      <h3 className="font-mono text-xs font-bold text-[#1F2430] leading-tight" title={panel.title}>
                         {panel.title}
                       </h3>
                     </div>
 
                     {/* Window Controls */}
                     <div className="flex items-center space-x-1 text-[#6B6F7B] shrink-0">
-                      {['phase_space', 'ligo_gw_strain', 'kepler_transit', 'goes_solar_flare', 'pulsar_folding', 'hilbert'].includes(panel.id) && (
+                      {[
+                        'oscillogram',
+                        'stft_spectrogram',
+                        'cwt_scalogram',
+                        'phase_space',
+                        'ligo_gw_strain',
+                        'kepler_transit',
+                        'goes_solar_flare',
+                        'pulsar_folding',
+                        'hilbert',
+                      ].includes(panel.id) && (
                         <button
                           type="button"
                           onClick={() => togglePanel3D(panel.id)}
@@ -975,7 +1071,7 @@ export const InstrumentRackView: React.FC = () => {
                               ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-2xs'
                               : 'bg-[#F6F3EC] text-[#4A5060] border-[#DDD6C7] hover:text-[#1F2430]'
                           }`}
-                          title="Toggle 3D Simulation"
+                          title="Toggle 3D Viewport"
                         >
                           <Box className="w-3 h-3" />
                           <span>{panel3DModes[panel.id] ? '3D Active' : '3D View'}</span>
@@ -1074,6 +1170,29 @@ export const InstrumentRackView: React.FC = () => {
                         </div>
                       ) : panel3DModes[panel.id] ? (
                         <div className="w-full h-full min-h-[240px]">
+                          {panel.id === 'stft_spectrogram' && (
+                            <WignerVille3DSurface
+                              densityMatrix={processedData.stftMatrix}
+                              timeLabels={processedData.stftTimes}
+                              freqLabels={processedData.stftFreqs}
+                              fs={processedData.stats.fs}
+                            />
+                          )}
+                          {panel.id === 'cwt_scalogram' && (
+                            <WignerVille3DSurface
+                              densityMatrix={processedData.cwtMatrix}
+                              timeLabels={processedData.cwtTimes}
+                              freqLabels={processedData.cwtFreqs}
+                              fs={processedData.stats.fs}
+                            />
+                          )}
+                          {panel.id === 'oscillogram' && (
+                            <Hilbert3DHelix
+                              signal={processedData.rawSignal}
+                              envelope={processedData.hilbertEnvelope}
+                              fs={processedData.stats.fs}
+                            />
+                          )}
                           {panel.id === 'ligo_gw_strain' && <Ligo3DSpacetime />}
                           {panel.id === 'kepler_transit' && <Exoplanet3DTransit />}
                           {panel.id === 'goes_solar_flare' && <Solar3DFlare />}
@@ -1086,6 +1205,19 @@ export const InstrumentRackView: React.FC = () => {
                             />
                           )}
                         </div>
+                      ) : panel.id === 'stft_spectrogram' ? (
+                        <SpectrogramHeatmap2D
+                          matrix={processedData.stftMatrix}
+                          timeLabels={processedData.stftTimes}
+                          freqLabels={processedData.stftFreqs}
+                        />
+                      ) : panel.id === 'cwt_scalogram' ? (
+                        <SpectrogramHeatmap2D
+                          matrix={processedData.cwtMatrix}
+                          timeLabels={processedData.cwtTimes}
+                          freqLabels={processedData.cwtFreqs}
+                          isWavelet={true}
+                        />
                       ) : (
                         <ResponsiveContainer width="100%" height="100%">
                           {panel.id === 'oscillogram' ? (
@@ -1129,24 +1261,6 @@ export const InstrumentRackView: React.FC = () => {
                               <ReferenceLine y={13.8} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'F_crit=13.8', fill: '#C0392B', fontSize: 9 }} />
                               <Line type="monotone" dataKey="fStat" stroke="#0F766E" strokeWidth={1.8} dot={false} isAnimationActive={false} />
                             </LineChart>
-                          ) : panel.id === 'stft_spectrogram' ? (
-                            <BarChart data={processedData.stftData} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
-                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
-                              <XAxis dataKey="time" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                              <Bar dataKey="f5" fill="#0072B2" stackId="a" />
-                              <Bar dataKey="f14" fill="#0F766E" stackId="a" />
-                              <Bar dataKey="chirp" fill="#E69F00" stackId="a" />
-                            </BarChart>
-                          ) : panel.id === 'cwt_scalogram' ? (
-                            <BarChart data={processedData.cwtData} layout="vertical" margin={{ top: 8, right: 10, left: 15, bottom: 0 }}>
-                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" horizontal={false} />
-                              <XAxis type="number" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                              <YAxis type="category" dataKey="scale" tick={{ fill: '#6B6F7B', fontSize: 8, fontFamily: 'JetBrains Mono' }} />
-                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                              <Bar dataKey="power" fill="#009E73" radius={[0, 3, 3, 0]} isAnimationActive={false} />
-                            </BarChart>
                           ) : panel.id === 'bispectrum' ? (
                             <BarChart
                               data={[

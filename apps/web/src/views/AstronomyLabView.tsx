@@ -38,6 +38,7 @@ import {
   Columns,
   Download,
   CheckCircle2,
+  Sliders,
 } from 'lucide-react';
 import {
   LineChart,
@@ -62,13 +63,24 @@ export type ObservatoryTab =
   | 'pulsar'
   | 's2_cmb'
   | 's3_frb'
-  | 's9_kerr';
+  | 's9_kerr'
+  | 'custom_sim';
 
 export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethodCard }) => {
-  const { selectDataset } = useSignal();
+  const { selectDataset, loadCustomSignal } = useSignal();
   const [activeTab, setActiveTab] = useState<ObservatoryTab>('ligo');
   const [displayMode, setDisplayMode] = useState<'3d' | 'timeseries' | 'dual'>('3d');
   const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
+
+  // Custom Cosmic Simulation Sandbox State
+  const [simType, setSimType] = useState<'merger' | 'exoplanet' | 'pulsar'>('merger');
+  const [simM1, setSimM1] = useState<number>(36.0); // M_sun
+  const [simM2, setSimM2] = useState<number>(29.0); // M_sun
+  const [simDistMpc, setSimDistMpc] = useState<number>(410); // Mpc
+  const [simRp, setSimRp] = useState<number>(1.17); // R_Earth
+  const [simRstar, setSimRstar] = useState<number>(1.0); // R_Sun
+  const [simPeriodDays, setSimPeriodDays] = useState<number>(129.9);
+  const [simPulsarMs, setSimPulsarMs] = useState<number>(33.39); // ms
 
   // Astrophysics Telemetry
   const ligoData = useMemo(() => getLigoGwStrainData(), []);
@@ -203,6 +215,120 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
     ];
   }, []);
 
+  // Custom Cosmic Simulation Synthesis Engine
+  const customSimTelemetry = useMemo(() => {
+    if (simType === 'merger') {
+      const chirpMass = Math.pow(simM1 * simM2, 3 / 5) / Math.pow(simM1 + simM2, 1 / 5);
+      const totalMass = simM1 + simM2;
+      const fIsco = Math.round(4398 / totalMass);
+      const peakStrain = ((1.05e-21 * Math.pow(chirpMass / 28.1, 5 / 3)) / (simDistMpc / 410)).toExponential(2);
+
+      const series: Array<{ timeMs: number; strain: number; envelope: number }> = [];
+      for (let t = -120; t <= 30; t += 1) {
+        const tSec = t / 1000;
+        let amp = 0;
+        let phase = 0;
+        if (t < 0) {
+          const tau = Math.max(0.001, -tSec);
+          amp = 0.8 * Math.pow(tau, -0.25) * Math.min(1.8, Math.exp(t / 40));
+          phase = -2 * Math.pow(tau, 5 / 8) * (fIsco / 12);
+        } else {
+          amp = 1.4 * Math.exp(-t / 8.0);
+          phase = 2 * Math.PI * (fIsco * 0.7) * tSec;
+        }
+        series.push({
+          timeMs: t,
+          strain: Number((amp * Math.cos(phase)).toFixed(3)),
+          envelope: Number(amp.toFixed(3)),
+        });
+      }
+      return { type: 'merger', chirpMass: Number(chirpMass.toFixed(2)), totalMass, fIsco, peakStrain, series };
+    } else if (simType === 'exoplanet') {
+      const depthPct = Number((Math.pow((simRp * 0.00915) / simRstar, 2) * 100).toFixed(3));
+      const durHours = Number((4.8 * Math.pow(simPeriodDays / 129.9, 1 / 3)).toFixed(1));
+      const series: Array<{ timeHours: number; observedFlux: number; transitModel: number }> = [];
+      for (let t = -6; t <= 6; t += 0.1) {
+        const inTransit = Math.abs(t) <= durHours / 2;
+        const ingress = Math.abs(t) <= durHours / 2 + 0.4 && Math.abs(t) > durHours / 2;
+        let model = 1.0;
+        if (inTransit) {
+          model = 1.0 - (depthPct / 100) * (1 - 0.2 * Math.pow(t / (durHours / 2), 2));
+        } else if (ingress) {
+          model = 1.0 - (depthPct / 100) * 0.5;
+        }
+        const noise = ((Math.sin(t * 37) * 43758.5453) % 1) * 0.0008;
+        series.push({
+          timeHours: Number(t.toFixed(1)),
+          observedFlux: Number((model + noise).toFixed(5)),
+          transitModel: Number(model.toFixed(5)),
+        });
+      }
+      return { type: 'exoplanet', depthPct, durHours, series };
+    } else {
+      const series: Array<{ phase: number; intensity: number; baseline: number }> = [];
+      for (let p = 0; p <= 1.0; p += 0.01) {
+        const peak1 = Math.exp(-Math.pow((p - 0.35) / 0.035, 2));
+        const peak2 = 0.45 * Math.exp(-Math.pow((p - 0.75) / 0.05, 2));
+        const noise = ((Math.sin(p * 73) * 12345.67) % 1) * 0.04;
+        series.push({
+          phase: Number(p.toFixed(2)),
+          intensity: Number((peak1 + peak2 + 0.15 + noise).toFixed(3)),
+          baseline: 0.15,
+        });
+      }
+      return { type: 'pulsar', periodMs: simPulsarMs, series };
+    }
+  }, [simType, simM1, simM2, simDistMpc, simRp, simRstar, simPeriodDays, simPulsarMs]);
+
+  const handleIngestSimulatedSignal = () => {
+    let name = '';
+    let values: number[] = [];
+    let times: number[] = [];
+    let fs = 200;
+
+    if (simType === 'merger') {
+      name = `Custom_BBH_Merger_${simM1}M_${simM2}M_${simDistMpc}Mpc.csv`;
+      fs = 4096;
+      times = customSimTelemetry.series.map((s: any) => s.timeMs / 1000);
+      values = customSimTelemetry.series.map((s: any) => s.strain);
+    } else if (simType === 'exoplanet') {
+      name = `Custom_Exoplanet_Transit_${simRp}Re_${simPeriodDays}d.csv`;
+      fs = 10;
+      times = customSimTelemetry.series.map((s: any) => s.timeHours * 3600);
+      values = customSimTelemetry.series.map((s: any) => s.observedFlux);
+    } else {
+      name = `Custom_Pulsar_Folding_${simPulsarMs}ms.csv`;
+      fs = 1000;
+      times = customSimTelemetry.series.map((s: any) => s.phase * (simPulsarMs / 1000));
+      values = customSimTelemetry.series.map((s: any) => s.intensity);
+    }
+
+    loadCustomSignal({
+      id: `custom_sim_${Date.now()}`,
+      filename: name,
+      samplingRate: fs,
+      timestamps: times,
+      channels: { 'Channel 1': values },
+      channelNames: ['Channel 1'],
+      duration: times[times.length - 1] - times[0],
+      quality: {
+        total_samples: values.length,
+        channel_count: 1,
+        sampling_rate: fs,
+        is_uniform: true,
+        timestamp_jitter_pct: 0.0,
+        nan_count: 0,
+        infinite_count: 0,
+        clipping_count: 0,
+        content_hash_sha256: `sha256_custom_sim_${Date.now()}`,
+        warnings: [],
+      },
+    });
+
+    setIngestSuccess(`Ingested ${name} directly into SYNAPSE Workbench.`);
+    setTimeout(() => setIngestSuccess(null), 3500);
+  };
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto font-sans pb-20">
       {/* 1. Header with Generous Scientific Spacing */}
@@ -243,7 +369,7 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
           Select Cosmic Observatory:
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {/* LIGO */}
           <button
             type="button"
@@ -368,6 +494,24 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
             </div>
             <div className="text-xs font-bold leading-tight truncate">Black Hole</div>
             <div className="text-[10px] opacity-75 mt-0.5">Photon Shadow</div>
+          </button>
+
+          {/* Custom Cosmic Sandbox */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('custom_sim')}
+            className={`p-3 rounded-lg border text-left transition-all font-mono ${
+              activeTab === 'custom_sim'
+                ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-sm ring-1 ring-[#0F766E]'
+                : 'bg-[#FFFFFF] border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430] hover:bg-[#F9F7F1]'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sliders className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[10px] font-bold uppercase opacity-80">Sandbox</span>
+            </div>
+            <div className="text-xs font-bold leading-tight truncate">Custom Sim</div>
+            <div className="text-[10px] opacity-75 mt-0.5">Live Parameter Lab</div>
           </button>
         </div>
       </div>
@@ -753,6 +897,263 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 8. CUSTOM COSMIC SIMULATOR SANDBOX */}
+      {activeTab === 'custom_sim' && (
+        <div className="space-y-4 font-sans">
+          {/* Controls & Configuration Card */}
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-5 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DDD6C7]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#0F766E]" />
+                  <h3 className="text-sm font-bold text-[#1F2430]">Custom Astrophysical Parameter Sandbox</h3>
+                </div>
+                <p className="text-xs text-[#6B6F7B] mt-0.5">
+                  Tune stellar masses, orbital radii, or rotational periods to generate custom gravitational strains and light curves.
+                </p>
+              </div>
+
+              {/* Sub-phenomenon switch */}
+              <div className="flex items-center border border-[#DDD6C7] rounded-lg bg-[#F6F3EC] p-0.5 text-xs font-mono">
+                <button
+                  type="button"
+                  onClick={() => setSimType('merger')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    simType === 'merger' ? 'bg-[#0F766E] text-white font-bold shadow-2xs' : 'text-[#4A5060]'
+                  }`}
+                >
+                  Binary Merger
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimType('exoplanet')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    simType === 'exoplanet' ? 'bg-[#0F766E] text-white font-bold shadow-2xs' : 'text-[#4A5060]'
+                  }`}
+                >
+                  Exoplanet Transit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimType('pulsar')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    simType === 'pulsar' ? 'bg-[#0F766E] text-white font-bold shadow-2xs' : 'text-[#4A5060]'
+                  }`}
+                >
+                  Pulsar Timing
+                </button>
+              </div>
+            </div>
+
+            {/* Sliders Grid */}
+            {simType === 'merger' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Primary Mass (m₁):</span>
+                    <span className="font-bold text-[#0F766E]">{simM1.toFixed(1)} M_☉</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="80"
+                    step="1"
+                    value={simM1}
+                    onChange={(e) => setSimM1(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Secondary Mass (m₂):</span>
+                    <span className="font-bold text-[#0F766E]">{simM2.toFixed(1)} M_☉</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="80"
+                    step="1"
+                    value={simM2}
+                    onChange={(e) => setSimM2(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Luminosity Distance (d_L):</span>
+                    <span className="font-bold text-[#0F766E]">{simDistMpc} Mpc</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="100"
+                    max="2000"
+                    step="50"
+                    value={simDistMpc}
+                    onChange={(e) => setSimDistMpc(parseInt(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            {simType === 'exoplanet' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Planet Radius (R_p):</span>
+                    <span className="font-bold text-[#0F766E]">{simRp.toFixed(2)} R_⊕</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="4.0"
+                    step="0.05"
+                    value={simRp}
+                    onChange={(e) => setSimRp(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Star Radius (R_*):</span>
+                    <span className="font-bold text-[#0F766E]">{simRstar.toFixed(2)} R_☉</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.4"
+                    max="2.5"
+                    step="0.05"
+                    value={simRstar}
+                    onChange={(e) => setSimRstar(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Orbital Period (P):</span>
+                    <span className="font-bold text-[#0F766E]">{simPeriodDays.toFixed(1)} days</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2"
+                    max="365"
+                    step="2"
+                    value={simPeriodDays}
+                    onChange={(e) => setSimPeriodDays(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            {simType === 'pulsar' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Spin Period (P):</span>
+                    <span className="font-bold text-[#0F766E]">{simPulsarMs.toFixed(2)} ms</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.5"
+                    max="250"
+                    step="0.5"
+                    value={simPulsarMs}
+                    onChange={(e) => setSimPulsarMs(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg flex items-center justify-between">
+                  <span className="text-[#6B6F7B]">Rotation Rate (Ω):</span>
+                  <span className="font-bold text-[#1F2430]">{(1000 / simPulsarMs).toFixed(1)} rev/sec</span>
+                </div>
+              </div>
+            )}
+
+            {/* Derived Physical Equations & Real-time Readout */}
+            <div className="p-3 bg-[#EFEBE0] border border-[#DDD6C7] rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
+              <div className="text-[#1F2430]">
+                {simType === 'merger' && (
+                  <span>Chirp Mass: <strong>M_c = {customSimTelemetry.chirpMass} M_☉</strong> • Total Mass: <strong>{customSimTelemetry.totalMass} M_☉</strong> • f_ISCO: <strong>{customSimTelemetry.fIsco} Hz</strong> • Peak Strain: <strong>h ~ {customSimTelemetry.peakStrain}</strong></span>
+                )}
+                {simType === 'exoplanet' && (
+                  <span>Transit Depth: <strong>ΔF = {customSimTelemetry.depthPct}%</strong> • Ingress-to-Egress: <strong>{customSimTelemetry.durHours} hours</strong></span>
+                )}
+                {simType === 'pulsar' && (
+                  <span>Period P: <strong>{simPulsarMs} ms</strong> • Relativistic Synchrotron Beaming Active</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleIngestSimulatedSignal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0F766E] text-white hover:bg-[#0D655E] text-xs font-bold transition-colors shadow-2xs shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Ingest Simulation into Workbench</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3D Simulation Canvas */}
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
+            <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+              <Box className="w-4 h-4 text-[#0F766E]" />
+              <span>
+                {simType === 'merger' && '3D Spacetime Quadrupole Metric Ripple [Custom Chirp]'}
+                {simType === 'exoplanet' && '3D Custom Exoplanet Stellar Occultation'}
+                {simType === 'pulsar' && '3D Custom Synchrotron Pulsar Lighthouse'}
+              </span>
+            </div>
+            {simType === 'merger' && <Ligo3DSpacetime />}
+            {simType === 'exoplanet' && <Exoplanet3DTransit />}
+            {simType === 'pulsar' && <Pulsar3DLighthouse />}
+          </div>
+
+          {/* Live Synthesized Chart */}
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
+            <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#0F766E]" />
+              <span>Live Synthesized Astrophysical Time-Series Profile</span>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                {simType === 'merger' ? (
+                  <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="timeMs" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                    <ReferenceLine x={0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Merger', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Line type="monotone" dataKey="strain" stroke="#1F2430" strokeWidth={1.75} dot={false} />
+                    <Line type="monotone" dataKey="envelope" stroke="#0F766E" strokeWidth={1.5} strokeDasharray="3 3" dot={false} />
+                  </LineChart>
+                ) : simType === 'exoplanet' ? (
+                  <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="timeHours" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <YAxis domain={['dataMin - 0.002', 1.002]} tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                    <Line type="monotone" dataKey="observedFlux" stroke="#1F2430" strokeWidth={1.5} dot={{ r: 1.5, fill: '#1F2430' }} />
+                    <Line type="monotone" dataKey="transitModel" stroke="#0F766E" strokeWidth={2} dot={false} />
+                  </LineChart>
+                ) : (
+                  <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="phase" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                    <Line type="monotone" dataKey="intensity" stroke="#1F2430" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="baseline" stroke="#6B6F7B" strokeWidth={1} strokeDasharray="3 3" dot={false} />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSignal } from '../context/SignalContext';
+import { SignalData } from '../types/signal';
 import { MathFormula } from '../components/common/MathFormula';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
 import { ExportBar } from '../components/common/ExportBar';
@@ -37,6 +38,7 @@ import {
   Download,
   CheckCircle2,
   Grid,
+  Sliders,
 } from 'lucide-react';
 import {
   LineChart,
@@ -61,13 +63,26 @@ export type PhysicsTab =
   | 's6_tokamak'
   | 's7_ising'
   | 's8_seismic'
-  | 's10_reactor';
+  | 's10_reactor'
+  | 'custom_sim';
 
 export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard }) => {
-  const { selectDataset } = useSignal();
+  const { selectDataset, loadCustomSignal } = useSignal();
   const [activeTab, setActiveTab] = useState<PhysicsTab>('s1_cern');
   const [displayMode, setDisplayMode] = useState<'3d' | 'timeseries' | 'dual'>('3d');
   const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
+
+  // Custom Physics Simulation Sandbox State
+  const [simType, setSimType] = useState<'collider' | 'reactor' | 'ising'>('collider');
+  const [simMassGev, setSimMassGev] = useState<number>(125.09); // GeV
+  const [simWidthGev, setSimWidthGev] = useState<number>(3.5); // GeV
+  const [simEnergyTev, setSimEnergyTev] = useState<number>(13.0); // TeV
+  const [simRodPct, setSimRodPct] = useState<number>(35); // %
+  const [simReactivityPcm, setSimReactivityPcm] = useState<number>(-120); // pcm
+  const [simDelayedBeta, setSimDelayedBeta] = useState<number>(0.0065);
+  const [simTempRatio, setSimTempRatio] = useState<number>(1.05); // T / Tc
+  const [simExtFieldB, setSimExtFieldB] = useState<number>(0.1); // B field
+  const [simCouplingJ, setSimCouplingJ] = useState<number>(1.0); // J
 
   // Calibrated Telemetry Datasets
   const cernData = useMemo(() => getCernHiggsData(), []);
@@ -77,6 +92,144 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
   const isingData = useMemo(() => getIsingModelData(), []);
   const seismicData = useMemo(() => getSeismicPremData(), []);
   const reactorData = useMemo(() => getReactorKineticsData(), []);
+
+  // Custom Simulator Mathematical Synthesis
+  const customSimTelemetry = useMemo(() => {
+    if (simType === 'collider') {
+      const nPts = 100;
+      const mMin = 105;
+      const mMax = 155;
+      const series = [];
+      const m0 = simMassGev;
+      const gamma = simWidthGev;
+      for (let i = 0; i <= nPts; i++) {
+        const m = mMin + (i / nPts) * (mMax - mMin);
+        const qcdBkg = 1800 * Math.exp(-0.028 * (m - 100));
+        const bwNumerator = 350 * gamma * gamma;
+        const bwDenominator = Math.pow(m * m - m0 * m0, 2) + Math.pow(m0 * gamma, 2);
+        const bwPeak = (bwNumerator / Math.max(1, bwDenominator)) * 20000;
+        series.push({
+          massGev: Number(m.toFixed(2)),
+          totalEvents: Math.round(qcdBkg + bwPeak),
+          qcdBackground: Math.round(qcdBkg),
+          signalResonance: Math.round(bwPeak),
+        });
+      }
+      return {
+        series,
+        fwhm: `${gamma.toFixed(2)} GeV`,
+        significance: `${(5.4 * (125.09 / Math.max(80, simMassGev)) * (3.5 / Math.max(0.5, gamma))).toFixed(1)} σ`,
+      };
+    } else if (simType === 'reactor') {
+      const nPts = 120;
+      const series = [];
+      const rho = (simReactivityPcm * 1e-5) - (simRodPct / 100) * 0.004;
+      const beta = simDelayedBeta;
+      const lambda = 0.08;
+      const promptLambda = 1e-4;
+      for (let i = 0; i <= nPts; i++) {
+        const t = (i / nPts) * 60; // 60 seconds
+        let pNorm = 1.0;
+        if (beta - rho !== 0) {
+          const delayedTerm = (beta / (beta - rho)) * Math.exp(((lambda * rho) / (beta - rho)) * t);
+          const promptTerm = (rho / (beta - rho)) * Math.exp(-((beta - rho) / promptLambda) * Math.min(t, 0.05));
+          pNorm = Math.max(0.01, delayedTerm - promptTerm);
+        }
+        const powerMw = Math.round(3000 * pNorm);
+        series.push({
+          timeSec: Number(t.toFixed(1)),
+          powerMw,
+          delayedPrecursor: Math.round(powerMw * 0.95),
+        });
+      }
+      return {
+        series,
+        netReactivity: `${(rho * 1e5).toFixed(0)} pcm`,
+        powerEnd: `${series[series.length - 1].powerMw} MWth`,
+      };
+    } else {
+      // Ising lattice
+      const nPts = 100;
+      const series = [];
+      const J = simCouplingJ;
+      const B = simExtFieldB;
+      for (let i = 0; i <= nPts; i++) {
+        const tRatio = 0.2 + (i / nPts) * 2.5; // T/Tc from 0.2 to 2.7
+        let mSpontaneous = 0;
+        if (tRatio < 1.0) {
+          const sinhTerm = Math.sinh((2 * J) / tRatio);
+          const arg = 1 - Math.pow(sinhTerm, -4);
+          mSpontaneous = arg > 0 ? Math.pow(arg, 0.125) : 0;
+        }
+        const mField = Math.tanh(B / Math.max(0.1, tRatio));
+        const totalMag = Math.min(1.0, Math.max(-1.0, mSpontaneous + 0.3 * mField));
+        series.push({
+          tempRatio: Number(tRatio.toFixed(2)),
+          magnetization: Number(totalMag.toFixed(3)),
+          susceptibility: Number((1 / (Math.abs(tRatio - 1.0) + 0.15)).toFixed(2)),
+        });
+      }
+      return {
+        series,
+        curieTemp: '2.269 J/k_B',
+        orderParam: simTempRatio < 1.0 ? 'Ferromagnetic Ordered' : 'Paramagnetic Disordered',
+      };
+    }
+  }, [simType, simMassGev, simWidthGev, simEnergyTev, simRodPct, simReactivityPcm, simDelayedBeta, simTempRatio, simExtFieldB, simCouplingJ]);
+
+  const handleIngestSimulatedSignal = () => {
+    let sigValues: number[] = [];
+    let timestamps: number[] = [];
+    let sigName = '';
+    let fs = 200;
+
+    if (simType === 'collider') {
+      sigName = `Simulated_CERN_LHC_Resonance_${simMassGev.toFixed(0)}GeV.csv`;
+      const data = customSimTelemetry.series as any[];
+      sigValues = data.map((d) => d.totalEvents);
+      timestamps = data.map((d) => d.massGev);
+      fs = 2;
+    } else if (simType === 'reactor') {
+      sigName = `Simulated_PWR_Reactor_Transient_${customSimTelemetry.netReactivity}.csv`;
+      const data = customSimTelemetry.series as any[];
+      sigValues = data.map((d) => d.powerMw);
+      timestamps = data.map((d) => d.timeSec);
+      fs = 2;
+    } else {
+      sigName = `Simulated_Ising_Lattice_Order_${simTempRatio.toFixed(2)}Tc.csv`;
+      const data = customSimTelemetry.series as any[];
+      sigValues = data.map((d) => d.magnetization);
+      timestamps = data.map((d) => d.tempRatio);
+      fs = 10;
+    }
+
+    const customSignal: SignalData = {
+      id: `sim-${Date.now()}`,
+      filename: sigName,
+      samplingRate: fs,
+      timestamps,
+      channelNames: ['Primary_Telemetry'],
+      channels: { Primary_Telemetry: sigValues },
+      duration: Math.max(0.1, timestamps[timestamps.length - 1] - timestamps[0]),
+      quality: {
+        total_samples: sigValues.length,
+        channel_count: 1,
+        sampling_rate: fs,
+        is_uniform: true,
+        timestamp_jitter_pct: 0,
+        nan_count: 0,
+        infinite_count: 0,
+        clipping_count: 0,
+        content_hash_sha256: 'simulated-physics-engine-hash',
+        warnings: [],
+      },
+    };
+
+    loadCustomSignal(customSignal);
+
+    setIngestSuccess(`Loaded ${sigName} into SYNAPSE Workbench.`);
+    setTimeout(() => setIngestSuccess(null), 3500);
+  };
 
   const handleIngest = (datasetId: string, label: string) => {
     selectDataset(datasetId);
@@ -241,7 +394,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
           Select Physical Instrument:
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {/* S1: CERN Higgs */}
           <button
             type="button"
@@ -367,6 +520,24 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
             <div className="text-xs font-bold leading-tight truncate">Nuclear Core</div>
             <div className="text-[10px] opacity-75 mt-0.5">Point-Kinetics</div>
           </button>
+
+          {/* Custom Physics Sandbox */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('custom_sim')}
+            className={`p-3 rounded-lg border text-left transition-all font-mono ${
+              activeTab === 'custom_sim'
+                ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-sm ring-1 ring-[#0F766E]'
+                : 'bg-[#FFFFFF] border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430] hover:bg-[#F9F7F1]'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sliders className="w-3.5 h-3.5 text-[#D97706]" />
+              <span className="text-[10px] font-bold uppercase opacity-80">Sandbox</span>
+            </div>
+            <div className="text-xs font-bold leading-tight truncate">Custom Physics</div>
+            <div className="text-[10px] opacity-75 mt-0.5">Collider &bull; Core &bull; Spin</div>
+          </button>
         </div>
       </div>
 
@@ -382,6 +553,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
               {activeTab === 's7_ising' && 'Statistical Mechanics • Critical Phase Transitions'}
               {activeTab === 's8_seismic' && 'Geophysics • Planetary Elastic Wave Seismology'}
               {activeTab === 's10_reactor' && 'Nuclear Engineering • Reactor Dynamics'}
+              {activeTab === 'custom_sim' && 'Simulation Sandbox • Custom Physical Engine'}
             </span>
             <span className="text-xs font-bold text-[#1F2430]">
               {activeTab === 's1_cern' && 'ATLAS / CMS Di-Photon Invariant Mass'}
@@ -391,6 +563,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
               {activeTab === 's7_ising' && '2D Square Lattice Onsager Magnetization'}
               {activeTab === 's8_seismic' && 'PREM Earth Core S-Wave Extinction'}
               {activeTab === 's10_reactor' && 'PWR Core Point Kinetics with Delayed Neutrons'}
+              {activeTab === 'custom_sim' && 'Interactive Quantum, Nuclear & Lattice Parameter Simulator'}
             </span>
           </div>
           <p className="text-xs text-[#6B6F7B]">
@@ -751,6 +924,297 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 8. CUSTOM QUANTUM & NUCLEAR SIMULATOR SANDBOX */}
+      {activeTab === 'custom_sim' && (
+        <div className="space-y-4 font-sans">
+          {/* Controls & Configuration Card */}
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-5 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DDD6C7]">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#0F766E]" />
+                  <h3 className="text-sm font-bold text-[#1F2430]">Custom Physics &amp; Nuclear Parameter Sandbox</h3>
+                </div>
+                <p className="text-xs text-[#6B6F7B] mt-0.5">
+                  Tune particle resonance masses, control rod reactivities, or spin lattice temperatures to test distinct physical hypotheses.
+                </p>
+              </div>
+
+              {/* Sub-phenomenon switch */}
+              <div className="flex items-center border border-[#DDD6C7] rounded-lg bg-[#F6F3EC] p-0.5 text-xs font-mono">
+                <button
+                  type="button"
+                  onClick={() => setSimType('collider')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    simType === 'collider' ? 'bg-[#0F766E] text-white font-bold shadow-2xs' : 'text-[#4A5060]'
+                  }`}
+                >
+                  Particle Collider
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimType('reactor')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    simType === 'reactor' ? 'bg-[#0F766E] text-white font-bold shadow-2xs' : 'text-[#4A5060]'
+                  }`}
+                >
+                  Nuclear Reactor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSimType('ising')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    simType === 'ising' ? 'bg-[#0F766E] text-white font-bold shadow-2xs' : 'text-[#4A5060]'
+                  }`}
+                >
+                  2D Ising Lattice
+                </button>
+              </div>
+            </div>
+
+            {/* Sliders Grid */}
+            {simType === 'collider' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Resonance Mass (M₀):</span>
+                    <span className="font-bold text-[#0F766E]">{simMassGev.toFixed(2)} GeV</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="90"
+                    max="180"
+                    step="0.5"
+                    value={simMassGev}
+                    onChange={(e) => setSimMassGev(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Decay Width (Γ):</span>
+                    <span className="font-bold text-[#0F766E]">{simWidthGev.toFixed(2)} GeV</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="10.0"
+                    step="0.1"
+                    value={simWidthGev}
+                    onChange={(e) => setSimWidthGev(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Beam Energy (√s):</span>
+                    <span className="font-bold text-[#0F766E]">{simEnergyTev.toFixed(1)} TeV</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="7.0"
+                    max="14.0"
+                    step="0.5"
+                    value={simEnergyTev}
+                    onChange={(e) => setSimEnergyTev(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            {simType === 'reactor' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Control Rod Insertion:</span>
+                    <span className="font-bold text-[#0F766E]">{simRodPct}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={simRodPct}
+                    onChange={(e) => setSimRodPct(parseInt(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Reactivity Insertion (Δρ):</span>
+                    <span className="font-bold text-[#0F766E]">{simReactivityPcm} pcm</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-800"
+                    max="300"
+                    step="20"
+                    value={simReactivityPcm}
+                    onChange={(e) => setSimReactivityPcm(parseInt(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Delayed Fraction (β_eff):</span>
+                    <span className="font-bold text-[#0F766E]">{simDelayedBeta.toFixed(4)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.0030"
+                    max="0.0090"
+                    step="0.0005"
+                    value={simDelayedBeta}
+                    onChange={(e) => setSimDelayedBeta(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            {simType === 'ising' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Reduced Temp (T / T_c):</span>
+                    <span className="font-bold text-[#0F766E]">{simTempRatio.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="2.5"
+                    step="0.05"
+                    value={simTempRatio}
+                    onChange={(e) => setSimTempRatio(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">External Field (B):</span>
+                    <span className="font-bold text-[#0F766E]">{simExtFieldB.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-2.0"
+                    max="2.0"
+                    step="0.1"
+                    value={simExtFieldB}
+                    onChange={(e) => setSimExtFieldB(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+
+                <div className="p-3 bg-[#F8F6F1] border border-[#DDD6C7] rounded-lg space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#6B6F7B]">Coupling (J):</span>
+                    <span className="font-bold text-[#0F766E]">{simCouplingJ.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.1"
+                    value={simCouplingJ}
+                    onChange={(e) => setSimCouplingJ(parseFloat(e.target.value))}
+                    className="w-full accent-[#0F766E] cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Derived Physical Equations & Real-time Readout */}
+            <div className="p-3 bg-[#EFEBE0] border border-[#DDD6C7] rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
+              <div className="text-[#1F2430]">
+                {simType === 'collider' && (
+                  <span>Resonance Mass: <strong>M₀ = {simMassGev.toFixed(2)} GeV</strong> • FWHM: <strong>{customSimTelemetry.fwhm}</strong> • Significance: <strong>{customSimTelemetry.significance}</strong></span>
+                )}
+                {simType === 'reactor' && (
+                  <span>Net Reactivity: <strong>{customSimTelemetry.netReactivity}</strong> • Terminal Power: <strong>{customSimTelemetry.powerEnd}</strong> • Precursor Decay: <strong>λ ≈ 0.08 s⁻¹</strong></span>
+                )}
+                {simType === 'ising' && (
+                  <span>Curie Temp: <strong>T_c = 2.269 J/k_B</strong> • Phase: <strong>{customSimTelemetry.orderParam}</strong></span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleIngestSimulatedSignal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0F766E] text-white hover:bg-[#0D655E] text-xs font-bold transition-colors shadow-2xs shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Ingest Simulation into Workbench</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3D Simulation Canvas */}
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
+            <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+              <Box className="w-4 h-4 text-[#0F766E]" />
+              <span>
+                {simType === 'collider' && '3D CERN Particle Collider Detector Chamber [LHC Bunches]'}
+                {simType === 'reactor' && '3D Pressurized Water Reactor (PWR) Core & Control Rod Clusters'}
+                {simType === 'ising' && '3D Ferromagnetic Spin Lattice Manifold'}
+              </span>
+            </div>
+            {simType === 'collider' && <CernHiggs3DCollider />}
+            {simType === 'reactor' && <NuclearReactor3DCore />}
+            {simType === 'ising' && <Ising3DSpinLattice />}
+          </div>
+
+          {/* Real-time Simulated Telemetry Chart */}
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
+            <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#0F766E]" />
+              <span>
+                {simType === 'collider' && `Synthesized Breit-Wigner Di-Photon Cross Section vs Invariant Mass [Peak = ${simMassGev.toFixed(2)} GeV]`}
+                {simType === 'reactor' && `Reactor Point-Kinetics Power Transient [Net Reactivity = ${customSimTelemetry.netReactivity}]`}
+                {simType === 'ising' && `Onsager Spontaneous Magnetization vs Reduced Temperature [T/T_c = ${simTempRatio.toFixed(2)}]`}
+              </span>
+            </div>
+            <div className="h-[340px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                {simType === 'collider' ? (
+                  <AreaChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="massGev" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                    <ReferenceLine x={simMassGev} stroke="#0F766E" strokeDasharray="3 3" label={{ value: `M₀=${simMassGev.toFixed(1)} GeV`, fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Area type="monotone" dataKey="totalEvents" stroke="#0F766E" fill="#E6F4F2" fillOpacity={0.65} strokeWidth={2} name="Total Events (Signal + QCD)" />
+                    <Line type="monotone" dataKey="qcdBackground" stroke="#6B6F7B" strokeDasharray="2 2" strokeWidth={1.5} dot={false} name="QCD Background" />
+                  </AreaChart>
+                ) : simType === 'reactor' ? (
+                  <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="timeSec" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                    <ReferenceLine y={3000} stroke="#C0392B" strokeDasharray="3 3" label={{ value: '3000 MWth', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Line type="monotone" dataKey="powerMw" stroke="#0F766E" strokeWidth={2} dot={false} name="Core Power (MW)" />
+                    <Line type="monotone" dataKey="delayedPrecursor" stroke="#4338CA" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Delayed Neutron Precursors" />
+                  </LineChart>
+                ) : (
+                  <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="tempRatio" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} domain={[-1.0, 1.2]} />
+                    <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                    <ReferenceLine x={1.0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Curie Point T_c', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <Line type="monotone" dataKey="magnetization" stroke="#0F766E" strokeWidth={2.5} dot={false} name="Spontaneous Magnetization <M>" />
+                    <Line type="monotone" dataKey="susceptibility" stroke="#D97706" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Magnetic Susceptibility χ" />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
 
