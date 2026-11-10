@@ -99,3 +99,31 @@
 - `npm run build` passed in 3.13s with 0 errors.
 - 33/33 pytest mathematical tests passing (100%).
 - Screenshots saved: `prototype-screenshots/stage3-workbench-musicplayer.png`, `stage3-rack-musicplayer.png`, and `stage3-mobile-player.png`.
+
+## [Stage 4 - Synapsev2 & PaperGraph Integration] - 2026-11-10
+
+### Sibling Workspace Architecture
+- **Workstation Clone:** Synchronized full upgraded main repository to sibling directory `C:\Users\Priyansh\Desktop\Synapsev2`.
+- **PaperGraph Engine Integration:** Placed the complete `PaperGraph` literature analysis engine into `Synapsev2/papergraph`.
+- **Unified 3-Way Switcher:** Added workspace switcher in the header allowing researchers to seamlessly transition between:
+  1. **Signal Workbench:** High-resolution time-domain, spectral, and Hilbert instantaneous dynamics.
+  2. **Instrument Rack:** 24-panel responsive multi-channel analytical rack with interactive legends and linked cursor.
+  3. **Linked Discovery View:** Integrated empirical-to-literature evidence lineage DAG.
+
+### Linked Discovery View (`LinkedDiscoveryView.tsx`)
+- **Bipartite Lineage DAG:** Visualizes multi-tier directed graph connecting:
+  - Raw signal data -> Analytical engines -> Empirical findings -> Evidence edges -> Peer-reviewed research papers.
+- **Bidirectional Interactivity:**
+  - Selecting an empirical finding highlights its supporting literature citations, mathematical methodology, and confidence intervals.
+  - Selecting a literature paper node highlights the exact empirical signal features that validate or challenge its theoretical claims.
+- **Empirical Corroboration:** Each paper card details the exact physical mechanism and mathematical formulation (e.g. Thomson 1982 for multitaper F-tests, Welch 1967 for periodogram variance reduction, Killick 2012 for PELT changepoints, Peng 1995 for DFA scaling).
+- **Integrated Research Session Export:** Single-click JSON export bundle packaging raw signal telemetry, computed metrics, evidence DAG edges, and cited literature bibliography.
+
+### Automation & Dual-Suite Testing
+- **Windows Startup Script:** Created `Synapsev2/start_synapse_v2.bat` orchestrating SYNAPSE API (port 8000), PaperGraph API (port 8001), and Vite Web Frontend (port 5173).
+- **Documentation:** Created comprehensive `Synapsev2/README.md` with system flowcharts and quickstart instructions.
+- **Test Suite Verification:**
+  - **SYNAPSE:** 33/33 mathematical tests passed (100%).
+  - **PaperGraph:** 61/61 unit and integration tests passed (2 skipped).
+- **Frontend Build:** `npm run build` completed in 3.11s with 0 errors.
+- **Screenshots:** Recorded `stage4-synapsev2-linked-discovery.png` and `stage4-synapsev2-rack.png` in `Synapsev2/screenshots/`.
