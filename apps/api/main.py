@@ -7,8 +7,10 @@ from __future__ import annotations
 import os
 import uuid
 import datetime
+import json
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Query
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -19,11 +21,16 @@ from synapse_anomaly.engine import AnomalyEngine
 from synapse_structure.engine import StructureEngine
 from synapse_relation.engine import RelationEngine
 from synapse_inference.engine import InferenceEngine
-from synapse_discovery.orchestrator import run_discovery_pipeline, DiscoveryExperiment
+from synapse_statistics.engine import StatisticsEngine
+from synapse_discovery.orchestrator import (
+    run_discovery_pipeline,
+    DiscoveryExperiment,
+    generate_html_investigation_report,
+)
 
 app = FastAPI(
     title="SYNAPSE Scientific Signal Intelligence API",
-    version="1.0.0",
+    version="2.0.0",
     description="Universal signal intelligence and scientific discovery platform.",
 )
 
@@ -47,7 +54,58 @@ ENGINES = {
     "STRUCTURE": StructureEngine(),
     "RELATION": RelationEngine(),
     "INFERENCE": InferenceEngine(),
+    "STATISTICS": StatisticsEngine(),
 }
+
+# Auto-load benchmark datasets if available
+BENCHMARK_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "benchmarks", "SYNAPSE_BENCHMARK_DATA")
+BENCHMARKS_CACHE: Dict[str, Any] = {}
+
+
+def load_benchmarks_catalog() -> List[Dict[str, Any]]:
+    if not os.path.exists(BENCHMARK_DIR):
+        return []
+
+    data_dir = os.path.join(BENCHMARK_DIR, "data")
+    gt_dir = os.path.join(BENCHMARK_DIR, "ground_truth")
+    meta_dir = os.path.join(BENCHMARK_DIR, "metadata")
+
+    catalog = []
+    if not os.path.exists(data_dir):
+        return []
+
+    for fn in sorted(os.listdir(data_dir)):
+        if not fn.endswith(".csv"):
+            continue
+        code = fn.split("_")[0]
+        csv_path = os.path.join(data_dir, fn)
+        gt_path = os.path.join(gt_dir, f"{code}_ground_truth.json")
+        meta_path = os.path.join(meta_dir, f"{code}_metadata.json")
+
+        gt_data = {}
+        if os.path.exists(gt_path):
+            try:
+                with open(gt_path, "r", encoding="utf-8") as f:
+                    gt_data = json.load(f)
+            except Exception:
+                pass
+
+        meta_data = {}
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, "r", encoding="utf-8") as f:
+                    meta_data = json.load(f)
+            except Exception:
+                pass
+
+        catalog.append({
+            "code": code,
+            "filename": fn,
+            "path": csv_path,
+            "metadata": meta_data,
+            "ground_truth": gt_data,
+        })
+    return catalog
 
 
 class ExperimentCreateRequest(BaseModel):
@@ -56,12 +114,16 @@ class ExperimentCreateRequest(BaseModel):
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ModuleExecutionRequest(BaseModel):
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+
+
 @app.get("/health")
 def get_health():
     return {
         "status": "healthy",
         "service": "SYNAPSE API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "registered_engines": list(ENGINES.keys()),
     }
@@ -80,15 +142,34 @@ def list_engines():
     }
 
 
-@app.get("/v1/engines/{engine_id}")
-def get_engine_details(engine_id: str):
-    eng = ENGINES.get(engine_id.upper())
-    if not eng:
-        raise HTTPException(status_code=404, detail=f"Engine '{engine_id}' not found.")
-    return {
-        "name": eng.engine_name,
-        "version": eng.engine_version,
-    }
+@app.get("/v1/benchmarks")
+def get_benchmarks():
+    return {"benchmarks": load_benchmarks_catalog()}
+
+
+@app.get("/v1/benchmarks/{code}")
+def load_benchmark_into_store(code: str):
+    cat = load_benchmarks_catalog()
+    match = next((b for b in cat if b["code"].upper() == code.upper()), None)
+    if not match:
+        raise HTTPException(status_code=404, detail=f"Benchmark '{code}' not found.")
+
+    ds_id = f"benchmark_{match['code']}"
+    if ds_id not in DATASETS_STORE:
+        signal = read_signal(match["path"])
+        DATASETS_STORE[ds_id] = signal
+        DATASETS_META[ds_id] = {
+            "id": ds_id,
+            "filename": match["filename"],
+            "samples": signal.n_samples,
+            "channels": signal.n_channels,
+            "sampling_rate": signal.sampling_rate,
+            "is_uniform": signal.is_uniform,
+            "hash": signal.quality.content_hash_sha256,
+            "is_benchmark": True,
+            "ground_truth": match["ground_truth"],
+        }
+    return DATASETS_META[ds_id]
 
 
 @app.post("/v1/datasets/upload")
@@ -106,7 +187,6 @@ async def upload_dataset(
         with open(temp_path, "wb") as f:
             f.write(content)
 
-        # Ingest into canonical Signal
         signal = read_signal(temp_path, time_column=time_column)
         DATASETS_STORE[ds_id] = signal
         DATASETS_META[ds_id] = {
@@ -121,7 +201,6 @@ async def upload_dataset(
         }
 
         return DATASETS_META[ds_id]
-
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -142,28 +221,16 @@ def get_dataset(id: str):
 
 
 @app.post("/v1/experiments")
-def create_experiment(req: ExperimentCreateRequest, background_tasks: BackgroundTasks):
+def create_experiment(req: ExperimentCreateRequest):
     if req.dataset_id not in DATASETS_STORE:
         raise HTTPException(status_code=404, detail=f"Dataset '{req.dataset_id}' not found.")
 
     exp_id = str(uuid.uuid4())
     job_id = str(uuid.uuid4())
 
-    JOBS_STORE[job_id] = {
-        "job_id": job_id,
-        "experiment_id": exp_id,
-        "status": "running",
-        "progress": 0.0,
-        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    }
-
-    # Execute experiment synchronously or via background task
     sig = DATASETS_STORE[req.dataset_id]
     experiment = run_discovery_pipeline(sig, experiment_id=exp_id, parameters=req.parameters)
     EXPERIMENTS_STORE[exp_id] = experiment
-
-    JOBS_STORE[job_id]["status"] = "completed"
-    JOBS_STORE[job_id]["progress"] = 1.0
 
     return {
         "experiment_id": exp_id,
@@ -172,31 +239,31 @@ def create_experiment(req: ExperimentCreateRequest, background_tasks: Background
     }
 
 
+@app.post("/v1/experiments/{id}/modules/{module}")
+def execute_single_module(id: str, module: str, req: ModuleExecutionRequest):
+    eng = ENGINES.get(module.upper())
+    if not eng:
+        raise HTTPException(status_code=404, detail=f"Module/Engine '{module}' not found.")
+
+    exp = EXPERIMENTS_STORE.get(id)
+    if not exp:
+        raise HTTPException(status_code=404, detail=f"Experiment '{id}' not found.")
+
+    ds_hash = exp.manifest.dataset_hash_sha256
+    matching_sig = next((s for s in DATASETS_STORE.values() if s.quality.content_hash_sha256 == ds_hash), None)
+    if not matching_sig:
+        raise HTTPException(status_code=404, detail="Dataset signal not found in active store.")
+
+    res = eng.execute(matching_sig, config=req.parameters)
+    return res.to_dict()
+
+
 @app.get("/v1/experiments/{id}")
 def get_experiment(id: str):
     if id not in EXPERIMENTS_STORE:
         raise HTTPException(status_code=404, detail=f"Experiment '{id}' not found.")
     exp = EXPERIMENTS_STORE[id]
     return exp.to_dict()
-
-
-@app.get("/v1/experiments/{id}/findings")
-def get_findings(id: str):
-    if id not in EXPERIMENTS_STORE:
-        raise HTTPException(status_code=404, detail=f"Experiment '{id}' not found.")
-    exp = EXPERIMENTS_STORE[id]
-    return {
-        "experiment_id": id,
-        "findings": [f.to_dict() for f in exp.all_findings],
-    }
-
-
-@app.get("/v1/experiments/{id}/evidence")
-def get_evidence_graph(id: str):
-    if id not in EXPERIMENTS_STORE:
-        raise HTTPException(status_code=404, detail=f"Experiment '{id}' not found.")
-    exp = EXPERIMENTS_STORE[id]
-    return exp.evidence_graph.to_dict()
 
 
 @app.get("/v1/experiments/{id}/report")
@@ -222,17 +289,9 @@ def get_report(id: str):
     }
 
 
-@app.get("/v1/jobs/{id}")
-def get_job_status(id: str):
-    if id not in JOBS_STORE:
-        raise HTTPException(status_code=404, detail=f"Job '{id}' not found.")
-    return JOBS_STORE[id]
-
-
-@app.post("/v1/jobs/{id}/cancel")
-def cancel_job(id: str):
-    if id not in JOBS_STORE:
-        raise HTTPException(status_code=404, detail=f"Job '{id}' not found.")
-    JOBS_STORE[id]["status"] = "cancelled"
-    return {"job_id": id, "status": "cancelled"}
-
+@app.get("/v1/experiments/{id}/report/html", response_class=HTMLResponse)
+def get_report_html(id: str):
+    if id not in EXPERIMENTS_STORE:
+        raise HTTPException(status_code=404, detail=f"Experiment '{id}' not found.")
+    exp = EXPERIMENTS_STORE[id]
+    return HTMLResponse(content=generate_html_investigation_report(exp))

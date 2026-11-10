@@ -1,33 +1,166 @@
 @import "tailwindcss";
 
-body {
-  margin: 0;
-  background-color: #f7f5f0;
-  color: #1c1917;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  user-select: none;
+:root {
+  --font-scale: 1rem;
+  --line-height-scale: 1.5;
+  --density-padding: 0.5rem;
 }
 
-/* Warm neutral grid paper background */
-.bg-grid-paper {
-  background-size: 24px 24px;
+/* Text Size Scalers */
+[data-text-size="sm"] {
+  --font-scale: 0.875rem;
+  font-size: 14px;
+}
+[data-text-size="md"] {
+  --font-scale: 1rem;
+  font-size: 16px;
+}
+[data-text-size="lg"] {
+  --font-scale: 1.15rem;
+  font-size: 18px;
+}
+[data-text-size="xl"] {
+  --font-scale: 1.3rem;
+  font-size: 20px;
+}
+
+/* Line Spacing */
+[data-line-spacing="normal"] {
+  --line-height-scale: 1.5;
+  line-height: 1.5;
+}
+[data-line-spacing="relaxed"] {
+  --line-height-scale: 1.8;
+  line-height: 1.8;
+}
+
+/* Density */
+[data-density="compact"] {
+  --density-padding: 0.35rem;
+}
+[data-density="comfortable"] {
+  --density-padding: 0.75rem;
+}
+
+/* Dyslexia friendly font */
+.dyslexia-font {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif !important;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+}
+
+/* Always show focus rings */
+.always-focus-rings *:focus-visible {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+/* Large click targets */
+.large-targets button,
+.large-targets a,
+.large-targets input,
+.large-targets select {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Light Theme (Default) */
+.theme-light {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+.theme-light .surface-base {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+.theme-light .surface-subtle {
+  background-color: #f1f5f9;
+  border-color: #e2e8f0;
+}
+.theme-light .text-primary {
+  color: #0f172a;
+}
+.theme-light .text-secondary {
+  color: #475569;
+}
+.theme-light .text-muted {
+  color: #64748b;
+}
+
+/* Dark Theme (Oscilloscope Charcoal) */
+.theme-dark {
+  background-color: #101317;
+  color: #f1f5f9;
+}
+.theme-dark .surface-base {
+  background-color: #181c22;
+  border-color: #29303d;
+}
+.theme-dark .surface-subtle {
+  background-color: #13171d;
+  border-color: #242b36;
+}
+.theme-dark .text-primary {
+  color: #f8fafc;
+}
+.theme-dark .text-secondary {
+  color: #cbd5e1;
+}
+.theme-dark .text-muted {
+  color: #8392a5;
+}
+
+/* High Contrast Theme */
+.theme-high-contrast {
+  background-color: #000000;
+  color: #ffffff;
+}
+.theme-high-contrast .surface-base {
+  background-color: #000000;
+  border-color: #ffffff;
+  border-width: 2px;
+}
+.theme-high-contrast .surface-subtle {
+  background-color: #121212;
+  border-color: #ffffff;
+}
+.theme-high-contrast .text-primary {
+  color: #ffffff;
+}
+.theme-high-contrast .text-secondary {
+  color: #ffff00;
+}
+.theme-high-contrast .text-muted {
+  color: #ffffff;
+}
+
+/* Graticule grid pattern for engineering charts */
+.chart-graticule-light {
   background-image: 
-    linear-gradient(to right, rgba(41, 37, 36, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(41, 37, 36, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+.chart-graticule-dark {
+  background-image: 
+    linear-gradient(to right, rgba(71, 85, 105, 0.25) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(71, 85, 105, 0.25) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
-::-webkit-scrollbar-track {
-  background: #ede8e1;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+
+/* Print Stylesheet for Reports */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  aside, nav, .no-print {
+    display: none !important;
+  }
+  main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }

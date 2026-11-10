@@ -1,0 +1,127 @@
+"""
+Bayesian Online Change-point Detection (BOCPD) for SYNAPSE ANOMALY.
+Implements the exact recursive message passing algorithm of Adams & MacKay (2007)
+to output the run-length posterior probability distribution and changepoint probabilities.
+"""
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Tuple, Optional, Dict, Any, List
+import numpy as np
+import scipy.stats as stats
+
+from synapse_core.exceptions import ValidationError
+
+
+@dataclass(frozen=True)
+class BOCPDResult:
+    changepoints: Tuple[int, ...]
+    changepoint_probabilities: np.ndarray # P(r_t = 0 | x_1:t)
+    run_length_posterior: np.ndarray     # 2D matrix shape (max_run, T)
+    hazard_lambda: float
+    n_changepoints: int
+
+
+def compute_bocpd(
+    values: np.ndarray,
+    hazard_lambda: float = 100.0,
+    prob_threshold: float = 0.35,
+    max_run_length: int = 150,
+) -> BOCPDResult:
+    """
+    Execute Bayesian Online Change-point Detection with Gaussian conjugate priors.
+    """
+    x = np.asarray(values, dtype=np.float64)
+    n = len(x)
+    if n < 8:
+        raise ValidationError("Need at least 8 samples for Bayesian Online Changepoint Detection.")
+
+    # Prior hyperparameters (Normal-Inverse-Gamma on Gaussian observations)
+    mu0 = float(np.mean(x))
+    kappa0 = 1.0
+    alpha0 = 1.0
+    beta0 = float(np.var(x)) or 1.0
+
+    # R matrix: stores P(r_t, x_1:t)
+    # Dimension: (max_run_length + 1, n)
+    R = np.zeros((max_run_length + 1, n), dtype=np.float64)
+    R[0, 0] = 1.0
+
+    # Sufficient statistics across active run lengths
+    mu_t = np.array([mu0])
+    kappa_t = np.array([kappa0])
+    alpha_t = np.array([alpha0])
+    beta_t = np.array([beta0])
+
+    hazard = 1.0 / hazard_lambda
+    cp_probs = np.zeros(n, dtype=np.float64)
+
+    for t in range(1, n):
+        cur_x = x[t]
+        k = len(mu_t)
+
+        # 1. Predictive probability under Student-t posterior predictive:
+        # df = 2 * alpha_t, loc = mu_t, scale = sqrt(beta_t * (kappa_t + 1) / (alpha_t * kappa_t))
+        df_pred = 2.0 * alpha_t
+        scale_pred = np.sqrt(np.maximum(1e-12, beta_t * (kappa_t + 1.0) / (alpha_t * kappa_t)))
+        pred_probs = stats.t.pdf(cur_x, df=df_pred, loc=mu_t, scale=scale_pred)
+        pred_probs = np.nan_to_num(pred_probs, nan=1e-12, posinf=1e-12, neginf=1e-12)
+
+        # 2. Growth probabilities: P(r_t = r_{t-1} + 1)
+        r_prev = R[:k, t - 1]
+        growth_probs = r_prev * pred_probs * (1.0 - hazard)
+
+        # 3. Changepoint probability: P(r_t = 0)
+        cp_prob = float(np.sum(r_prev * pred_probs * hazard))
+
+        # Combine into unnormalized vector for t
+        r_current = np.concatenate([[cp_prob], growth_probs])
+
+        # Normalize across run lengths
+        evidence = np.sum(r_current)
+        if evidence > 0:
+            r_current /= evidence
+        else:
+            r_current[0] = 1.0
+
+        # Truncate to max_run_length
+        if len(r_current) > max_run_length + 1:
+            r_current = r_current[: max_run_length + 1]
+
+        R[: len(r_current), t] = r_current
+        cp_probs[t] = r_current[0]
+
+        # 4. Update hyperparameters for next step
+        # Base updates for conjugate Normal-Inverse-Gamma
+        new_kappa = np.concatenate([[kappa0], kappa_t + 1.0])
+        new_mu = np.concatenate([[mu0], (kappa_t * mu_t + cur_x) / (kappa_t + 1.0)])
+        new_alpha = np.concatenate([[alpha0], alpha_t + 0.5])
+        new_beta = np.concatenate([[beta0], beta_t + (kappa_t * (cur_x - mu_t) ** 2) / (2.0 * (kappa_t + 1.0))])
+
+        if len(new_kappa) > max_run_length:
+            new_kappa = new_kappa[:max_run_length]
+            new_mu = new_mu[:max_run_length]
+            new_alpha = new_alpha[:max_run_length]
+            new_beta = new_beta[:max_run_length]
+
+        kappa_t = new_kappa
+        mu_t = new_mu
+        alpha_t = new_alpha
+        beta_t = new_beta
+
+    # Identify changepoints where cp_prob > prob_threshold and local peak
+    changepoints = []
+    min_dist = 8
+    for i in range(1, n - 1):
+        if cp_probs[i] >= prob_threshold:
+            if cp_probs[i] >= cp_probs[i - 1] and cp_probs[i] >= cp_probs[i + 1]:
+                if not changepoints or (i - changepoints[-1]) >= min_dist:
+                    changepoints.append(i)
+
+    return BOCPDResult(
+        changepoints=tuple(changepoints),
+        changepoint_probabilities=cp_probs,
+        run_length_posterior=R,
+        hazard_lambda=hazard_lambda,
+        n_changepoints=len(changepoints),
+    )
