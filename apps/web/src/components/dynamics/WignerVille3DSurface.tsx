@@ -235,19 +235,21 @@ export const WignerVille3DSurface: React.FC<WignerVille3DSurfaceProps> = ({
     const handleResize = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        canvas.width = rect.width * (window.devicePixelRatio || 1);
-        canvas.height = rect.height * (window.devicePixelRatio || 1);
-        const ctx = canvas.getContext('2d');
-        if (ctx) ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-        drawScene();
-      }
+      const parent = canvas.parentElement;
+      const w = parent?.clientWidth || 600;
+      const h = parent?.clientHeight || 380;
+      canvas.width = w;
+      canvas.height = h;
+      drawScene();
     };
 
     handleResize();
+    const timer = setTimeout(handleResize, 50);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [drawScene]);
 
   // Mouse Orbit Drag Listeners
@@ -372,7 +374,7 @@ export const WignerVille3DSurface: React.FC<WignerVille3DSurfaceProps> = ({
 
       {/* Main 3D Canvas Box */}
       <div
-        className="w-full h-88 sm:h-96 rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
+        className="w-full h-[380px] sm:h-[420px] min-h-[380px] rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

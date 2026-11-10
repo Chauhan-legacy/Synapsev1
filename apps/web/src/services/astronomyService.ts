@@ -15,13 +15,18 @@ export interface KeplerTransitPoint {
   timeHours: number;
   flux: number; // Relative flux (1.0 = baseline)
   modelFlux: number;
+  observedFlux: number;
+  transitModel: number;
   residuals: number;
 }
 
 export interface GoesSolarPoint {
   timeMinutes: number;
-  fluxLong: number;  // 0.1 - 0.8 nm (Watts / m^2)
-  fluxShort: number; // 0.05 - 0.4 nm (Watts / m^2)
+  timeMin: number;
+  fluxLong: number;  // 0.1 - 0.8 nm (MicroWatts / m^2)
+  fluxShort: number; // 0.05 - 0.4 nm (MicroWatts / m^2)
+  longChannel: number;
+  shortChannel: number;
   flareClass: 'A' | 'B' | 'C' | 'M' | 'X';
 }
 
@@ -141,6 +146,8 @@ export function getKeplerTransitData(): {
       timeHours: Number(t.toFixed(2)),
       flux,
       modelFlux,
+      observedFlux: flux,
+      transitModel: modelFlux,
       residuals,
     });
   }
@@ -202,10 +209,16 @@ export function getGoesSolarFlareData(): {
     else if (fluxLong >= 1e-7) flareClass = 'B';
     else flareClass = 'A';
 
+    const fLong = Number((fluxLong * 1e6).toFixed(3));
+    const fShort = Number((fluxShort * 1e6).toFixed(3));
+
     points.push({
       timeMinutes: m,
-      fluxLong: Number((fluxLong * 1e6).toFixed(3)), // MicroWatts / m^2 for cleaner charts
-      fluxShort: Number((fluxShort * 1e6).toFixed(3)),
+      timeMin: m,
+      fluxLong: fLong,
+      fluxShort: fShort,
+      longChannel: fLong,
+      shortChannel: fShort,
       flareClass,
     });
   }

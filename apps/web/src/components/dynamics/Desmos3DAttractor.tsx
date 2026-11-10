@@ -253,19 +253,21 @@ export const Desmos3DAttractor: React.FC<Desmos3DAttractorProps> = ({
     const handleResize = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        canvas.width = rect.width * (window.devicePixelRatio || 1);
-        canvas.height = rect.height * (window.devicePixelRatio || 1);
-        const ctx = canvas.getContext('2d');
-        if (ctx) ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-        drawScene();
-      }
+      const parent = canvas.parentElement;
+      const w = parent?.clientWidth || 700;
+      const h = parent?.clientHeight || 420;
+      canvas.width = w;
+      canvas.height = h;
+      drawScene();
     };
 
     handleResize();
+    const timer = setTimeout(handleResize, 50);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [drawScene]);
 
   // Mouse Orbit Drag Listeners
@@ -441,7 +443,7 @@ export const Desmos3DAttractor: React.FC<Desmos3DAttractorProps> = ({
 
       {/* Main Interactive Canvas Area */}
       <div
-        className="w-full h-84 sm:h-96 rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
+        className="w-full h-[400px] sm:h-[460px] min-h-[380px] rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

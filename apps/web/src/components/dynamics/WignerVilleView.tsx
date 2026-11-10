@@ -199,7 +199,7 @@ export const WignerVilleView: React.FC<WignerVilleViewProps> = ({ signal, fs }) 
       {/* VIEW 2: 2D RAZOR HEATMAP CONTOUR */}
       {viewMode === '2d' && (
         <div className="space-y-2">
-          <div className="h-84 rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-4 flex flex-col justify-between relative shadow-2xs font-mono">
+          <div className="h-[380px] min-h-[380px] rounded-md bg-[#FFFDF9] border border-[#DDD6C7] p-4 flex flex-col justify-between relative shadow-2xs font-mono">
             <div className="text-[10px] text-[#6B6F7B] flex justify-between border-b border-[#DDD6C7] pb-1">
               <span>CONTINUOUS WIGNER-VILLE ENERGY DENSITY W(t, f)</span>
               <span className="text-[#0F766E] font-bold">Heisenberg Saturated • Zero Gabor Leakage</span>

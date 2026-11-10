@@ -258,14 +258,20 @@ export const Ligo3DSpacetime: React.FC<Ligo3DSpacetimeProps> = () => {
     if (!parent) return;
 
     const resize = () => {
-      canvas.width = parent.clientWidth;
-      canvas.height = parent.clientHeight;
+      const w = parent.clientWidth || 600;
+      const h = parent.clientHeight || 380;
+      canvas.width = w;
+      canvas.height = h;
       drawScene();
     };
 
     resize();
+    const timer = setTimeout(resize, 50);
     window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', resize);
+    };
   }, [drawScene]);
 
   // Mouse Drag Handlers
@@ -360,7 +366,7 @@ export const Ligo3DSpacetime: React.FC<Ligo3DSpacetimeProps> = () => {
 
       {/* Main 3D Canvas Viewport */}
       <div
-        className="w-full h-84 sm:h-96 rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
+        className="w-full h-[380px] sm:h-[420px] min-h-[380px] rounded-md border border-[#DDD6C7] relative overflow-hidden bg-[#FFFDF9] cursor-grab active:cursor-grabbing select-none shadow-2xs"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
