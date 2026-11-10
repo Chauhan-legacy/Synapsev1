@@ -50,6 +50,12 @@ import {
   computePCA,
   computeSurrogateBounds,
   runAutoAnalystEngine,
+  computeMUSIC,
+  computeCepstrum,
+  computeKalmanFilter,
+  computeMatrixProfile,
+  computeTransferEntropy,
+  getMethodComparisonMatrix,
 } from '../utils/signalMath';
 
 interface PanelInstance {
@@ -179,6 +185,12 @@ export const InstrumentRackView: React.FC = () => {
     const pca = computePCA(activeSignal.channels, activeSignal.channelNames);
     const surrogates = computeSurrogateBounds(raw, fs, 20);
     const autoFindings = runAutoAnalystEngine(raw, fs);
+    const musicResult = computeMUSIC(raw, fs);
+    const cepstrumResult = computeCepstrum(raw, fs);
+    const kalmanResult = computeKalmanFilter(raw, fs);
+    const matrixProfileResult = computeMatrixProfile(raw);
+    const transferEntropyResult = computeTransferEntropy(raw, ch2);
+    const methodComparisonList = getMethodComparisonMatrix();
 
     // Downsampled Time Series for Oscillogram (up to 250 points)
     const stride = Math.max(1, Math.floor(raw.length / 250));
@@ -305,6 +317,12 @@ export const InstrumentRackView: React.FC = () => {
       timeData,
       phaseData,
       acfData,
+      musicResult,
+      cepstrumResult,
+      kalmanResult,
+      matrixProfileResult,
+      transferEntropyResult,
+      methodComparisonList,
     };
   }, [activeSignal]);
 
@@ -1390,6 +1408,164 @@ function renderInstrumentVisualizer({
               <div className="text-[11px] font-semibold text-[var(--color-accent)]">{finding.value}</div>
             </div>
           ))}
+        </div>
+      );
+
+    // 19. MUSIC Super-Resolution
+    case 'music_subspace':
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={mathResults.musicResult.frequencies.map((f: number, i: number) => ({
+              freq: f,
+              pseudo: mathResults.musicResult.pseudoSpectrum[i],
+              peak: mathResults.musicResult.detectedPeaks.includes(f)
+                ? mathResults.musicResult.pseudoSpectrum[i]
+                : undefined,
+            }))}
+          >
+            <CartesianGrid strokeDasharray="2 2" stroke="#EFEBE0" />
+            <XAxis dataKey="freq" stroke="#6B6F7B" fontSize={10} tickFormatter={(v) => `${v}Hz`} />
+            <YAxis stroke="#6B6F7B" fontSize={10} tickFormatter={(v) => `${v}dB`} />
+            <Tooltip contentStyle={{ backgroundColor: '#1F2430', color: '#fff', fontSize: '11px', borderRadius: '4px' }} />
+            {!isHidden('pseudo_spec') && (
+              <Line type="monotone" dataKey="pseudo" stroke="#0072B2" strokeWidth={1.8} dot={false} />
+            )}
+            {!isHidden('peaks') && (
+              <Line type="monotone" dataKey="peak" stroke="#D55E00" strokeWidth={0} dot={{ r: 4, fill: '#D55E00' }} />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      );
+
+    // 20. Real Cepstrum & Pitch
+    case 'cepstrum_pitch':
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={mathResults.cepstrumResult.quefrencyHz.slice(0, 80).map((f: number, i: number) => ({
+              freq: f,
+              mag: mathResults.cepstrumResult.cepstrumMagnitude[i],
+            }))}
+          >
+            <CartesianGrid strokeDasharray="2 2" stroke="#EFEBE0" />
+            <XAxis dataKey="freq" stroke="#6B6F7B" fontSize={10} tickFormatter={(v) => `${v}Hz`} />
+            <YAxis stroke="#6B6F7B" fontSize={10} />
+            <Tooltip contentStyle={{ backgroundColor: '#1F2430', color: '#fff', fontSize: '11px', borderRadius: '4px' }} />
+            {!isHidden('quefrency') && (
+              <Line type="monotone" dataKey="mag" stroke="#7B5EA7" strokeWidth={1.8} dot={false} />
+            )}
+            <ReferenceLine
+              x={mathResults.cepstrumResult.pitchFrequencyHz}
+              stroke="#2E7D32"
+              strokeDasharray="3 3"
+              label={{ value: `Pitch ${mathResults.cepstrumResult.pitchFrequencyHz}Hz`, fill: '#2E7D32', fontSize: 10 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      );
+
+    // 21. Kalman Filter State Tracking
+    case 'kalman_filter':
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={mathResults.kalmanResult.times.map((t: number, i: number) => ({
+              time: t,
+              raw: mathResults.kalmanResult.raw[i],
+              kalman: mathResults.kalmanResult.filteredState[i],
+            }))}
+          >
+            <CartesianGrid strokeDasharray="2 2" stroke="#EFEBE0" />
+            <XAxis dataKey="time" stroke="#6B6F7B" fontSize={10} tickFormatter={(v) => `${v}s`} />
+            <YAxis stroke="#6B6F7B" fontSize={10} />
+            <Tooltip contentStyle={{ backgroundColor: '#1F2430', color: '#fff', fontSize: '11px', borderRadius: '4px' }} />
+            {!isHidden('raw') && (
+              <Line type="monotone" dataKey="raw" stroke="#6B6F7B" strokeWidth={1} dot={false} />
+            )}
+            {!isHidden('kalman') && (
+              <Line type="monotone" dataKey="kalman" stroke="#0F766E" strokeWidth={2} dot={false} />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      );
+
+    // 22. Matrix Profile (Motifs & Discords)
+    case 'matrix_profile':
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={mathResults.matrixProfileResult.indices.map((idx: number, i: number) => ({
+              idx,
+              dist: mathResults.matrixProfileResult.distanceProfile[i],
+            }))}
+          >
+            <CartesianGrid strokeDasharray="2 2" stroke="#EFEBE0" />
+            <XAxis dataKey="idx" stroke="#6B6F7B" fontSize={10} tickFormatter={(v) => `#${v}`} />
+            <YAxis stroke="#6B6F7B" fontSize={10} />
+            <Tooltip contentStyle={{ backgroundColor: '#1F2430', color: '#fff', fontSize: '11px', borderRadius: '4px' }} />
+            <ReferenceLine
+              x={mathResults.matrixProfileResult.minMotifIndex}
+              stroke="#2E7D32"
+              label={{ value: 'Motif', fill: '#2E7D32', fontSize: 10 }}
+            />
+            <ReferenceLine
+              x={mathResults.matrixProfileResult.maxDiscordIndex}
+              stroke="#C0392B"
+              label={{ value: 'Discord', fill: '#C0392B', fontSize: 10 }}
+            />
+            {!isHidden('profile') && (
+              <Line type="monotone" dataKey="dist" stroke="#1F2430" strokeWidth={1.8} dot={false} />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      );
+
+    // 23. Transfer Entropy
+    case 'transfer_entropy':
+      return (
+        <div className="w-full h-full flex flex-col justify-center items-center font-mono p-4 bg-[var(--color-tint)] rounded space-y-3">
+          <div className="text-center">
+            <span className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider">
+              Asymmetric Transfer Entropy
+            </span>
+            <div className="text-base font-serif font-bold text-[var(--color-ink)] mt-1">
+              T(Ch1 → Ch2) = {mathResults.transferEntropyResult.teXtoY} bits
+            </div>
+            <div className="text-xs text-[var(--color-muted)]">
+              T(Ch2 → Ch1) = {mathResults.transferEntropyResult.teYtoX} bits (p &lt; {mathResults.transferEntropyResult.pValue})
+            </div>
+          </div>
+          <div className="px-3 py-1 rounded bg-teal-100 text-teal-800 text-xs font-bold">
+            Dominant Causality: {mathResults.transferEntropyResult.netDirection.replace(/_/g, ' ')}
+          </div>
+        </div>
+      );
+
+    // 24. Method Comparison Matrix
+    case 'method_comparison':
+      return (
+        <div className="w-full h-full overflow-y-auto font-mono text-[10px] p-1">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] text-[var(--color-muted)]">
+                <th className="py-1 px-1.5">Method</th>
+                <th className="py-1 px-1.5">Resolution</th>
+                <th className="py-1 px-1.5">Variance</th>
+                <th className="py-1 px-1.5">Speed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mathResults.methodComparisonList.map((row: any, rIdx: number) => (
+                <tr key={rIdx} className="border-b border-[var(--color-border)]/50 hover:bg-[var(--color-tint)]">
+                  <td className="py-1 px-1.5 font-bold text-[var(--color-ink)]">{row.method}</td>
+                  <td className="py-1 px-1.5 text-[var(--color-muted)]">{row.frequencyResolution}</td>
+                  <td className="py-1 px-1.5 text-[var(--color-muted)]">{row.varianceReduction}</td>
+                  <td className="py-1 px-1.5 font-semibold text-[var(--color-accent)]">{row.speed}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       );
 

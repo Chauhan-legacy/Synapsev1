@@ -299,4 +299,90 @@ export const INSTRUMENT_REGISTRY: InstrumentDefinition[] = [
     ],
     tier: 1,
   },
+  // 19. MUSIC Super-Resolution
+  {
+    id: 'music_subspace',
+    title: 'MUSIC Super-Resolution Estimator',
+    category: 'Spectral',
+    caption: 'Eigenvector noise subspace projection separating closely spaced sinusoidal tones',
+    mathematicalBasis: 'P_{MUSIC}(f) = \\frac{1}{\\mathbf{a}^H(f) \\mathbf{E}_n \\mathbf{E}_n^H \\mathbf{a}(f)}',
+    tags: ['music', 'super-resolution', 'subspace', 'eigenvectors', 'spectral'],
+    legend: [
+      { id: 'pseudo_spec', name: 'MUSIC Pseudo-Spectrum (dB)', color: '#0072B2', defaultVisible: true },
+      { id: 'peaks', name: 'Sub-Sample Resolved Frequencies', color: '#D55E00', defaultVisible: true },
+    ],
+    tier: 2,
+  },
+  // 20. Real Cepstrum
+  {
+    id: 'cepstrum_pitch',
+    title: 'Real Cepstral Analysis & Pitch',
+    category: 'Spectral',
+    caption: 'Quefrency decomposition isolating harmonic periodicity and fundamental vocal/instrument pitch',
+    mathematicalBasis: 'c[n] = \\mathcal{F}^{-1} \\{ \\ln |\\mathcal{F}\\{x[n]\\}| \\}',
+    tags: ['cepstrum', 'quefrency', 'pitch', 'homomorphic', 'harmonics'],
+    legend: [
+      { id: 'quefrency', name: 'Cepstral Magnitude |c(τ)|', color: '#7B5EA7', defaultVisible: true },
+      { id: 'pitch_peak', name: 'Fundamental Pitch Period', color: '#2E7D32', defaultVisible: true },
+    ],
+    tier: 2,
+  },
+  // 21. Kalman Filter
+  {
+    id: 'kalman_filter',
+    title: 'Kalman Filter State Tracking',
+    category: 'Time-Frequency',
+    caption: 'Recursive Bayesian state-space estimation separating deterministic dynamics from Gaussian observation noise',
+    mathematicalBasis: '\\hat{x}_{k|k} = \\hat{x}_{k|k-1} + K_k (z_k - H \\hat{x}_{k|k-1}), \\quad K_k = P_{k|k-1} H^T (H P_{k|k-1} H^T + R)^{-1}',
+    tags: ['kalman', 'state-space', 'filtering', 'smoothing', 'recursive'],
+    legend: [
+      { id: 'raw', name: 'Noisy Measurement z_k', color: '#6B6F7B', defaultVisible: true },
+      { id: 'kalman', name: 'Optimal State Estimate x̂_k', color: '#0F766E', defaultVisible: true },
+      { id: 'error_cov', name: 'Estimation Error Covariance P_k', color: '#B7791F', defaultVisible: false },
+    ],
+    tier: 2,
+  },
+  // 22. Matrix Profile
+  {
+    id: 'matrix_profile',
+    title: 'Matrix Profile (Motifs & Discords)',
+    category: 'Complexity & Dynamics',
+    caption: 'Exact 1-NN Euclidean distance profile across all subsequences identifying repeated patterns and anomalies',
+    mathematicalBasis: 'P(i) = \\min_{j \\ne i} \\text{dist}(T_{i, m}, T_{j, m})',
+    tags: ['matrix-profile', 'motifs', 'discords', 'subsequences', 'scamp'],
+    legend: [
+      { id: 'profile', name: '1-NN Distance Profile P(i)', color: '#1F2430', defaultVisible: true },
+      { id: 'motif', name: 'Conserved Motif (Min Distance)', color: '#2E7D32', defaultVisible: true },
+      { id: 'discord', name: 'Anomalous Discord (Max Distance)', color: '#C0392B', defaultVisible: true },
+    ],
+    tier: 2,
+  },
+  // 23. Transfer Entropy
+  {
+    id: 'transfer_entropy',
+    title: 'Transfer Entropy (Nonlinear Flow)',
+    category: 'Multi-channel & Relations',
+    caption: 'Model-free asymmetric information transfer quantifying causal directionality beyond linear correlation',
+    mathematicalBasis: 'T_{X \\to Y} = \\sum p(y_{t+1}, y_t, x_t) \\log_2 \\frac{p(y_{t+1} | y_t, x_t)}{p(y_{t+1} | y_t)}',
+    tags: ['transfer-entropy', 'information-theory', 'causality', 'nonlinear', 'multichannel'],
+    legend: [
+      { id: 'x_to_y', name: 'Transfer Entropy T(X → Y)', color: '#0F766E', defaultVisible: true },
+      { id: 'y_to_x', name: 'Reverse Entropy T(Y → X)', color: '#6B6F7B', defaultVisible: true },
+    ],
+    tier: 2,
+  },
+  // 24. Method Comparison View
+  {
+    id: 'method_comparison',
+    title: 'Scientific Method Comparison Matrix',
+    category: 'Statistical & Inference',
+    caption: 'Rigorous benchmark trade-off matrix comparing resolution, leakage, variance, non-stationarity, and computational speed',
+    mathematicalBasis: '\\text{Trade-off: Heisenberg-Gabor Uncertainty } \\Delta t \\cdot \\Delta f \\ge \\frac{1}{4\\pi}',
+    tags: ['benchmarks', 'comparison', 'resolution', 'variance', 'uncertainty'],
+    legend: [
+      { id: 'spectral', name: 'Spectral Methods', color: '#0072B2', defaultVisible: true },
+      { id: 'timefreq', name: 'Time-Frequency Methods', color: '#0F766E', defaultVisible: true },
+    ],
+    tier: 2,
+  },
 ];

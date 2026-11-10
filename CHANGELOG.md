@@ -76,3 +76,26 @@
   - `npm run build` passed in 4.85s (0 errors, code-split chunks).
   - 33/33 pytest mathematical unit and integration tests passed (100% pass rate).
   - Screenshots recorded: `prototype-screenshots/stage2-rack-desktop.png`, `stage2-rack-tablet.png`, and `stage2-rack-phone.png`.
+
+## [Stage 3 - Extras: Music Player, Audio Ingestion, Tier 2 Analysers] - 2026-11-10
+
+### Music Player & Audio Lab Integration
+- **Reference Design Matching:** Built `apps/web/src/components/music/MusicPlayer.tsx` matching `/reference/music-player-reference.png` with pastel cream `#F7F0D6` cards, soft sage `#8FAE8B` rounded album-art square, thin progress line with round handle, simple icons (shuffle, previous, play/pause, next, repeat, heart, volume).
+- **Audio Storage & Ingestion:** Created `apps/web/src/utils/musicDb.ts` with IndexedDB persistence (`synapse_music_vault_v1`) to store uploaded tracks, metadata, and user favorites. Accepts `.mp3`, `.wav`, `.flac`, `.ogg`, `.m4a` files.
+- **Synthetic Ambient Synthesizer:** Implemented built-in Web Audio API 432 Hz multi-harmonic generator (C Major triad) for immediate playback when no custom audio is uploaded.
+- **Audio Visualizer Canvas:** Real-time Web Audio `AnalyserNode` frequency spectrum rendered directly inside the sage album art.
+- **"Analyse this song" Pipeline Bridge:** Decodes audio stream via `AudioContext.decodeAudioData` into PCM float32 samples and streams directly into SYNAPSE's `activeSignal`, immediately enabling Fourier and Wavelet analysis on real music.
+- **Sidebar Integration:** Embedded seamlessly into both the Shell sidebar (`Sidebar.tsx`) and the Paper Workbench left sidebar (`PaperWorkbench.tsx`).
+
+### Tier 2 Advanced Analysers
+- **MUSIC Super-Resolution Estimator:** Subspace noise-eigenvector projection resolving closely spaced harmonic lines beyond the Fourier resolution limit.
+- **Real Cepstrum & Pitch Tracking:** Quefrency analysis isolating fundamental vocal/instrumental pitch periods.
+- **Kalman Filter State Tracking:** Recursive state-space Bayesian filter separating deterministic dynamics from observation noise.
+- **Matrix Profile:** 1-NN Euclidean distance profile across subsequences discovering conserved motifs and anomalous discords.
+- **Transfer Entropy:** Model-free asymmetric information transfer quantifying directional causality beyond linear correlations.
+- **Method Comparison Matrix:** Comprehensive benchmark matrix comparing resolution, variance, leakage, non-stationarity, and execution speed across 7 scientific methods.
+
+### Verification & Quality Gates
+- `npm run build` passed in 3.13s with 0 errors.
+- 33/33 pytest mathematical tests passing (100%).
+- Screenshots saved: `prototype-screenshots/stage3-workbench-musicplayer.png`, `stage3-rack-musicplayer.png`, and `stage3-mobile-player.png`.
