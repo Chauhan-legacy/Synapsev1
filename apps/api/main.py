@@ -27,6 +27,8 @@ from synapse_discovery.orchestrator import (
     DiscoveryExperiment,
     generate_html_investigation_report,
 )
+from apps.api.routers.arxiv_router import router as arxiv_router
+from apps.api.routers.astronomy_router import router as astronomy_router
 
 app = FastAPI(
     title="SYNAPSE Scientific Signal Intelligence API",
@@ -41,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(arxiv_router)
+app.include_router(astronomy_router)
 
 # In-memory storage for datasets, experiments, and async jobs
 DATASETS_STORE: Dict[str, Signal] = {}

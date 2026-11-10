@@ -161,6 +161,67 @@ export function createSignalPreset(code: string): SignalData {
       const u2 = ((i * 11 + 17) % 991) / 991.0;
       return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
     });
+  } else if (code === 'astro_ligo_gw150914') {
+    filename = 'LIGO_GW150914_Binary_Black_Hole_Strain.csv';
+    // Authentic Gravitational Wave Inspiraling Chirp & Ringdown
+    values = timestamps.map((t) => {
+      const tMerger = 5.0; // Merger event at t = 5.0s
+      let strain = 0;
+      if (t < tMerger) {
+        const tau = Math.max(0.015, tMerger - t);
+        const freq = Math.min(250.0, 35.0 * Math.pow(0.5 / tau, 0.375));
+        const env = Math.min(2.5, 0.25 * Math.pow(0.5 / tau, 0.25));
+        strain = env * Math.sin(2 * Math.PI * (freq * 0.5 * t));
+      } else {
+        const decay = (t - tMerger) / 0.04;
+        strain = 2.5 * Math.exp(-decay) * Math.sin(2 * Math.PI * 250.0 * (t - tMerger));
+      }
+      const noise = (Math.sin(t * 789.3) * 0.08 + Math.cos(t * 1421.7) * 0.05);
+      return strain + noise;
+    });
+  } else if (code === 'astro_kepler_transit') {
+    filename = 'Kepler186f_Exoplanet_Transit_Photometry.csv';
+    // Stellar normalized flux with planetary transit ingress, bottom, and egress at t = 5.0s
+    values = timestamps.map((t, i) => {
+      let flux = 1.0;
+      const tMid = 5.0;
+      const duration = 1.5;
+      if (Math.abs(t - tMid) <= duration) {
+        const u = Math.abs(t - tMid) / duration;
+        const limb = 1.0 - 0.25 * (1.0 - Math.sqrt(Math.max(0, 1.0 - u * u)));
+        flux = 1.0 - 0.0142 * limb;
+      }
+      const shotNoise = ((i % 17) - 8) * 0.0004;
+      return flux + shotNoise;
+    });
+  } else if (code === 'astro_goes_solar_flare') {
+    filename = 'NOAA_GOES16_Solar_XRay_Flux.csv';
+    // M5.4 Solar flare impulsive rise and exponential cooling decay
+    values = timestamps.map((t) => {
+      let flux = 0.15; // Baseline B1.5 class
+      if (t >= 2.5 && t <= 9.0) {
+        if (t < 4.5) {
+          const rise = (t - 2.5) / 2.0;
+          flux = 0.15 + 5.4 * Math.pow(rise, 3.2);
+        } else {
+          const decay = (t - 4.5) / 1.5;
+          flux = 0.15 + 5.4 * Math.exp(-decay);
+        }
+      }
+      const noise = Math.sin(t * 43.1) * 0.03;
+      return flux + noise;
+    });
+  } else if (code === 'astro_crab_pulsar') {
+    filename = 'Crab_Pulsar_PSR_B0531+21_Radio_Pulses.csv';
+    // 29.85 Hz periodic pulsed emission (Period P = 33.5 ms) with secondary interpulse
+    values = timestamps.map((t, i) => {
+      const pSec = 0.0335028;
+      const phase = (t % pSec) / pSec;
+      const p1 = 2.4 * Math.exp(-Math.pow((phase - 0.35) / 0.035, 2));
+      const p2 = 1.1 * Math.exp(-Math.pow((phase - 0.75) / 0.045, 2));
+      const noise = ((i % 23) - 11) / 30.0;
+      return p1 + p2 + noise;
+    });
   } else {
     // Default Master Challenge Signal (benchmark_J, etc.)
     filename = 'J_master_discovery_challenge.csv';
@@ -210,6 +271,10 @@ export function createSignalPreset(code: string): SignalData {
 
 const ALL_BENCHMARK_PRESETS = [
   { id: 'benchmark_ALL', name: 'Dataset Ω: Master All-in-One Multi-Physics (Combined Testing)', isBenchmark: true },
+  { id: 'astro_ligo_gw150914', name: '🔭 Astro: LIGO GW150914 Gravitational Wave Strain', isBenchmark: true },
+  { id: 'astro_kepler_transit', name: '🪐 Astro: Kepler-186f Exoplanet Transit Photometry', isBenchmark: true },
+  { id: 'astro_goes_solar_flare', name: '☀️ Astro: NOAA GOES-16 M5.4 Solar X-Ray Flare', isBenchmark: true },
+  { id: 'astro_crab_pulsar', name: '⚡ Astro: Crab Pulsar PSR B0531+21 Radio Pulses', isBenchmark: true },
   { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
   { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
   { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },

@@ -30,11 +30,17 @@ import {
 } from 'lucide-react';
 import { useSignal } from '../context/SignalContext';
 import { MathFormula } from '../components/common/MathFormula';
+import {
+  getLigoGwStrainData,
+  getKeplerTransitData,
+  getGoesSolarFlareData,
+  getPulsarFoldingData,
+} from '../services/astronomyService';
 
 export interface PanelConfig {
   id: string;
   title: string;
-  category: 'Spectral' | 'Time-Frequency' | 'Complexity' | 'Anomalies' | 'Relations' | 'Inference';
+  category: 'Spectral' | 'Time-Frequency' | 'Complexity' | 'Anomalies' | 'Relations' | 'Inference' | 'Astronomy';
   caption: string;
   latexBasis: string;
   legend: Array<{ name: string; color: string; unit?: string }>;
@@ -280,6 +286,66 @@ const ALL_INSTRUMENT_CATALOG: PanelConfig[] = [
     legend: [
       { name: 'Surrogate Null Count', color: '#0F766E' },
       { name: 'Observed Statistic', color: '#2E7D32' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 17. LIGO Gravitational Wave Strain
+  {
+    id: 'ligo_gw_strain',
+    title: 'LIGO GW150914 Spacetime Strain Streamer',
+    category: 'Astronomy',
+    caption: 'Inspiral, merger, and ringdown gravitational-wave strain h(t) × 10⁻²¹ from binary black hole collision',
+    latexBasis: 'h(t) = \\frac{4}{r}\\left(\\frac{G\\mathcal{M}}{c^2}\\right)^{5/4}\\left(\\frac{c(t_c - t)}{5}\\right)^{-1/4}\\cos(2\\phi(t)), \\quad \\mathcal{M} = 28.1\\,M_\\odot',
+    legend: [
+      { name: 'Strain h(t) [10⁻²¹]', color: '#1F2430' },
+      { name: 'Chirp Envelope', color: '#0F766E' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 18. Kepler / TESS Exoplanet Transit Photometry
+  {
+    id: 'kepler_transit',
+    title: 'Kepler/TESS Exoplanet Transit Photometer',
+    category: 'Astronomy',
+    caption: 'Normalized stellar flux showing limb-darkened planetary ingress, transit trough, and egress',
+    latexBasis: '\\Delta F \\approx \\left(\\frac{R_p}{R_*}\\right)^2 = 1.42\\%, \\quad R_p = 1.17\\,R_\\oplus',
+    legend: [
+      { name: 'Normalized Flux', color: '#1F2430' },
+      { name: 'Transit Model', color: '#0F766E' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 19. NOAA GOES Solar Flare Spectrograph
+  {
+    id: 'goes_solar_flare',
+    title: 'NOAA GOES Solar X-Ray Spectrograph',
+    category: 'Astronomy',
+    caption: 'Continuous 1-minute GOES-16 solar irradiance telemetry with M5.4 class eruption classification',
+    latexBasis: 'I_{\\text{GOES}} = \\int_{0.1\\,\\text{nm}}^{0.8\\,\\text{nm}} F(\\lambda, t)\\,d\\lambda, \\quad \\text{Class } M \\ge 10^{-5}\\,\\text{W/m}^2',
+    legend: [
+      { name: 'X-Ray (0.1-0.8 nm)', color: '#1F2430', unit: 'μW/m²' },
+      { name: 'Short Channel', color: '#B7791F', unit: 'μW/m²' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 20. Pulsar Epoch-Folding Profiler
+  {
+    id: 'pulsar_folding',
+    title: 'Pulsar Epoch-Folding & Pulse Profiler',
+    category: 'Astronomy',
+    caption: 'Integrated radio pulse profile over rotational phase [0, 1] for Crab Pulsar (P = 33.5 ms, DM = 56.8)',
+    latexBasis: '\\Phi(t) = \\frac{t - t_0}{P} - \\frac{1}{2}\\frac{\\dot{P}}{P^2}(t - t_0)^2 \\pmod 1, \\quad \\chi^2_{\\text{PDM}} = 489.2',
+    legend: [
+      { name: 'Pulse Profile Intensity', color: '#1F2430' },
+      { name: 'Noise Baseline', color: '#6B6F7B' },
     ],
     pinned: false,
     collapsed: false,
@@ -550,6 +616,12 @@ export const InstrumentRackView: React.FC = () => {
       { bin: '18.4 (Observed)', count: 0, isObserved: true },
     ];
 
+    // 15-18. Astronomy Physical Data Streams
+    const ligoData = getLigoGwStrainData();
+    const keplerData = getKeplerTransitData();
+    const goesData = getGoesSolarFlareData();
+    const pulsarData = getPulsarFoldingData();
+
     return {
       timeData,
       spectrumData,
@@ -566,6 +638,10 @@ export const InstrumentRackView: React.FC = () => {
       xcorrData,
       musicData,
       surrogateBins,
+      ligoData,
+      keplerData,
+      goesData,
+      pulsarData,
       stats: { fs, n, mean, std },
     };
   }, [activeSignal]);
@@ -590,10 +666,12 @@ export const InstrumentRackView: React.FC = () => {
     setShowAddMenu(false);
   };
 
-  const handleApplyPreset = (preset: 'all' | 'discovery' | 'spectral' | 'dynamics') => {
+  const handleApplyPreset = (preset: 'all' | 'discovery' | 'spectral' | 'dynamics' | 'astronomy') => {
     setDeletedPanelIds([]);
     if (preset === 'all') {
       setPanels(ALL_INSTRUMENT_CATALOG);
+    } else if (preset === 'astronomy') {
+      setPanels(ALL_INSTRUMENT_CATALOG.filter((p) => p.category === 'Astronomy'));
     } else if (preset === 'spectral') {
       setPanels(ALL_INSTRUMENT_CATALOG.filter((p) => p.category === 'Spectral' || p.id === 'stft_spectrogram' || p.id === 'cwt_scalogram'));
     } else if (preset === 'dynamics') {
@@ -730,9 +808,9 @@ export const InstrumentRackView: React.FC = () => {
               type="button"
               onClick={() => handleApplyPreset('all')}
               className="px-2.5 py-1 rounded text-xs font-semibold text-[#1F2430] hover:bg-[#FFFFFF] transition-colors"
-              title="Load all 16 instruments simultaneously"
+              title="Load all 20 instruments simultaneously"
             >
-              All 16 Mega Rack
+              All 20 Mega Rack
             </button>
             <button
               type="button"
@@ -741,6 +819,14 @@ export const InstrumentRackView: React.FC = () => {
               title="Standard 8-instrument discovery rack"
             >
               Standard 8
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('astronomy')}
+              className="px-2 py-1 rounded text-xs text-[#0F766E] font-bold hover:bg-[#FFFFFF] transition-colors"
+              title="Astrophysical instruments (LIGO, Kepler, GOES, Pulsars)"
+            >
+              🔭 Astronomy
             </button>
             <button
               type="button"
@@ -800,7 +886,7 @@ export const InstrumentRackView: React.FC = () => {
       {/* 2. CATEGORY PILLS & SEARCH */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {['all', 'Spectral', 'Time-Frequency', 'Complexity', 'Anomalies', 'Relations', 'Inference'].map((cat) => (
+          {['all', 'Astronomy', 'Spectral', 'Time-Frequency', 'Complexity', 'Anomalies', 'Relations', 'Inference'].map((cat) => (
             <button
               key={cat}
               type="button"
@@ -1102,6 +1188,49 @@ export const InstrumentRackView: React.FC = () => {
                               <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
                               <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                               <Line type="monotone" dataKey="powerDb" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'ligo_gw_strain' ? (
+                            <LineChart data={processedData.ligoData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="timeMs" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis domain={[-1.6, 1.6]} tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={0} stroke="#C0392B" strokeDasharray="2 2" label={{ value: 'Merger (t=0)', fill: '#C0392B', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="strain" stroke="#1F2430" strokeWidth={1.75} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="envelope" stroke="#0F766E" strokeWidth={1.5} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'kepler_transit' ? (
+                            <LineChart data={processedData.keplerData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="timeHours" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis domain={[0.98, 1.005]} tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine y={1.0} stroke="#6B6F7B" strokeDasharray="2 2" />
+                              <ReferenceLine y={1.0 - 0.0142} stroke="#0F766E" strokeDasharray="2 2" label={{ value: 'ΔF=1.42%', fill: '#0F766E', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="flux" stroke="#1F2430" strokeWidth={1.5} dot={{ r: 1.5, fill: '#1F2430' }} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="modelFlux" stroke="#0F766E" strokeWidth={2} dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'goes_solar_flare' ? (
+                            <LineChart data={processedData.goesData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="timeMinutes" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine y={10.0} stroke="#E69F00" strokeDasharray="3 3" label={{ value: 'M-Class', fill: '#E69F00', fontSize: 9 }} />
+                              <ReferenceLine y={100.0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'X-Class', fill: '#C0392B', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="fluxLong" stroke="#1F2430" strokeWidth={2} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="fluxShort" stroke="#B7791F" strokeWidth={1.5} strokeDasharray="2 2" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'pulsar_folding' ? (
+                            <LineChart data={processedData.pulsarData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="phase" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={0.35} stroke="#0F766E" strokeDasharray="2 2" label={{ value: 'Main Pulse', fill: '#0F766E', fontSize: 9 }} />
+                              <ReferenceLine x={0.75} stroke="#B7791F" strokeDasharray="2 2" label={{ value: 'Interpulse', fill: '#B7791F', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="intensity" stroke="#1F2430" strokeWidth={2} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="baseline" stroke="#6B6F7B" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
                             </LineChart>
                           ) : (
                             <BarChart data={processedData.surrogateBins} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>

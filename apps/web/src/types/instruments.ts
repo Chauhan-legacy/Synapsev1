@@ -9,7 +9,8 @@ export type InstrumentCategory =
   | 'anomaly'
   | 'relations'
   | 'modeling'
-  | 'rigor';
+  | 'rigor'
+  | 'astronomy';
 
 export type InstrumentStatus = 'running' | 'done' | 'warning' | 'error';
 
@@ -47,3 +48,4 @@ export interface PanelState {
   colSpan: 1 | 2 | 3;
   customSettings?: Record<string, any>;
 }
+
