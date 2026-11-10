@@ -47,6 +47,9 @@ const RelationsView = React.lazy(() =>
 const AstronomyLabView = React.lazy(() =>
   import('./views/AstronomyLabView').then((m) => ({ default: m.AstronomyLabView }))
 );
+const PhysicsLabView = React.lazy(() =>
+  import('./views/PhysicsLabView').then((m) => ({ default: m.PhysicsLabView }))
+);
 const InferenceView = React.lazy(() =>
   import('./views/InferenceView').then((m) => ({ default: m.InferenceView }))
 );
@@ -106,6 +109,7 @@ const AppInner: React.FC = () => {
       hash.includes('benchmarks') ||
       hash.includes('dynamics') ||
       hash.includes('astronomy') ||
+      hash.includes('physics') ||
       hash.includes('methods') ||
       hash.includes('rack') ||
       hash.includes('inference') ||
@@ -136,6 +140,7 @@ const AppInner: React.FC = () => {
         hash.includes('benchmarks') ||
         hash.includes('dynamics') ||
         hash.includes('astronomy') ||
+        hash.includes('physics') ||
         hash.includes('methods') ||
         hash.includes('rack') ||
         hash.includes('inference') ||
@@ -353,6 +358,8 @@ const AppInner: React.FC = () => {
         return <RelationsView onOpenMethodCard={handleOpenMethodCard} />;
       case 'astronomy':
         return <AstronomyLabView onOpenMethodCard={handleOpenMethodCard} />;
+      case 'physics':
+        return <PhysicsLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'inference':
         return <InferenceView onOpenMethodCard={handleOpenMethodCard} />;
       case 'findings':

@@ -27,6 +27,7 @@ import {
   Plus,
   Sliders,
   Check,
+  Box,
 } from 'lucide-react';
 import { useSignal } from '../context/SignalContext';
 import { MathFormula } from '../components/common/MathFormula';
@@ -36,6 +37,12 @@ import {
   getGoesSolarFlareData,
   getPulsarFoldingData,
 } from '../services/astronomyService';
+import { Ligo3DSpacetime } from '../components/astronomy/Ligo3DSpacetime';
+import { Exoplanet3DTransit } from '../components/astronomy/Exoplanet3DTransit';
+import { Pulsar3DLighthouse } from '../components/astronomy/Pulsar3DLighthouse';
+import { Solar3DFlare } from '../components/astronomy/Solar3DFlare';
+import { Desmos3DAttractor } from '../components/dynamics/Desmos3DAttractor';
+import { Hilbert3DHelix } from '../components/dynamics/Hilbert3DHelix';
 
 export interface PanelConfig {
   id: string;
@@ -360,6 +367,11 @@ export const InstrumentRackView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [layoutPreset, setLayoutPreset] = useState<'compact' | 'comfortable' | 'presentation'>('comfortable');
+  const [panel3DModes, setPanel3DModes] = useState<Record<string, boolean>>({});
+
+  const togglePanel3D = (id: string) => {
+    setPanel3DModes((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Shared Linked Cursor (Hover time in seconds across time panels)
   const [sharedCursorTime, setSharedCursorTime] = useState<number | null>(null);
@@ -642,6 +654,8 @@ export const InstrumentRackView: React.FC = () => {
       keplerData,
       goesData,
       pulsarData,
+      rawSignal: raw,
+      hilbertEnvelope: hilbertData.map((h) => h.env),
       stats: { fs, n, mean, std },
     };
   }, [activeSignal]);
@@ -724,9 +738,9 @@ export const InstrumentRackView: React.FC = () => {
 
   // Height class by layout density
   const heightClass = {
-    compact: 'h-48',
-    comfortable: 'h-64',
-    presentation: 'h-80',
+    compact: 'h-[220px] min-h-[220px]',
+    comfortable: 'h-[280px] min-h-[280px]',
+    presentation: 'h-[360px] min-h-[360px]',
   }[layoutPreset];
 
   return (
@@ -952,6 +966,21 @@ export const InstrumentRackView: React.FC = () => {
 
                     {/* Window Controls */}
                     <div className="flex items-center space-x-1 text-[#6B6F7B] shrink-0">
+                      {['phase_space', 'ligo_gw_strain', 'kepler_transit', 'goes_solar_flare', 'pulsar_folding', 'hilbert'].includes(panel.id) && (
+                        <button
+                          type="button"
+                          onClick={() => togglePanel3D(panel.id)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1 border transition-colors ${
+                            panel3DModes[panel.id]
+                              ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-2xs'
+                              : 'bg-[#F6F3EC] text-[#4A5060] border-[#DDD6C7] hover:text-[#1F2430]'
+                          }`}
+                          title="Toggle 3D Simulation"
+                        >
+                          <Box className="w-3 h-3" />
+                          <span>{panel3DModes[panel.id] ? '3D Active' : '3D View'}</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleTogglePin(panel.id)}
@@ -999,7 +1028,11 @@ export const InstrumentRackView: React.FC = () => {
                     {/* Chart Container */}
                     <div className={`w-full ${isFullscreen ? 'h-[65vh]' : heightClass}`}>
                       {/* Instrument Specific Renderers */}
-                      {panel.id === 'phase_space' ? (
+                      {panel.id === 'phase_space' && panel3DModes['phase_space'] ? (
+                        <div className="w-full h-full">
+                          <Desmos3DAttractor signal={processedData.rawSignal} delay={5} title="3D Phase-Space Attractor" />
+                        </div>
+                      ) : panel.id === 'phase_space' ? (
                         <div className="w-full h-full flex items-center justify-center relative overflow-hidden bg-[#FFFFFF] rounded-md border border-[#DDD6C7] p-2">
                           <svg className="w-full h-full max-h-full" viewBox="-4 -4 8 8" preserveAspectRatio="xMidYMid meet">
                             <line x1="-4" y1="0" x2="4" y2="0" stroke="#DDD6C7" strokeWidth="0.04" strokeDasharray="0.1 0.1" />
@@ -1038,6 +1071,20 @@ export const InstrumentRackView: React.FC = () => {
                           <div className="absolute bottom-1 right-2 text-[9px] font-mono text-[#6B6F7B] bg-[#FFFFFF]/90 px-1 rounded border border-[#DDD6C7]">
                             DET = 0.842
                           </div>
+                        </div>
+                      ) : panel3DModes[panel.id] ? (
+                        <div className="w-full h-full min-h-[240px]">
+                          {panel.id === 'ligo_gw_strain' && <Ligo3DSpacetime />}
+                          {panel.id === 'kepler_transit' && <Exoplanet3DTransit />}
+                          {panel.id === 'goes_solar_flare' && <Solar3DFlare />}
+                          {panel.id === 'pulsar_folding' && <Pulsar3DLighthouse />}
+                          {panel.id === 'hilbert' && (
+                            <Hilbert3DHelix
+                              signal={processedData.rawSignal}
+                              envelope={processedData.hilbertEnvelope}
+                              fs={processedData.stats.fs}
+                            />
+                          )}
                         </div>
                       ) : (
                         <ResponsiveContainer width="100%" height="100%">

@@ -280,3 +280,4 @@ export const CernHiggs3DCollider: React.FC = () => {
     </div>
   );
 };
+

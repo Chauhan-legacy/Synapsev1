@@ -21,6 +21,7 @@ import {
   ChevronDown,
   X,
   Orbit,
+  Atom,
 } from 'lucide-react';
 
 export type WorkbenchView =
@@ -35,6 +36,7 @@ export type WorkbenchView =
   | 'dynamics'
   | 'relations'
   | 'astronomy'
+  | 'physics'
   | 'inference'
   | 'findings'
   | 'evidence'
@@ -116,6 +118,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Astronomy',
       items: [
         { id: 'astronomy', label: 'Astronomy Lab', icon: Orbit },
+      ],
+    },
+    {
+      title: 'Physics & Nuclear',
+      items: [
+        { id: 'physics', label: 'Physics & Nuclear Lab', icon: Atom },
       ],
     },
     {
