@@ -83,6 +83,7 @@ const AppInner: React.FC = () => {
     selectDataset,
     loadCustomSignal,
     deleteDataset,
+    restoreDefaultDatasets,
     isAnalyzing,
     runAnalysis,
     currentView,
@@ -230,10 +231,20 @@ const AppInner: React.FC = () => {
             setPageMode('workbench');
             window.location.hash = '#/workbench';
           }}
+          onOpenRack={() => {
+            setPageMode('advanced');
+            setCurrentView('rack');
+            window.location.hash = '#/rack';
+          }}
           onOpenBenchmarks={() => {
             setPageMode('advanced');
             setCurrentView('benchmarks');
             window.location.hash = '#/benchmarks';
+          }}
+          onOpenMethods={() => {
+            setPageMode('advanced');
+            setCurrentView('methods');
+            window.location.hash = '#/methods';
           }}
           realTestCount={33}
         />
@@ -353,6 +364,7 @@ const AppInner: React.FC = () => {
           selectedDatasetId={activeSignal.id}
           onSelectDataset={selectDataset}
           onDeleteDataset={deleteDataset}
+          onRestoreDatasets={restoreDefaultDatasets}
           isAnalyzing={isAnalyzing}
           onRunAnalysis={runAnalysis}
           onUploadClick={() => fileInputRef.current?.click()}

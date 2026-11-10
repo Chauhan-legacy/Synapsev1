@@ -32,7 +32,64 @@ export function createSignalPreset(code: string): SignalData {
   let channel2: number[] = [];
   let filename = `${code}_dataset.csv`;
 
-  if (code === 'benchmark_A' || code === 'A') {
+  if (code === 'benchmark_ALL' || code === 'ALL') {
+    filename = 'Omega_master_multiphysics_omnibus.csv';
+    // Comprehensive Multi-Physics Signal:
+    // 1. Harmonics at 5, 14, 35 Hz with sum-frequency coupling at 19 Hz
+    // 2. Frequency sweep chirp in center window
+    // 3. Planted outlier spikes for Rosner ESD
+    // 4. Mean & variance regime shifts for PELT
+    // 5. Deterministic chaos fold
+    // 6. Photometric transit dip
+    values = timestamps.map((t, i) => {
+      // Harmonic baseline + quadratic phase coupling (5 + 14 = 19 Hz)
+      let s = 1.5 * Math.cos(2 * Math.PI * 5.0 * t) +
+              1.0 * Math.cos(2 * Math.PI * 14.0 * t + 0.4) +
+              0.6 * Math.cos(2 * Math.PI * 35.0 * t + 1.2) +
+              0.5 * Math.cos(2 * Math.PI * 19.0 * t + 0.4);
+
+      // Non-stationary quadratic chirp sweep in window t in [3.0, 6.0]
+      if (t >= 3.0 && t <= 6.0) {
+        const chirpT = t - 3.0;
+        const chirpPhase = 2 * Math.PI * (2.0 * chirpT + 3.0 * Math.pow(chirpT, 2));
+        s += 1.2 * Math.sin(chirpPhase);
+      }
+
+      // Nonlinear folded attractor component (deterministic chaos proxy)
+      s += 0.45 * Math.sin(2 * Math.PI * 1.25 * t) * Math.cos(2 * Math.PI * 0.3 * t);
+
+      // Regime shift: low variance t < 3s, high variance 3-6.5s, mean level offset t >= 6.5s
+      const baseNoise = ((i % 17) - 8) / 22.0;
+      if (t < 3.0) {
+        s += 0.25 * baseNoise;
+      } else if (t < 6.5) {
+        s += 0.85 * baseNoise;
+      } else {
+        s += 1.8 + 0.35 * baseNoise; // mean shift +1.8V
+      }
+
+      // Planted transient outlier spikes for Rosner ESD test
+      if (Math.abs(t - 1.85) < 0.015) s += 7.8; // Outlier Spike 1 (+7.8V)
+      if (Math.abs(t - 4.60) < 0.015) s -= 6.5; // Outlier Spike 2 (-6.5V)
+      if (Math.abs(t - 7.90) < 0.015) s += 8.4; // Outlier Spike 3 (+8.4V)
+
+      // Photometric transit dip at t = 9.1s
+      if (t >= 8.95 && t <= 9.25) {
+        s -= 1.1 * (1.0 - Math.pow((t - 9.1) / 0.15, 2));
+      }
+
+      return s;
+    });
+
+    // Coupled response channel Y with 25 ms lag (5 samples) and transfer entropy
+    channel2 = timestamps.map((t, i) => {
+      const lagIdx = Math.max(0, i - 5);
+      const driven = 0.85 * values[lagIdx];
+      const localCoupled = 0.4 * Math.sin(2 * Math.PI * 9.0 * t);
+      const noise2 = ((i % 19) - 9) / 20.0;
+      return driven + localCoupled + noise2;
+    });
+  } else if (code === 'benchmark_A' || code === 'A') {
     filename = 'A_periodic_multifrequency.csv';
     // 5 Hz (amp 1.5), 14 Hz (amp 1.0), 35 Hz (amp 0.6) + noise
     values = timestamps.map((t, i) => {
@@ -87,8 +144,25 @@ export function createSignalPreset(code: string): SignalData {
       const lagT = Math.max(0, t - 0.025);
       return 0.8 * (2.0 * Math.sin(2 * Math.PI * 8.0 * lagT)) + ((i % 19) - 9) / 18.0;
     });
+  } else if (code === 'benchmark_F' || code === 'F') {
+    filename = 'F_motifs_recurrence.csv';
+    // Repeating nonlinear motif patterns
+    values = timestamps.map((t, i) => {
+      const phaseInCycle = (t % 1.5) / 1.5;
+      const motif = Math.sin(2 * Math.PI * 3.0 * phaseInCycle) * Math.exp(-2.0 * phaseInCycle);
+      const noise = ((i % 21) - 10) / 25.0;
+      return 2.2 * motif + noise;
+    });
+  } else if (code === 'benchmark_G' || code === 'G') {
+    filename = 'G_pure_null_challenge.csv';
+    // Pure Gaussian White Noise null challenge
+    values = timestamps.map((_, i) => {
+      const u1 = Math.max(1e-9, ((i * 7 + 13) % 997) / 997.0);
+      const u2 = ((i * 11 + 17) % 991) / 991.0;
+      return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    });
   } else {
-    // Default Master Challenge Signal
+    // Default Master Challenge Signal (benchmark_J, etc.)
     filename = 'J_master_discovery_challenge.csv';
     values = timestamps.map((t, i) => {
       let s = 1.2 * Math.sin(2 * Math.PI * 7.2 * t) +
@@ -135,6 +209,7 @@ export function createSignalPreset(code: string): SignalData {
 }
 
 const ALL_BENCHMARK_PRESETS = [
+  { id: 'benchmark_ALL', name: 'Dataset Ω: Master All-in-One Multi-Physics (Combined Testing)', isBenchmark: true },
   { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
   { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
   { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },
@@ -166,7 +241,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return createSignalPreset(firstAvailable.id);
       }
     } catch {}
-    return createSignalPreset('benchmark_A');
+    return createSignalPreset('benchmark_ALL');
   });
 
   const [customDatasets, setCustomDatasets] = useState<SignalData[]>([]);
@@ -294,7 +369,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         try {
           localStorage.removeItem('synapse_deleted_datasets_v1');
         } catch {}
-        return createSignalPreset('benchmark_A');
+        return createSignalPreset('benchmark_ALL');
       }
       return curr;
     });
@@ -316,7 +391,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     try {
       localStorage.removeItem('synapse_deleted_datasets_v1');
     } catch {}
-    setActiveSignal(createSignalPreset('benchmark_A'));
+    setActiveSignal(createSignalPreset('benchmark_ALL'));
   }, []);
 
   // Real numerical execution across modules

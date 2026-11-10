@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Menu,
   Play,
@@ -6,6 +6,8 @@ import {
   Search,
   Database,
   Trash2,
+  ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 import { WorkbenchView } from './Sidebar';
 
@@ -16,6 +18,7 @@ interface TopBarProps {
   selectedDatasetId: string;
   onSelectDataset: (id: string) => void;
   onDeleteDataset?: (id: string) => void;
+  onRestoreDatasets?: () => void;
   isAnalyzing: boolean;
   onRunAnalysis: () => void;
   onUploadClick: () => void;
@@ -49,16 +52,35 @@ export const TopBar: React.FC<TopBarProps> = ({
   selectedDatasetId,
   onSelectDataset,
   onDeleteDataset,
+  onRestoreDatasets,
   isAnalyzing,
   onRunAnalysis,
   onUploadClick,
   onOpenCommandPalette,
   apiConnected,
 }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
   const currentDataset = datasets.find((d) => d.id === selectedDatasetId);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isDropdownOpen]);
+
   return (
-    <header className="h-14 bg-[#FFFFFF] border-b border-[#DDD6C7] px-4 flex items-center justify-between gap-3 shrink-0 select-none z-10 sticky top-0 text-[#1F2430]">
+    <header className="h-14 bg-[#FFFFFF] border-b border-[#DDD6C7] px-4 flex items-center justify-between gap-3 shrink-0 select-none z-20 sticky top-0 text-[#1F2430]">
       {/* Left: Mobile Toggle & Breadcrumbs */}
       <div className="flex items-center gap-2.5 overflow-hidden">
         <button
@@ -77,35 +99,104 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Center: Dataset Selector & Delete Button */}
-      <div className="hidden md:flex items-center gap-1.5">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#DDD6C7] bg-[#EFEBE0] text-xs font-mono">
-          <Database className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
-          <select
-            value={selectedDatasetId}
-            onChange={(e) => onSelectDataset(e.target.value)}
-            className="bg-transparent border-none text-xs font-semibold text-[#1F2430] focus:outline-none cursor-pointer pr-3 font-mono max-w-[220px] lg:max-w-[290px] truncate"
-            aria-label="Active Dataset"
-          >
-            {datasets.map((ds) => (
-              <option key={ds.id} value={ds.id}>
-                {ds.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {onDeleteDataset && datasets.length > 0 && (
+      {/* Center: Integrated Dataset Selector Dropdown with in-menu Delete */}
+      <div className="hidden md:block relative" ref={dropdownRef}>
+        <div className="flex items-center rounded-md border border-[#DDD6C7] bg-[#EFEBE0] text-xs font-mono transition-colors hover:border-[#0F766E]/40 shadow-2xs">
+          {/* Main Dropdown Trigger */}
           <button
             type="button"
-            onClick={() => onDeleteDataset(selectedDatasetId)}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-medium text-[#C0392B] bg-[#FFFFFF] hover:bg-[#FDEDEC] border border-[#DDD6C7] hover:border-[#C0392B] rounded-md transition-colors shadow-2xs"
-            title={`Delete ${currentDataset?.name || 'selected dataset'}`}
-            aria-label="Delete selected dataset"
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#1F2430] focus:outline-none max-w-[240px] lg:max-w-[320px] truncate"
+            title={currentDataset?.name || 'Select dataset'}
+            aria-haspopup="listbox"
+            aria-expanded={isDropdownOpen}
           >
-            <Trash2 className="w-3.5 h-3.5 text-[#C0392B] shrink-0" />
-            <span className="hidden xl:inline">Delete</span>
+            <Database className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+            <span className="truncate">{currentDataset?.name || 'Select dataset...'}</span>
+            <ChevronDown className={`w-3 h-3 text-[#6B6F7B] shrink-0 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
+
+          {/* Quick Active Item Delete Button (compact inside capsule) */}
+          {onDeleteDataset && datasets.length > 0 && (
+            <div className="flex items-center pr-1.5 border-l border-[#DDD6C7] pl-1 py-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteDataset(selectedDatasetId);
+                }}
+                className="p-1 rounded text-[#6B6F7B] hover:text-[#C0392B] hover:bg-[#FDEDEC] transition-colors"
+                title={`Delete ${currentDataset?.name || 'active dataset'}`}
+                aria-label="Delete active dataset"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Custom Dropdown Menu with in-row Delete Buttons */}
+        {isDropdownOpen && (
+          <div className="absolute left-0 mt-1 w-80 bg-[#FFFFFF] border border-[#DDD6C7] rounded-md shadow-lg py-1 z-50 font-mono text-xs max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-[#6B6F7B] tracking-wider border-b border-[#DDD6C7] flex items-center justify-between bg-[#F8F6F1]">
+              <span>Active &amp; Available Signals ({datasets.length})</span>
+              {onRestoreDatasets && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRestoreDatasets();
+                    setIsDropdownOpen(false);
+                  }}
+                  className="flex items-center gap-1 text-[10px] text-[#0F766E] hover:underline normal-case font-medium"
+                  title="Reset to default benchmark presets"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset defaults</span>
+                </button>
+              )}
+            </div>
+
+            <div className="py-1">
+              {datasets.map((ds) => {
+                const isSelected = ds.id === selectedDatasetId;
+                return (
+                  <div
+                    key={ds.id}
+                    onClick={() => {
+                      onSelectDataset(ds.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors group ${
+                      isSelected
+                        ? 'bg-[#EFEBE0] text-[#1F2430] font-semibold'
+                        : 'hover:bg-[#F6F3EC] text-[#4A5060]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate mr-2">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-[#0F766E]' : 'bg-[#DDD6C7]'}`} />
+                      <span className="truncate">{ds.name}</span>
+                    </div>
+
+                    {/* Delete button inside each dropdown row */}
+                    {onDeleteDataset && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteDataset(ds.id);
+                        }}
+                        className="opacity-70 group-hover:opacity-100 p-1 rounded hover:bg-[#FDEDEC] text-[#6B6F7B] hover:text-[#C0392B] transition-all shrink-0"
+                        title={`Delete ${ds.name}`}
+                        aria-label={`Delete ${ds.name}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 

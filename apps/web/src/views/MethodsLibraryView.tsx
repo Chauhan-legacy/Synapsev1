@@ -56,8 +56,8 @@ export const MethodsLibraryView: React.FC<MethodsLibraryViewProps> = ({ initialM
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                 selectedCategory === cat
-                  ? 'bg-[#2563eb] text-white'
-                  : 'surface-subtle border text-secondary hover:text-primary'
+                  ? 'bg-[#0F766E] text-white shadow-2xs'
+                  : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
               }`}
             >
               {cat}
@@ -67,13 +67,13 @@ export const MethodsLibraryView: React.FC<MethodsLibraryViewProps> = ({ initialM
 
         {/* Search Input */}
         <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 text-muted absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-[#6B6F7B] absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search method or formula..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-surface-base border rounded-md text-primary placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#FFFFFF] border border-[#DDD6C7] rounded-md text-[#1F2430] placeholder:text-[#6B6F7B] focus:outline-none focus:ring-1 focus:ring-[#0F766E]"
           />
         </div>
       </div>
@@ -81,7 +81,7 @@ export const MethodsLibraryView: React.FC<MethodsLibraryViewProps> = ({ initialM
       {/* Cards Grid */}
       <div className="space-y-4">
         {filteredCards.length === 0 ? (
-          <div className="surface-base border rounded-md p-8 text-center text-muted text-xs">
+          <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-md p-8 text-center text-[#6B6F7B] text-xs">
             No methods match your filter criteria.
           </div>
         ) : (
@@ -91,32 +91,32 @@ export const MethodsLibraryView: React.FC<MethodsLibraryViewProps> = ({ initialM
               <div
                 key={card.id}
                 id={`method_${card.id}`}
-                className="surface-base border rounded-md p-5 space-y-4 transition-all hover:border-[#2563eb]/50"
+                className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-md p-5 space-y-4 transition-all hover:border-[#0F766E]/50 shadow-2xs"
               >
                 {/* Card Title & Meta */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#2563eb]/10 text-[#2563eb] border border-[#2563eb]/20">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/20">
                         {card.category}
                       </span>
-                      <h2 className="text-sm font-bold text-primary font-sans">{card.name}</h2>
+                      <h2 className="text-sm font-bold text-[#1F2430] font-sans">{card.name}</h2>
                     </div>
-                    <p className="text-xs text-secondary font-sans leading-relaxed">{card.plain_language}</p>
+                    <p className="text-xs text-[#4A5060] font-sans leading-relaxed">{card.plain_language}</p>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setExpandedCardId(isExpanded ? null : card.id)}
-                    className="text-xs font-mono text-[#2563eb] hover:underline shrink-0"
+                    className="text-xs font-mono text-[#0F766E] hover:underline shrink-0"
                   >
                     {isExpanded ? 'Collapse [-]' : 'Expand Details [+]'}
                   </button>
                 </div>
 
-                {/* KaTeX Formula Box */}
-                <div className="p-3.5 rounded bg-[#0d0e11] border border-[#26282e] overflow-x-auto text-center">
-                  <MathFormula formula={card.latex_formula} displayMode={true} />
+                {/* KaTeX Formula Box - Clean Paper Style */}
+                <div className="p-4 rounded-md bg-[#EFEBE0] border border-[#DDD6C7] overflow-x-auto text-center text-[#1F2430] shadow-2xs">
+                  <MathFormula formula={card.latex_formula} displayMode={true} className="text-[#1F2430]" />
                 </div>
 
                 {/* Expanded Details: Assumptions, Failure Modes, Parameters, Benchmarks */}
