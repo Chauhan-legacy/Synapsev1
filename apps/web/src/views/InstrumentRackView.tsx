@@ -557,7 +557,25 @@ export const InstrumentRackView: React.FC = () => {
   const [panels, setPanels] = useState<PanelConfig[]>(() => {
     try {
       const saved = localStorage.getItem('synapse_rack_panels_v2');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Re-hydrate each panel with canonical catalog properties (legend, latexBasis, category)
+          const hydrated = parsed
+            .map((p: any) => {
+              const canonical = ALL_INSTRUMENT_CATALOG.find((c) => c.id === p.id);
+              if (!canonical) return null;
+              return {
+                ...canonical,
+                pinned: p.pinned ?? false,
+                collapsed: p.collapsed ?? false,
+                fullscreen: p.fullscreen ?? false,
+              };
+            })
+            .filter(Boolean) as PanelConfig[];
+          if (hydrated.length > 0) return hydrated;
+        }
+      }
     } catch (e) {
       // fallback
     }
@@ -1756,7 +1774,7 @@ export const InstrumentRackView: React.FC = () => {
 
                     {/* Standardized Chart Legend */}
                     <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[#DDD6C7]/60 text-[10px] font-mono mt-1">
-                      {panel.legend.map((leg, lIdx) => (
+                      {(panel.legend || []).map((leg, lIdx) => (
                         <div key={lIdx} className="flex items-center space-x-1.5">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: leg.color }} />
                           <span className="text-[#4A5060] font-medium">{leg.name}</span>

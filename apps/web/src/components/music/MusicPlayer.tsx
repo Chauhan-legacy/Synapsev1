@@ -669,26 +669,16 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
                 }`}
               />
               <span className="font-bold uppercase tracking-wider text-[10px]">
-                {activeEmbed.provider}
+                {activeEmbed.provider} Stream
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-[10px]">
-              <button
-                type="button"
-                onClick={() => setShowUrlInput(!showUrlInput)}
-                className={`p-1 rounded transition ${
-                  showUrlInput ? 'bg-[#0F766E] text-white' : 'hover:bg-[#EFE8CC] text-[#1F2430]'
-                }`}
-                title="Change or paste streaming link"
-              >
-                <Link2 className="w-3 h-3" />
-              </button>
+            <div className="flex items-center gap-2 text-[10px]">
               <a
                 href={activeEmbed.originalUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[#6B6F7B] hover:text-[#1F2430] flex items-center gap-0.5 hover:underline px-1 py-0.5"
+                className="text-[#6B6F7B] hover:text-[#1F2430] flex items-center gap-0.5 hover:underline"
                 title="Open stream in external tab"
               >
                 Open <ExternalLink className="w-2.5 h-2.5" />
@@ -697,7 +687,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
                 type="button"
                 onClick={() => setActiveEmbed(null)}
                 className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-red-100 text-red-600 font-bold transition text-[10px]"
-                title="Close stream and return to internal synth"
+                title="Detach stream and return to internal synth"
               >
                 Detach
               </button>
@@ -707,35 +697,10 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
                 className="p-1 rounded hover:bg-[#EFE8CC] text-[#6B6F7B] transition"
                 title="Minimize player"
               >
-                <Minimize2 className="w-3 h-3" />
+                <Minimize2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
-
-          {/* Quick URL Switcher Drawer */}
-          {showUrlInput && (
-            <div className="p-2 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-xs flex flex-col gap-1.5 text-xs">
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={streamUrl}
-                  onChange={(e) => setStreamUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleConnectStream();
-                  }}
-                  placeholder="Paste Spotify, YouTube or MP3 link..."
-                  className="flex-1 px-2 py-1 text-xs font-mono bg-[#FFFDF9] border border-[#DDD6C7] rounded focus:outline-hidden focus:border-[#0F766E] text-[#1F2430]"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleConnectStream()}
-                  className="px-2.5 py-1 rounded bg-[#0F766E] hover:bg-[#0B5E58] text-white text-[10px] font-bold transition shrink-0"
-                >
-                  Go
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Video / Track Player (Hero Centerpiece) */}
           <div className="rounded-xl overflow-hidden border border-[#DDD6C7] bg-black shadow-inner">
@@ -920,7 +885,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         )}
 
         {/* Sage-Green Album Art with Waveform Canvas */}
-        <div className="relative w-full h-28 rounded-xl bg-[#8FAE8B] overflow-hidden flex flex-col items-center justify-center shadow-inner">
+        <div className="relative w-full aspect-square rounded-2xl bg-[#8FAE8B] overflow-hidden flex flex-col items-center justify-center shadow-inner">
           <canvas
             ref={canvasRef}
             width={200}

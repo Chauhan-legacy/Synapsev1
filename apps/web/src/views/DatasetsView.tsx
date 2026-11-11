@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useSignal } from '../context/SignalContext';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
 import { Upload, Database, CheckCircle2, Filter, Trash2 } from 'lucide-react';
+import { parseUniversalSignalCSV } from '../utils/csvParser';
 
 interface DatasetsViewProps {
   onOpenMethodCard?: (name: string) => void;
@@ -24,48 +25,9 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
       const text = event.target?.result as string;
       if (!text) return;
 
-      const lines = text.trim().split('\n');
-      const parsedValues: number[] = [];
-      const parsedTimes: number[] = [];
-
-      lines.forEach((line, idx) => {
-        if (idx === 0 && isNaN(Number(line.split(',')[0]))) {
-          return; // Skip header
-        }
-        const parts = line.split(',').map((p) => parseFloat(p.trim()));
-        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          parsedTimes.push(parts[0]);
-          parsedValues.push(parts[1]);
-        } else if (parts.length === 1 && !isNaN(parts[0])) {
-          parsedTimes.push(parsedTimes.length * (1.0 / 200.0));
-          parsedValues.push(parts[0]);
-        }
-      });
-
-      if (parsedValues.length > 4) {
-        const dt = parsedTimes.length > 1 ? parsedTimes[1] - parsedTimes[0] : 1.0 / 200.0;
-        const fs = 1.0 / (dt || 0.005);
-        loadCustomSignal({
-          id: `upload_${Date.now()}`,
-          filename: file.name,
-          samplingRate: fs,
-          timestamps: parsedTimes,
-          channels: { 'Channel 1': parsedValues },
-          channelNames: ['Channel 1'],
-          duration: parsedTimes[parsedTimes.length - 1],
-          quality: {
-            total_samples: parsedValues.length,
-            channel_count: 1,
-            sampling_rate: fs,
-            is_uniform: true,
-            timestamp_jitter_pct: 0.0,
-            nan_count: 0,
-            infinite_count: 0,
-            clipping_count: 0,
-            content_hash_sha256: `sha256_custom_${file.name}`,
-            warnings: [],
-          },
-        });
+      const parsed = parseUniversalSignalCSV(text, file.name);
+      if (parsed) {
+        loadCustomSignal(parsed);
       }
     };
     reader.readAsText(file);

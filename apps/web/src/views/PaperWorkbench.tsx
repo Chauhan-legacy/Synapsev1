@@ -39,6 +39,8 @@ import {
   generateApaCitation,
 } from '../services/arxivService';
 import { MusicPlayer } from '../components/music/MusicPlayer';
+import { useSignal } from '../context/SignalContext';
+import { parseUniversalSignalCSV } from '../utils/csvParser';
 
 export type WorkbenchTab =
   | 'charts'
@@ -69,6 +71,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   realTestCount = 33,
   initialTab = 'charts',
 }) => {
+  const { activeSignal, loadCustomSignal } = useSignal();
   const [customData, setCustomData] = useState<CustomDataset | null>(null);
   const [activeTab, setActiveTab] = useState<WorkbenchTab>(initialTab);
 
@@ -144,6 +147,15 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       values = customData.values;
       n = values.length;
       title = customData.name;
+    } else if (activeSignal && activeSignal.channelNames.length > 0 && activeSignal.channels[activeSignal.channelNames[0]]?.length > 0) {
+      const chName = activeSignal.channelNames[0];
+      fs = activeSignal.samplingRate || 200;
+      values = activeSignal.channels[chName];
+      times = activeSignal.timestamps && activeSignal.timestamps.length === values.length
+        ? activeSignal.timestamps
+        : Array.from({ length: values.length }, (_, i) => i / (fs || 200));
+      n = values.length;
+      title = activeSignal.filename || 'Active_Signal.csv';
     } else {
       // Canonical Research Signal: Non-stationary, multi-harmonic, transient impulse, regime shift
       fs = 200;
@@ -165,11 +177,15 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     }
 
     // 1. Basic Statistical Moments
-    const mean = values.reduce((a, b) => a + b, 0) / n;
-    const variance = values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / n;
+    const mean = n > 0 ? values.reduce((a, b) => a + b, 0) / n : 0;
+    const variance = n > 0 ? values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / n : 1;
     const std = Math.sqrt(variance) || 1e-6;
-    const peak = Math.max(...values.map(Math.abs));
-    const rms = Math.sqrt(values.reduce((acc, v) => acc + v * v, 0) / n);
+    let peak = 0;
+    for (let i = 0; i < n; i++) {
+      const a = Math.abs(values[i]);
+      if (a > peak) peak = a;
+    }
+    const rms = n > 0 ? Math.sqrt(values.reduce((acc, v) => acc + v * v, 0) / n) : 0;
 
     // 2. Outlier Z-score & Transient Index (Rosner ESD proxy)
     let maxZ = 0;
@@ -488,7 +504,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
         bicoherenceCoupling: Number((peakPower / (variance || 1)).toFixed(3)),
       },
     };
-  }, [customData]);
+  }, [customData, activeSignal]);
 
   // Handle Custom Dataset Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -500,41 +516,16 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       const text = event.target?.result as string;
       if (!text) return;
 
-      const lines = text.trim().split('\n');
-      const parsedValues: number[] = [];
-      const parsedTimes: number[] = [];
-
-      let startIdx = 0;
-      if (lines.length > 0 && isNaN(Number(lines[0].split(/[,;\t]/)[0]))) {
-        startIdx = 1; // Header detected
-      }
-
-      for (let i = startIdx; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const parts = line.split(/[,;\t]/).map((p) => parseFloat(p.trim()));
-        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          parsedTimes.push(parts[0]);
-          parsedValues.push(parts[1]);
-        } else if (parts.length === 1 && !isNaN(parts[0])) {
-          parsedTimes.push(i - startIdx);
-          parsedValues.push(parts[0]);
-        }
-      }
-
-      if (parsedValues.length > 2) {
-        let detectedFs = 200;
-        if (parsedTimes.length > 1) {
-          const dt = (parsedTimes[parsedTimes.length - 1] - parsedTimes[0]) / (parsedTimes.length - 1);
-          if (dt > 0) detectedFs = Math.round(1 / dt);
-        }
-
+      const parsed = parseUniversalSignalCSV(text, file.name);
+      if (parsed && parsed.channelNames.length > 0) {
+        const primary = parsed.channelNames[0];
         setCustomData({
-          name: file.name,
-          samplingRate: detectedFs,
-          timestamps: parsedTimes,
-          values: parsedValues,
+          name: parsed.filename,
+          samplingRate: parsed.samplingRate,
+          timestamps: parsed.timestamps,
+          values: parsed.channels[primary] || [],
         });
+        loadCustomSignal(parsed);
       }
     };
     reader.readAsText(file);

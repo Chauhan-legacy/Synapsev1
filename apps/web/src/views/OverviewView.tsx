@@ -29,7 +29,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     if (n === 0) return { mean: 0, std: 0, peak: 0, rms: 0, domFreq: 0 };
     const m = vals.reduce((a, b) => a + b, 0) / n;
     const s = Math.sqrt(vals.reduce((acc, v) => acc + Math.pow(v - m, 2), 0) / n) || 1e-6;
-    const peak = Math.max(...vals.map(Math.abs));
+    let peak = 0;
+    for (let i = 0; i < n; i++) {
+      const a = Math.abs(vals[i]);
+      if (a > peak) peak = a;
+    }
     const rms = Math.sqrt(vals.reduce((acc, v) => acc + v * v, 0) / n);
 
     // Simple peak DFT frequency

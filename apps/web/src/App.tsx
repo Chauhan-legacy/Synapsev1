@@ -7,6 +7,8 @@ import { CommandPalette } from './components/shell/CommandPalette';
 import { AccessibilityModal } from './components/shell/AccessibilityModal';
 import { ShortcutsModal } from './components/shell/ShortcutsModal';
 import { Compass } from 'lucide-react';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import { parseUniversalSignalCSV } from './utils/csvParser';
 
 // Lazy-Loaded Views for Fast Initial Bundle
 const LandingHero = React.lazy(() =>
@@ -111,23 +113,26 @@ const AppInner: React.FC = () => {
     if (hash.includes('workbench') || path.includes('workbench')) return 'workbench';
     if (
       hash.includes('app') ||
-      hash.includes('spectra') ||
-      hash.includes('benchmarks') ||
-      hash.includes('dynamics') ||
-      hash.includes('astronomy') ||
-      hash.includes('physics') ||
-      hash.includes('methods') ||
+      hash.includes('overview') ||
       hash.includes('rack') ||
-      hash.includes('inference') ||
-      hash.includes('relations') ||
       hash.includes('datasets') ||
-      hash.includes('timefreq') ||
       hash.includes('explorer') ||
       hash.includes('statistics') ||
+      hash.includes('spectra') ||
+      hash.includes('timefreq') ||
       hash.includes('anomalies') ||
+      hash.includes('dynamics') ||
+      hash.includes('relations') ||
+      hash.includes('astronomy') ||
+      hash.includes('physics') ||
+      hash.includes('satellite') ||
+      hash.includes('geophysics') ||
+      hash.includes('inference') ||
       hash.includes('findings') ||
       hash.includes('evidence') ||
-      hash.includes('reproducibility')
+      hash.includes('reproducibility') ||
+      hash.includes('benchmarks') ||
+      hash.includes('methods')
     ) {
       return 'advanced';
     }
@@ -142,23 +147,26 @@ const AppInner: React.FC = () => {
         setPageMode('workbench');
       } else if (
         hash.includes('app') ||
-        hash.includes('spectra') ||
-        hash.includes('benchmarks') ||
-        hash.includes('dynamics') ||
-        hash.includes('astronomy') ||
-        hash.includes('physics') ||
-        hash.includes('methods') ||
+        hash.includes('overview') ||
         hash.includes('rack') ||
-        hash.includes('inference') ||
-        hash.includes('relations') ||
         hash.includes('datasets') ||
-        hash.includes('timefreq') ||
         hash.includes('explorer') ||
         hash.includes('statistics') ||
+        hash.includes('spectra') ||
+        hash.includes('timefreq') ||
         hash.includes('anomalies') ||
+        hash.includes('dynamics') ||
+        hash.includes('relations') ||
+        hash.includes('astronomy') ||
+        hash.includes('physics') ||
+        hash.includes('satellite') ||
+        hash.includes('geophysics') ||
+        hash.includes('inference') ||
         hash.includes('findings') ||
         hash.includes('evidence') ||
-        hash.includes('reproducibility')
+        hash.includes('reproducibility') ||
+        hash.includes('benchmarks') ||
+        hash.includes('methods')
       ) {
         setPageMode('advanced');
       }
@@ -220,7 +228,7 @@ const AppInner: React.FC = () => {
     [setCurrentView]
   );
 
-  // Real CSV Upload Handler
+  // Real CSV Upload Handler with Multi-Channel & High-Capacity Support
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -230,63 +238,20 @@ const AppInner: React.FC = () => {
       const text = event.target?.result as string;
       if (!text) return;
 
-      const lines = text.trim().split(/\r?\n/);
-      if (lines.length < 2) return;
-
-      const delimiter = text.includes('\t') ? '\t' : ',';
-      const parsedTimes: number[] = [];
-      const parsedValues: number[] = [];
-
-      let startIdx = 0;
-      const firstParts = lines[0].split(delimiter);
-      if (isNaN(Number(firstParts[0].trim()))) {
-        startIdx = 1;
-      }
-
-      for (let i = startIdx; i < lines.length; i++) {
-        const parts = lines[i].split(delimiter).map((p) => Number(p.trim()));
-        if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          parsedTimes.push(parts[0]);
-          parsedValues.push(parts[1]);
-        } else if (parts.length === 1 && !isNaN(parts[0])) {
-          parsedTimes.push(i - startIdx);
-          parsedValues.push(parts[0]);
+      const parsed = parseUniversalSignalCSV(text, file.name);
+      if (parsed) {
+        loadCustomSignal(parsed);
+        // If coming from landing hero, open advanced lab overview; otherwise keep current view
+        if (pageMode === 'hero') {
+          setPageMode('advanced');
+          setCurrentView('overview');
+          window.location.hash = '#/overview';
         }
-      }
-
-      if (parsedValues.length > 2) {
-        let fs = 200;
-        if (parsedTimes.length > 1) {
-          const dt = (parsedTimes[parsedTimes.length - 1] - parsedTimes[0]) / (parsedTimes.length - 1);
-          if (dt > 0) fs = Math.round(1 / dt);
-        }
-
-        loadCustomSignal({
-          id: `upload_${Date.now()}`,
-          filename: file.name,
-          samplingRate: fs,
-          timestamps: parsedTimes,
-          channels: { 'Channel 1': parsedValues },
-          channelNames: ['Channel 1'],
-          duration: parsedTimes[parsedTimes.length - 1],
-          quality: {
-            total_samples: parsedValues.length,
-            channel_count: 1,
-            sampling_rate: fs,
-            is_uniform: true,
-            timestamp_jitter_pct: 0.0,
-            nan_count: 0,
-            infinite_count: 0,
-            clipping_count: 0,
-            content_hash_sha256: `sha256_upload_${file.name}_${parsedValues.length}`,
-            warnings: [],
-          },
-        });
-
-        setPageMode('workbench');
       }
     };
     reader.readAsText(file);
+    // Reset file input so re-uploading the same file triggers change
+    e.target.value = '';
   };
 
   // Route 1: Landing Hero
@@ -478,9 +443,11 @@ const AppInner: React.FC = () => {
 
         {/* View Content Port */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F6F3EC]">
-          <Suspense fallback={<SkeletonLoader />}>
-            {renderCurrentView()}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<SkeletonLoader />}>
+              {renderCurrentView()}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
 

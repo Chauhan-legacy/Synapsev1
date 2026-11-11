@@ -413,8 +413,9 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (hash) {
         const validViews: WorkbenchView[] = [
           'overview', 'rack', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
-          'anomalies', 'dynamics', 'relations', 'astronomy', 'physics', 'inference', 'findings',
-          'evidence', 'reproducibility', 'benchmarks', 'methods'
+          'anomalies', 'dynamics', 'relations', 'astronomy', 'physics', 'satellite', 'geophysics',
+          'inference', 'findings', 'evidence', 'reproducibility', 'benchmarks', 'methods',
+          'workbench', 'papergraph'
         ];
         if (validViews.includes(hash as WorkbenchView)) {
           setCurrentView(hash as WorkbenchView);
