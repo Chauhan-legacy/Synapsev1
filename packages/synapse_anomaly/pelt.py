@@ -61,6 +61,8 @@ def detect_pelt_changepoints(
     # F[t]: optimal cost for prefix 0:t
     F = np.zeros(n + 1, dtype=np.float64)
     F[0] = -beta
+    for i in range(1, min_size):
+        F[i] = float("inf")
     # cp_record[t]: optimal previous change-point
     cp_record = np.zeros(n + 1, dtype=int)
 
@@ -92,7 +94,9 @@ def detect_pelt_changepoints(
         for cost, tau in cand_costs:
             if cost - beta <= best_val:
                 new_R.append(tau)
-        new_R.append(t_step - min_size + 1)
+        cand_to_add = t_step - min_size + 1
+        if cand_to_add >= min_size:
+            new_R.append(cand_to_add)
         R = sorted(list(set(new_R)))
 
     # Backtrack changepoints from n

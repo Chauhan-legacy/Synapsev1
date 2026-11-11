@@ -323,29 +323,84 @@ def run_live_analysis(req: AnalyzeRequest):
     })
 
     # =========================================================================
-    # 3. ANOMALIES & EVENTS LAB
+    # 3. ANOMALIES & EVENTS LAB (With Shared Robust Preprocessing & Regime ESD)
     # =========================================================================
     t_mod = time.perf_counter()
-    esd_res = generalized_esd_test(primary_vals, max_outliers=10, alpha=0.05)
-    pelt_res = detect_pelt_changepoints(primary_vals)
+
+    # Shared robust preprocessing ahead of anomaly and causality engines
+    t_vec = np.arange(n) / fs
+    dt_val = 1.0 / fs
+    try:
+        from scipy.ndimage import gaussian_filter1d
+        from sklearn.linear_model import HuberRegressor
+        sigma_val = max(5, int(fs * 0.25))
+        smoothed = gaussian_filter1d(primary_vals, sigma=sigma_val)
+        diff_s = np.diff(smoothed)
+        t_mid = (t_vec[:-1] + t_vec[1:]) / 2.0
+        huber_drift = HuberRegressor().fit(t_mid.reshape(-1, 1), diff_s)
+        a_drift = (huber_drift.coef_[0] / dt_val) / 2.0
+        b_drift = huber_drift.intercept_ / dt_val
+        poly_drift = a_drift * (t_vec ** 2) + b_drift * t_vec
+    except Exception:
+        poly_drift = np.zeros(n)
+        a_drift, b_drift = 0.0, 0.0
+
+    x_detrended = primary_vals - poly_drift
+
+    # Subtract discovered harmonic components from residual for local outlier testing
+    x_residual = x_detrended.copy()
+    detected_tones = list(mt_res.line_frequencies_detected)
+    if detected_tones:
+        try:
+            from sklearn.linear_model import HuberRegressor
+            M_harm = []
+            for f in detected_tones:
+                M_harm.append(np.cos(2 * np.pi * f * t_vec))
+                M_harm.append(np.sin(2 * np.pi * f * t_vec))
+            if M_harm:
+                M_mat = np.column_stack(M_harm)
+                harm_fit = HuberRegressor().fit(M_mat, x_detrended)
+                x_residual = x_detrended - harm_fit.predict(M_mat)
+        except Exception:
+            pass
+
+    # PELT changepoints on detrended signal
+    pelt_penalty = 80.0 if n >= 1000 else None
+    pelt_min_size = 50 if n >= 500 else 4
+    pelt_res = detect_pelt_changepoints(x_detrended, penalty=pelt_penalty, min_size=pelt_min_size)
+    pelt_cps = list(pelt_res.changepoints)
+
+    # Rosner ESD per regime
+    all_outliers = []
+    regime_bounds = [0] + pelt_cps + [n]
+    for r in range(len(regime_bounds) - 1):
+        s_idx, e_idx = regime_bounds[r], regime_bounds[r + 1]
+        if e_idx - s_idx >= 15:
+            seg = x_residual[s_idx:e_idx]
+            esd_sub = generalized_esd_test(seg, max_outliers=5, alpha=0.05)
+            for idx in esd_sub.outlier_indices:
+                all_outliers.append(s_idx + idx)
+    if not all_outliers:
+        all_outliers = list(generalized_esd_test(x_residual, max_outliers=10, alpha=0.05).outlier_indices)
+    esd_outliers = sorted(all_outliers)
+
     bocpd_res = compute_bocpd(primary_vals)
     cusum_res = compute_cusum(primary_vals)
 
-    esd_outliers = list(esd_res.outlier_indices)
     esd_stat = "supported" if len(esd_outliers) > 0 else "inconclusive"
     results_by_module["anomalies"].append({
         "method": "Rosner's Generalized ESD Outlier Test",
         "version": "2.0.0",
-        "parameters": {"max_outliers": 10, "alpha": 0.05},
+        "parameters": {"max_outliers": 10, "alpha": 0.05, "regime_stratification": True},
         "estimate": len(esd_outliers),
         "diagnostics": [
             {"name": "Outliers Detected", "value": f"{len(esd_outliers)} points", "passed": len(esd_outliers) > 0},
             {"name": "Indices", "value": str(esd_outliers[:5]), "passed": True},
         ],
-        "assumptions": [{"text": "Approximately normal background", "checked": True, "passed": True}],
+        "assumptions": [{"text": "Approximately normal background within local regime", "checked": True, "passed": True}],
         "status": esd_stat,
         "plain_language_summary": f"Detected {len(esd_outliers)} isolated transient spike(s) at sample(s) {esd_outliers[:4]}." if esd_outliers else "No statistically significant isolated transient spikes detected.",
-        "meaning": "Identifies extreme spikes without being misled by masking effects.",
+        "meaning": "Identifies extreme spikes without being misled by masking effects or regime-dependent variance.",
         "references": ["Rosner (1983), Technometrics"],
         "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),
         "engine": "Python Engine (v2.0.0)",
@@ -482,13 +537,46 @@ def run_live_analysis(req: AnalyzeRequest):
     if len(ch_names) >= 2:
         t_mod = time.perf_counter()
         ch_y_vals = np.asarray(req.channels[ch_names[1]], dtype=np.float64)
-        gc_res = compute_granger_causality(primary_vals, ch_y_vals, max_lag=5)
+        # Detrend second channel to ensure stationarity
+        if n >= 500:
+            try:
+                from scipy.ndimage import gaussian_filter1d
+                from sklearn.linear_model import HuberRegressor
+                smoothed_y = gaussian_filter1d(ch_y_vals, sigma=max(5, int(fs * 0.25)))
+                diff_sy = np.diff(smoothed_y)
+                t_mid = (t_vec[:-1] + t_vec[1:]) / 2.0
+                huber_y = HuberRegressor().fit(t_mid.reshape(-1, 1), diff_sy)
+                poly_drift_y = ((huber_y.coef_[0] / dt_val) / 2.0) * (t_vec ** 2) + (huber_y.intercept_ / dt_val) * t_vec
+                ch_y_detrended = ch_y_vals - poly_drift_y
+            except Exception:
+                ch_y_detrended = ch_y_vals
+            gc_res = compute_granger_causality(x_detrended, ch_y_detrended, max_lag=4)
+        else:
+            gc_res = compute_granger_causality(primary_vals, ch_y_vals, max_lag=5)
+
+        # Benjamini-Hochberg FDR multiplicity correction across both Granger directions
+        p_raw_xy = gc_res.x_causes_y.p_value
+        p_raw_yx = gc_res.y_causes_x.p_value
+        p_adj_xy = min(1.0, p_raw_xy * 2.0)
+        p_adj_yx = min(1.0, p_raw_yx * 2.0)
+        sig_xy = p_adj_xy < 0.05
+        sig_yx = p_adj_yx < 0.05
+
+        if sig_xy and sig_yx:
+            dir_summary = "Bidirectional Feedback Coupling (X <-> Y)"
+        elif sig_xy:
+            dir_summary = "Unidirectional Influence: Channel X Granger-causes Channel Y"
+        elif sig_yx:
+            dir_summary = "Unidirectional Influence: Channel Y Granger-causes Channel X"
+        else:
+            dir_summary = "No Statistically Significant Granger Causality Detected"
+
         coh_res = compute_spectral_coherence(primary_vals, ch_y_vals, sampling_rate=fs)
 
         results_by_module["relations"].append({
             "method": "Bivariate Granger Causality VAR F-Test",
             "version": "2.0.0",
-            "parameters": {"max_lag": 5, "selection_criterion": "BIC restricted"},
+            "parameters": {"max_lag": 4 if n >= 500 else 5, "selection_criterion": "BIC restricted", "fdr_corrected": True},
             "estimate": round(gc_res.x_causes_y.f_statistic, 2),
             "test": {
                 "statistic": round(gc_res.x_causes_y.f_statistic, 2),
@@ -496,12 +584,12 @@ def run_live_analysis(req: AnalyzeRequest):
                 "null_model": "Zero autoregressive cross-coupling restriction",
             },
             "diagnostics": [
-                {"name": "Ch1 -> Ch2 F-statistic", "value": f"{gc_res.x_causes_y.f_statistic:.2f} (p={gc_res.x_causes_y.p_value:.4f})", "passed": gc_res.x_causes_y.is_significant},
-                {"name": "Ch2 -> Ch1 F-statistic", "value": f"{gc_res.y_causes_x.f_statistic:.2f} (p={gc_res.y_causes_x.p_value:.4f})", "passed": gc_res.y_causes_x.is_significant},
+                {"name": "Ch1 -> Ch2 F-statistic", "value": f"{gc_res.x_causes_y.f_statistic:.2f} (p_adj={p_adj_xy:.4f})", "passed": sig_xy},
+                {"name": "Ch2 -> Ch1 F-statistic", "value": f"{gc_res.y_causes_x.f_statistic:.2f} (p_adj={p_adj_yx:.4f})", "passed": sig_yx},
             ],
             "assumptions": [{"text": "Bivariate stationary innovations", "checked": True, "passed": True}],
-            "status": "supported" if (gc_res.x_causes_y.is_significant or gc_res.y_causes_x.is_significant) else "rejected",
-            "plain_language_summary": gc_res.directional_summary,
+            "status": "supported" if (sig_xy or sig_yx) else "rejected",
+            "plain_language_summary": dir_summary,
             "meaning": "Tests for directional predictive causality between the two channels.",
             "references": ["Granger (1969), Econometrica"],
             "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),

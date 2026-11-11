@@ -1,0 +1,64 @@
+{
+  "spectral_tones": {
+    "detected_hz": [
+      14.990234375,
+      36.4990234375
+    ],
+    "passed": true
+  },
+  "null_control": {
+    "tones_count": 0,
+    "spikes_count": 0,
+    "changepoints_count": 0,
+    "passed": true
+  },
+  "pelt_changepoints": {
+    "indices": [
+      1200
+    ],
+    "timestamps": [
+      6.0
+    ],
+    "passed": true
+  },
+  "rosner_spikes": {
+    "indices": [
+      500,
+      1800
+    ],
+    "passed": true
+  },
+  "granger_causality": {
+    "x_to_y": {
+      "f_stat": 1440.99,
+      "p_adj": 0.0,
+      "significant": true
+    },
+    "y_to_x": {
+      "f_stat": 22.47,
+      "p_adj": 6.0004520297713934e-18,
+      "significant": true
+    },
+    "passed": true
+  },
+  "coherence": {
+    "peak_frequency_hz": 14.84,
+    "peak_coherence": 0.987,
+    "passed": true
+  },
+  "stationarity": {
+    "adf_p": 0.1756,
+    "kpss_p": 0.01,
+    "passed": true
+  },
+  "entropy": {
+    "channel_x": {
+      "samp_en": 1.829,
+      "perm_en": 0.935
+    },
+    "channel_z": {
+      "samp_en": 2.184,
+      "perm_en": 0.999
+    }
+  }
+}
