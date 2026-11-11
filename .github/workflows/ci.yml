@@ -28,10 +28,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .[test]
-          pip install pytest pytest-asyncio anyio
+          pip install pytest pytest-asyncio anyio statsmodels scikit-learn PyWavelets fastapi pydantic uvicorn
 
       - name: Run Ground-Truth & Engine Regression Tests
         run: |
+          export PYTHONPATH=".:packages:connectors:benchmarks:apps"
           pytest -v tests/
 
   test-frontend:
