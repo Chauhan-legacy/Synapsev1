@@ -231,3 +231,5 @@ export const ReproducibilityView: React.FC = () => {
     </div>
   );
 };
+
+export default ReproducibilityView;

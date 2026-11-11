@@ -2140,3 +2140,5 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     </div>
   );
 };
+
+export default PaperWorkbench;

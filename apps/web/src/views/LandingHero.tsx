@@ -535,3 +535,5 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
     </div>
   );
 };
+
+export default LandingHero;

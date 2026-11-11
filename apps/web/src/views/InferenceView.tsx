@@ -384,3 +384,5 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
     </div>
   );
 };
+
+export default InferenceView;

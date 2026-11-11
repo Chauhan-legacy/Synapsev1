@@ -231,3 +231,5 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
     </div>
   );
 };
+
+export default DatasetsView;

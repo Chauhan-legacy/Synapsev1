@@ -326,3 +326,5 @@ export const EvidenceGraphView: React.FC = () => {
     </div>
   );
 };
+
+export default EvidenceGraphView;

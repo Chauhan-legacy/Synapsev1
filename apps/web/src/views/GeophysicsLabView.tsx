@@ -452,3 +452,5 @@ export const GeophysicsLabView: React.FC<GeophysicsLabViewProps> = ({ onOpenMeth
     </div>
   );
 };
+
+export default GeophysicsLabView;

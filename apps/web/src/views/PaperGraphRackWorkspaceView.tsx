@@ -812,3 +812,5 @@ export const PaperGraphRackWorkspaceView: React.FC<PaperGraphRackWorkspaceViewPr
     </div>
   );
 };
+
+export default PaperGraphRackWorkspaceView;

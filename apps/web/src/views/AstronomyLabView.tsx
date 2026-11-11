@@ -1172,3 +1172,5 @@ export const AstronomyLabView: React.FC<AstronomyLabViewProps> = ({ onOpenMethod
     </div>
   );
 };
+
+export default AstronomyLabView;

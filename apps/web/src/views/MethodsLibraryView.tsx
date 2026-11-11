@@ -211,3 +211,5 @@ export const MethodsLibraryView: React.FC<MethodsLibraryViewProps> = ({ initialM
     </div>
   );
 };
+
+export default MethodsLibraryView;

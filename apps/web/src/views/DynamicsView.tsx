@@ -485,3 +485,5 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
     </div>
   );
 };
+
+export default DynamicsView;

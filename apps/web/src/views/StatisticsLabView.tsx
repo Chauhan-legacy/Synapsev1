@@ -98,3 +98,5 @@ export const StatisticsLabView: React.FC<StatisticsLabViewProps> = ({ onOpenMeth
     </div>
   );
 };
+
+export default StatisticsLabView;

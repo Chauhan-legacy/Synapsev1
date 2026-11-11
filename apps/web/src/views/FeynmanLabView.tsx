@@ -491,3 +491,5 @@ export const FeynmanLabView: React.FC = () => {
     </div>
   );
 };
+
+export default FeynmanLabView;

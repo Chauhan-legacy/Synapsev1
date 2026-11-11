@@ -380,3 +380,5 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
     </div>
   );
 };
+
+export default RelationsView;

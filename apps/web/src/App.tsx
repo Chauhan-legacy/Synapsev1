@@ -13,93 +13,93 @@ import { parseCsvWithStreamingWorker } from './utils/streamingCsvParser';
 
 // Lazy-Loaded Views for Fast Initial Bundle
 const LandingHero = React.lazy(() =>
-  import('./views/LandingHero').then((m) => ({ default: m.LandingHero }))
+  import('./views/LandingHero').then((m) => ({ default: m.default || m.LandingHero }))
 );
 const PaperWorkbench = React.lazy(() =>
-  import('./views/PaperWorkbench').then((m) => ({ default: m.PaperWorkbench }))
+  import('./views/PaperWorkbench').then((m) => ({ default: m.default || m.PaperWorkbench }))
 );
 
 // Advanced Lab Views (Code-split for under 150 kB initial load)
 const OverviewView = React.lazy(() =>
-  import('./views/OverviewView').then((m) => ({ default: m.OverviewView }))
+  import('./views/OverviewView').then((m) => ({ default: m.default || m.OverviewView }))
 );
 const DatasetsView = React.lazy(() =>
-  import('./views/DatasetsView').then((m) => ({ default: m.DatasetsView }))
+  import('./views/DatasetsView').then((m) => ({ default: m.default || m.DatasetsView }))
 );
 const ExplorerView = React.lazy(() =>
-  import('./views/ExplorerView').then((m) => ({ default: m.ExplorerView }))
+  import('./views/ExplorerView').then((m) => ({ default: m.default || m.ExplorerView }))
 );
 const StatisticsLabView = React.lazy(() =>
-  import('./views/StatisticsLabView').then((m) => ({ default: m.StatisticsLabView }))
+  import('./views/StatisticsLabView').then((m) => ({ default: m.default || m.StatisticsLabView }))
 );
 const SpectralLabView = React.lazy(() =>
-  import('./views/SpectralLabView').then((m) => ({ default: m.SpectralLabView }))
+  import('./views/SpectralLabView').then((m) => ({ default: m.default || m.SpectralLabView }))
 );
 const TimeFreqLabView = React.lazy(() =>
-  import('./views/TimeFreqLabView').then((m) => ({ default: m.TimeFreqLabView }))
+  import('./views/TimeFreqLabView').then((m) => ({ default: m.default || m.TimeFreqLabView }))
 );
 const AnomaliesView = React.lazy(() =>
-  import('./views/AnomaliesView').then((m) => ({ default: m.AnomaliesView }))
+  import('./views/AnomaliesView').then((m) => ({ default: m.default || m.AnomaliesView }))
 );
 const DynamicsView = React.lazy(() =>
-  import('./views/DynamicsView').then((m) => ({ default: m.DynamicsView }))
+  import('./views/DynamicsView').then((m) => ({ default: m.default || m.DynamicsView }))
 );
 const RelationsView = React.lazy(() =>
-  import('./views/RelationsView').then((m) => ({ default: m.RelationsView }))
+  import('./views/RelationsView').then((m) => ({ default: m.default || m.RelationsView }))
 );
 const AstronomyLabView = React.lazy(() =>
-  import('./views/AstronomyLabView').then((m) => ({ default: m.AstronomyLabView }))
+  import('./views/AstronomyLabView').then((m) => ({ default: m.default || m.AstronomyLabView }))
 );
 const PhysicsLabView = React.lazy(() =>
-  import('./views/PhysicsLabView').then((m) => ({ default: m.PhysicsLabView }))
+  import('./views/PhysicsLabView').then((m) => ({ default: m.default || m.PhysicsLabView }))
 );
 const BioSignalsLabView = React.lazy(() =>
-  import('./views/BioSignalsLabView').then((m) => ({ default: m.BioSignalsLabView }))
+  import('./views/BioSignalsLabView').then((m) => ({ default: m.default || m.BioSignalsLabView }))
 );
 const ChaosLabView = React.lazy(() =>
-  import('./views/ChaosLabView').then((m) => ({ default: m.ChaosLabView }))
+  import('./views/ChaosLabView').then((m) => ({ default: m.default || m.ChaosLabView }))
 );
 const EarthSystemsLabView = React.lazy(() =>
-  import('./views/EarthSystemsLabView').then((m) => ({ default: m.EarthSystemsLabView }))
+  import('./views/EarthSystemsLabView').then((m) => ({ default: m.default || m.EarthSystemsLabView }))
 );
 const QuantumLabView = React.lazy(() =>
-  import('./views/QuantumLabView').then((m) => ({ default: m.QuantumLabView }))
+  import('./views/QuantumLabView').then((m) => ({ default: m.default || m.QuantumLabView }))
 );
 const FeynmanLabView = React.lazy(() =>
-  import('./views/FeynmanLabView').then((m) => ({ default: m.FeynmanLabView }))
+  import('./views/FeynmanLabView').then((m) => ({ default: m.default || m.FeynmanLabView }))
 );
 const SatelliteLabView = React.lazy(() =>
-  import('./views/SatelliteLabView').then((m) => ({ default: m.SatelliteLabView }))
+  import('./views/SatelliteLabView').then((m) => ({ default: m.default || m.SatelliteLabView }))
 );
 const GeophysicsLabView = React.lazy(() =>
-  import('./views/GeophysicsLabView').then((m) => ({ default: m.GeophysicsLabView }))
+  import('./views/GeophysicsLabView').then((m) => ({ default: m.default || m.GeophysicsLabView }))
 );
 const InferenceView = React.lazy(() =>
-  import('./views/InferenceView').then((m) => ({ default: m.InferenceView }))
+  import('./views/InferenceView').then((m) => ({ default: m.default || m.InferenceView }))
 );
 const FindingsView = React.lazy(() =>
-  import('./views/FindingsView').then((m) => ({ default: m.FindingsView }))
+  import('./views/FindingsView').then((m) => ({ default: m.default || m.FindingsView }))
 );
 const EvidenceGraphView = React.lazy(() =>
-  import('./views/EvidenceGraphView').then((m) => ({ default: m.EvidenceGraphView }))
+  import('./views/EvidenceGraphView').then((m) => ({ default: m.default || m.EvidenceGraphView }))
 );
 const ReproducibilityView = React.lazy(() =>
-  import('./views/ReproducibilityView').then((m) => ({ default: m.ReproducibilityView }))
+  import('./views/ReproducibilityView').then((m) => ({ default: m.default || m.ReproducibilityView }))
 );
 const BenchmarksView = React.lazy(() =>
-  import('./views/BenchmarksView').then((m) => ({ default: m.BenchmarksView }))
+  import('./views/BenchmarksView').then((m) => ({ default: m.default || m.BenchmarksView }))
 );
 const MethodsLibraryView = React.lazy(() =>
-  import('./views/MethodsLibraryView').then((m) => ({ default: m.MethodsLibraryView }))
+  import('./views/MethodsLibraryView').then((m) => ({ default: m.default || m.MethodsLibraryView }))
 );
 const InstrumentRackView = React.lazy(() =>
-  import('./views/InstrumentRackView').then((m) => ({ default: m.InstrumentRackView }))
+  import('./views/InstrumentRackView').then((m) => ({ default: m.default || m.InstrumentRackView }))
 );
 const PaperGraphView = React.lazy(() =>
-  import('./views/PaperGraphView').then((m) => ({ default: m.PaperGraphView }))
+  import('./views/PaperGraphView').then((m) => ({ default: m.default || m.PaperGraphView }))
 );
 const PaperGraphRackWorkspaceView = React.lazy(() =>
-  import('./views/PaperGraphRackWorkspaceView').then((m) => ({ default: m.PaperGraphRackWorkspaceView }))
+  import('./views/PaperGraphRackWorkspaceView').then((m) => ({ default: m.default || m.PaperGraphRackWorkspaceView }))
 );
 
 // Minimal Skeleton Loader

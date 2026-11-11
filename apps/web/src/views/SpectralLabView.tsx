@@ -147,3 +147,5 @@ export const SpectralLabView: React.FC<SpectralLabViewProps> = ({ onOpenMethodCa
     </div>
   );
 };
+
+export default SpectralLabView;

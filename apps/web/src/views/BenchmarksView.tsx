@@ -378,3 +378,5 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
     </div>
   );
 };
+
+export default BenchmarksView;

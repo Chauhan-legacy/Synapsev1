@@ -260,3 +260,5 @@ export const TimeFreqLabView: React.FC<TimeFreqLabViewProps> = ({ onOpenMethodCa
     </div>
   );
 };
+
+export default TimeFreqLabView;

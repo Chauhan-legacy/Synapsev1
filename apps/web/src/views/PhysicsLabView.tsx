@@ -896,8 +896,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={125.09} stroke="#0F766E" strokeWidth={2} strokeDasharray="3 3" label={{ value: 'm_H = 125.09 GeV', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Area type="monotone" dataKey="totalEvents" stroke="#1F2430" fill="#E6F4F2" fillOpacity={0.6} strokeWidth={1.75} />
-                    <Line type="monotone" dataKey="background" stroke="#B7791F" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
+                    <Area isAnimationActive={false} type="monotone" dataKey="totalEvents" stroke="#1F2430" fill="#E6F4F2" fillOpacity={0.6} strokeWidth={1.75} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="background" stroke="#B7791F" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -946,7 +946,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <ReferenceLine x={1173.2} stroke="#0F766E" strokeDasharray="3 3" label={{ value: '1173.2 keV', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <ReferenceLine x={1332.5} stroke="#0F766E" strokeDasharray="3 3" label={{ value: '1332.5 keV', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <ReferenceLine x={963.4} stroke="#B7791F" strokeDasharray="2 2" label={{ value: 'Compton Edge', fill: '#B7791F', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
-                    <Area type="monotone" dataKey="counts" stroke="#0F766E" fill="#E6F4F2" fillOpacity={0.65} strokeWidth={1.5} />
+                    <Area isAnimationActive={false} type="monotone" dataKey="counts" stroke="#0F766E" fill="#E6F4F2" fillOpacity={0.65} strokeWidth={1.5} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -989,13 +989,13 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height={340}>
                   <LineChart data={liveMuonData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                    <XAxis dataKey="altitudeKm" type="number" domain={[0, 15]} tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} unit=" km" />
+                    <XAxis dataKey="altitudeKm" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} unit=" km" />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Ground Level (0 km)', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <ReferenceLine x={15} stroke="#0F766E" strokeDasharray="3 3" label={{ value: 'Atmosphere Peak (15 km)', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="relativisticRate" stroke="#0F766E" strokeWidth={2.5} name="Relativistic Dilation (Observed)" dot={false} />
-                    <Line type="monotone" dataKey="classicalRate" stroke="#C0392B" strokeWidth={1.5} strokeDasharray="3 3" name="Classical Newtonian (No Dilation)" dot={false} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="relativisticRate" stroke="#0F766E" strokeWidth={2.5} name="Relativistic Dilation (Observed)" dot={false} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="classicalRate" stroke="#C0392B" strokeWidth={1.5} strokeDasharray="3 3" name="Classical Newtonian (No Dilation)" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1042,8 +1042,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={40.0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Current Quench', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="mirnovSignal" stroke="#0F766E" strokeWidth={1.5} dot={false} name="Mirnov Coil dB/dt" />
-                    <Line type="monotone" dataKey="plasmaCurrentMa" stroke="#4338CA" strokeWidth={2} dot={false} name="Plasma Current I_p (MA)" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="mirnovSignal" stroke="#0F766E" strokeWidth={1.5} dot={false} name="Mirnov Coil dB/dt" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="plasmaCurrentMa" stroke="#4338CA" strokeWidth={2} dot={false} name="Plasma Current I_p (MA)" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1090,8 +1090,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={2.269} stroke="#0F766E" strokeDasharray="3 3" label={{ value: 'T_c = 2.269', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="analyticalM" stroke="#0F766E" strokeWidth={2} name="Onsager Exact M" dot={false} />
-                    <Line type="monotone" dataKey="simulatedM" stroke="#4338CA" strokeWidth={1.5} dot={{ r: 2 }} name="Monte Carlo Mean" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="analyticalM" stroke="#0F766E" strokeWidth={2} name="Onsager Exact M" dot={false} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="simulatedM" stroke="#4338CA" strokeWidth={1.5} dot={{ r: 2 }} name="Monte Carlo Mean" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1138,7 +1138,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={40.0} stroke="#0F766E" strokeDasharray="3 3" label={{ value: 'P-Wave Arrival', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="amplitude" stroke="#1F2430" strokeWidth={1.5} dot={false} />
+                    <Line isAnimationActive={false} type="monotone" dataKey="amplitude" stroke="#1F2430" strokeWidth={1.5} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1185,7 +1185,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine y={3000} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Nominal 3000 MWth', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="powerMw" stroke="#0F766E" strokeWidth={2} dot={false} name="Thermal Power (MW)" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="powerMw" stroke="#0F766E" strokeWidth={2} dot={false} name="Thermal Power (MW)" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1462,8 +1462,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={simMassGev} stroke="#0F766E" strokeWidth={2} strokeDasharray="3 3" label={{ value: `M₀=${simMassGev.toFixed(1)} GeV`, fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Area type="monotone" dataKey="totalEvents" stroke="#0F766E" fill="#E6F4F2" fillOpacity={0.65} strokeWidth={2} name="Total Events (Signal + QCD)" />
-                    <Line type="monotone" dataKey="qcdBackground" stroke="#6B6F7B" strokeDasharray="2 2" strokeWidth={1.5} dot={false} name="QCD Background" />
+                    <Area isAnimationActive={false} type="monotone" dataKey="totalEvents" stroke="#0F766E" fill="#E6F4F2" fillOpacity={0.65} strokeWidth={2} name="Total Events (Signal + QCD)" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="qcdBackground" stroke="#6B6F7B" strokeDasharray="2 2" strokeWidth={1.5} dot={false} name="QCD Background" />
                   </ComposedChart>
                 ) : simType === 'reactor' ? (
                   <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
@@ -1471,8 +1471,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine y={3000} stroke="#C0392B" strokeDasharray="3 3" label={{ value: '3000 MWth (Nominal)', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="powerMw" stroke="#0F766E" strokeWidth={2} dot={false} name="Core Power (MW)" />
-                    <Line type="monotone" dataKey="delayedPrecursor" stroke="#4338CA" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Delayed Neutron Precursors" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="powerMw" stroke="#0F766E" strokeWidth={2} dot={false} name="Core Power (MW)" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="delayedPrecursor" stroke="#4338CA" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Delayed Neutron Precursors" />
                   </LineChart>
                 ) : (
                   <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
@@ -1481,8 +1481,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={1.0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Curie Point T_c', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <ReferenceLine x={simTempRatio} stroke="#0F766E" strokeWidth={2} label={{ value: `Current T: ${(simTempRatio * 2.269).toFixed(2)}`, fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="magnetization" stroke="#0F766E" strokeWidth={2.5} dot={false} name="Spontaneous Magnetization <M>" />
-                    <Line type="monotone" dataKey="susceptibility" stroke="#D97706" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Magnetic Susceptibility χ" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="magnetization" stroke="#0F766E" strokeWidth={2.5} dot={false} name="Spontaneous Magnetization <M>" />
+                    <Line isAnimationActive={false} type="monotone" dataKey="susceptibility" stroke="#D97706" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Magnetic Susceptibility χ" />
                   </LineChart>
                 )}
               </ResponsiveContainer>
@@ -1506,3 +1506,5 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
     </div>
   );
 };
+
+export default PhysicsLabView;

@@ -590,3 +590,5 @@ export const SatelliteLabView: React.FC<SatelliteLabViewProps> = ({ onOpenMethod
     </div>
   );
 };
+
+export default SatelliteLabView;

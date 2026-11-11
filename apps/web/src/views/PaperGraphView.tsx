@@ -847,3 +847,5 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
     </div>
   );
 };
+
+export default PaperGraphView;

@@ -125,3 +125,5 @@ export const AnomaliesView: React.FC<AnomaliesViewProps> = ({ onOpenMethodCard }
     </div>
   );
 };
+
+export default AnomaliesView;

@@ -266,3 +266,5 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
     </div>
   );
 };
+
+export default FindingsView;

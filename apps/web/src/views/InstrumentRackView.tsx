@@ -1807,3 +1807,5 @@ export const InstrumentRackView: React.FC = () => {
     </div>
   );
 };
+
+export default InstrumentRackView;
