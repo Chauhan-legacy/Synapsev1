@@ -101,24 +101,55 @@ def _read_delimited(
 
     cols = list(df.columns)
     
-    # Identify time column
+    # Identify time column by name or structure
     time_col_name = time_column
     if not time_col_name:
-        for candidate in ["time", "timestamp", "timestamps", "t", "time_sec", "epoch"]:
+        for candidate in [
+            "time", "timestamp", "timestamps", "timestamp_sec", "timestamp_s",
+            "t", "t_sec", "time_sec", "seconds", "sec", "epoch", "datetime", "date"
+        ]:
             matched = [c for c in cols if c.strip().lower() == candidate]
             if matched:
                 time_col_name = matched[0]
                 break
 
+    # Structural autodetection: if no candidate name matched, inspect first column
+    if not time_col_name and len(cols) > 1:
+        first_col = cols[0]
+        try:
+            col_data = pd.to_numeric(df[first_col], errors="coerce").to_numpy()
+            if not np.isnan(col_data).any() and len(col_data) >= 2:
+                diffs = np.diff(col_data)
+                if (diffs > 0).all():
+                    mean_diff = float(np.mean(diffs))
+                    std_diff = float(np.std(diffs))
+                    if mean_diff > 0 and (std_diff / mean_diff) < 0.25:
+                        time_col_name = first_col
+        except Exception:
+            pass
+
     if time_col_name and time_col_name in df.columns:
         timestamps = df[time_col_name].to_numpy(dtype=np.float64)
+        # If concatenated batch experiments cause non-monotonic timestamp resets, linearize continuously
+        if len(timestamps) >= 2:
+            diffs = np.diff(timestamps)
+            if (diffs <= 0).any():
+                pos_diffs = diffs[diffs > 0]
+                if len(pos_diffs) > 0:
+                    med_dt = float(np.median(pos_diffs))
+                    shifts = np.zeros(len(timestamps))
+                    for idx in np.where(diffs <= 0)[0]:
+                        step = (timestamps[idx] - timestamps[idx + 1]) + med_dt
+                        shifts[idx + 1:] += step
+                    timestamps = timestamps + shifts
         non_time_cols = [c for c in cols if c != time_col_name]
     else:
-        # If no explicit time column exists, reject guessing sampling rate without explicit instruction
+        cand_list = [c for c in cols if any(k in c.lower() for k in ["time", "sec", "t", "date", "idx"])]
+        cand_str = f" Candidates found: {cand_list}." if cand_list else ""
         raise ValidationError(
             f"Could not identify a time column in '{filepath}'. "
-            f"Available columns: {cols}. Please provide 'time_column' explicitly. "
-            "Never guess sampling frequency from row index."
+            f"Available columns: {cols}.{cand_str} "
+            f"Please specify time column explicitly with ?time_column={cols[0]}."
         )
 
     # Determine signal columns
@@ -128,7 +159,8 @@ def _read_delimited(
             raise ValidationError(f"Requested signal columns not found: {missing}. Available: {cols}")
         val_cols = signal_columns
     else:
-        val_cols = non_time_cols
+        # Filter non-time columns to numeric channels only (ignoring string IDs/labels)
+        val_cols = [c for c in non_time_cols if pd.api.types.is_numeric_dtype(df[c])]
 
     if not val_cols:
         raise ValidationError("No numeric signal channels found after separating time column.")
