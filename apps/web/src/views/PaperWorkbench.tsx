@@ -39,10 +39,20 @@ import {
   generateApaCitation,
 } from '../services/arxivService';
 
+export type WorkbenchTab =
+  | 'charts'
+  | 'phase_space'
+  | 'bispectrum'
+  | 'instantaneous'
+  | 'diagnostics'
+  | 'evidence'
+  | 'papergraph';
+
 interface PaperWorkbenchProps {
   onBackToHero: () => void;
   onOpenAdvancedLab?: (tab: string) => void;
   realTestCount?: number;
+  initialTab?: WorkbenchTab;
 }
 
 interface CustomDataset {
@@ -56,11 +66,16 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   onBackToHero,
   onOpenAdvancedLab,
   realTestCount = 33,
+  initialTab = 'charts',
 }) => {
   const [customData, setCustomData] = useState<CustomDataset | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    'charts' | 'phase_space' | 'bispectrum' | 'instantaneous' | 'diagnostics' | 'evidence' | 'papergraph'
-  >('charts');
+  const [activeTab, setActiveTab] = useState<WorkbenchTab>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 

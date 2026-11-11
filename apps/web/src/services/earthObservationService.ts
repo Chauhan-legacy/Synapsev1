@@ -564,3 +564,4 @@ export function getGraceGravityRecoveryData(): GraceGravityData {
     equivalentWaterThicknessCm: -14.2, // Groundwater depletion anomaly in cm
   };
 }
+

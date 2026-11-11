@@ -25,8 +25,11 @@ import {
   Satellite,
   Globe2,
 } from 'lucide-react';
+import { MusicPlayer } from '../music/MusicPlayer';
 
 export type WorkbenchView =
+  | 'workbench'
+  | 'papergraph'
   | 'overview'
   | 'rack'
   | 'datasets'
@@ -96,6 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'Start',
       items: [
+        { id: 'workbench', label: 'Paper Workbench', icon: BookOpen },
         { id: 'overview', label: 'Overview', icon: Compass },
         { id: 'rack', label: 'Instrument Rack', icon: Layers },
         { id: 'datasets', label: 'Datasets', icon: Database },
@@ -135,6 +139,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'satellite', label: 'Satellite Systems Lab', icon: Satellite },
         { id: 'geophysics', label: 'Earth & Geophysics Lab', icon: Globe2 },
+      ],
+    },
+    {
+      title: 'Literature & Research',
+      items: [
+        { id: 'papergraph', label: 'PaperGraph Citations', icon: BookOpen },
       ],
     },
     {
@@ -284,8 +294,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </div>
 
+      {/* Embedded Audio Lab & Music Player */}
+      <MusicPlayer
+        onOpenAnalysis={() => onSelectView('rack')}
+        collapsedSidebar={collapsed}
+      />
+
       {/* Pinned Bottom Actions */}
-      <div className="p-2 border-t border-[#E6E1D6] space-y-1">
+      <div className="p-2 border-t border-[#DDD6C7] space-y-1">
         <button
           type="button"
           onClick={onOpenAccessibility}
@@ -310,7 +326,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!collapsed && (
             <div className="flex items-center justify-between flex-1 font-mono">
               <span>Shortcuts</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#E6E1D6] rounded">?</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#EFEBE0] rounded border border-[#DDD6C7]">?</kbd>
             </div>
           )}
         </button>
@@ -323,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Desktop Persistent Sidebar */}
       <aside
         className={`hidden lg:block shrink-0 transition-all duration-200 ease-in-out ${
-          collapsed ? 'w-16' : 'w-60'
+          collapsed ? 'w-16' : 'w-64'
         }`}
         aria-label="Workbench Navigation"
       >

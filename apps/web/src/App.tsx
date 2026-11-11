@@ -342,6 +342,35 @@ const AppInner: React.FC = () => {
   // Route 3: Advanced Full-Instrument Rack (14 Labs)
   const renderCurrentView = () => {
     switch (currentView) {
+      case 'workbench':
+        return (
+          <PaperWorkbench
+            onBackToHero={() => {
+              setPageMode('hero');
+              window.location.hash = '';
+            }}
+            onOpenAdvancedLab={(labView) => {
+              setCurrentView(labView as any);
+              window.location.hash = `#/${labView}`;
+            }}
+            realTestCount={33}
+          />
+        );
+      case 'papergraph':
+        return (
+          <PaperWorkbench
+            onBackToHero={() => {
+              setPageMode('hero');
+              window.location.hash = '';
+            }}
+            onOpenAdvancedLab={(labView) => {
+              setCurrentView(labView as any);
+              window.location.hash = `#/${labView}`;
+            }}
+            realTestCount={33}
+            initialTab="papergraph"
+          />
+        );
       case 'overview':
         return <OverviewView onOpenMethodCard={handleOpenMethodCard} onNavigate={setCurrentView} />;
       case 'rack':

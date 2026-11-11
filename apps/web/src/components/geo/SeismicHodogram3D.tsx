@@ -144,3 +144,4 @@ export const SeismicHodogram3D: React.FC<SeismicHodogram3DProps> = ({
     </div>
   );
 };
+

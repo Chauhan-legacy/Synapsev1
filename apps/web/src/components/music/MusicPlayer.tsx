@@ -434,10 +434,10 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   // Collapsed Minimal Sidebar Pill
   if (!isExpanded) {
     return (
-      <div className="w-full p-2 border-t border-[var(--color-border)] bg-[var(--color-panel)] font-mono">
+      <div className="w-full p-2 border-t border-[#DDD6C7] bg-[#FFFFFF] font-mono">
         <div
           onClick={() => setIsExpanded(true)}
-          className="cursor-pointer group flex items-center justify-between p-2 rounded-lg bg-[#F7F0D6] border border-[#E6DFC6] hover:shadow-sm transition"
+          className="cursor-pointer group flex items-center justify-between p-2 rounded-lg bg-[#F7F0D6] border border-[#E6DFC6] hover:shadow-xs transition"
           title="Click to open full Music Player"
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -478,7 +478,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
   // Full Expanded Player Card Matching Reference Design
   return (
-    <div className="w-full p-2 border-t border-[var(--color-border)] bg-[var(--color-panel)] font-mono">
+    <div className="w-full p-2 border-t border-[#DDD6C7] bg-[#FFFFFF] font-mono">
       {/* Hidden Audio Tag */}
       <audio
         ref={audioRef}
