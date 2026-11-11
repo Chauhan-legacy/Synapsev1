@@ -23,6 +23,7 @@ from synapse_core.registry import SelfValidationRegistry
 from synapse_spectra.multitaper import compute_multitaper_psd
 from synapse_spectra.high_res_peaks import fit_high_res_sinusoid
 from synapse_spectra.noise_color import estimate_noise_color
+from synapse_spectra.fast_batch import fast_analyze_signal, FastAnalysisResult
 
 from synapse_statistics.stationarity import evaluate_stationarity
 from synapse_statistics.normality import evaluate_normality
@@ -646,4 +647,117 @@ def run_live_analysis(req: AnalyzeRequest):
             "rejected": n_rejected,
         },
         "engine_source": "Python Engine (v2.0.0)",
+    }
+
+
+class FastBatchRequest(BaseModel):
+    channels: Dict[str, List[float]]
+    sampling_rate: float = 500.0
+    max_peaks: int = 5
+
+
+@router.post("/analysers/ultra_fast_batch")
+def run_ultra_fast_batch(req: FastBatchRequest):
+    """High-throughput vectorized analysis capable of processing 120,000+ samples per channel in milliseconds."""
+    t0 = time.perf_counter()
+    results: Dict[str, Any] = {}
+
+    for ch_name, data in req.channels.items():
+        arr = np.asarray(data, dtype=np.float64)
+        res = fast_analyze_signal(arr, fs=req.sampling_rate, max_peaks=req.max_peaks)
+        results[ch_name] = {
+            "total_samples": res.total_samples,
+            "sampling_rate_hz": res.sampling_rate_hz,
+            "duration_sec": res.duration_sec,
+            "execution_time_ms": res.execution_time_ms,
+            "throughput_samples_per_sec": res.throughput_samples_per_sec,
+            "mean": res.mean,
+            "std": res.std,
+            "rms": res.rms,
+            "median": res.median,
+            "mad": res.mad,
+            "skewness": res.skewness,
+            "kurtosis": res.kurtosis,
+            "peak_to_peak": res.peak_to_peak,
+            "dominant_frequency_hz": res.dominant_frequency_hz,
+            "dominant_power_db": res.dominant_power_db,
+            "spectral_entropy": res.spectral_entropy,
+            "peaks": [p.__dict__ for p in res.peaks],
+            "transient_events": [t.__dict__ for t in res.transient_events],
+            "changepoint_timestamps_sec": res.changepoint_timestamps_sec,
+            "is_stationary": res.is_stationary,
+            "is_gaussian": res.is_gaussian,
+            "quality_status": res.quality_status,
+        }
+
+    total_elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+    total_samples = sum(len(d) for d in req.channels.values())
+
+    return {
+        "status": "success",
+        "total_channels": len(req.channels),
+        "total_samples": total_samples,
+        "total_execution_time_ms": total_elapsed_ms,
+        "sub_second_verified": total_elapsed_ms < 1000.0,
+        "results_by_channel": results,
+    }
+
+
+@router.get("/analysers/benchmark_120k")
+def run_benchmark_120k():
+    """Executes ultra-fast vectorized analysis on the 120,000-point mega benchmark dataset on disk."""
+    from pathlib import Path
+    import pandas as pd
+
+    csv_path = Path("data/synapse_mega_120k_benchmark.csv")
+    if not csv_path.exists():
+        csv_path = Path("benchmarks/SYNAPSE_BENCHMARK_DATA/data/synapse_mega_120k_benchmark.csv")
+    if not csv_path.exists():
+        raise HTTPException(status_code=404, detail="Mega benchmark dataset file not found.")
+
+    t_read_0 = time.perf_counter()
+    df = pd.read_csv(csv_path)
+    read_ms = round((time.perf_counter() - t_read_0) * 1000.0, 2)
+
+    channels = [
+        "seismic_velocity_mps",
+        "magnetometer_flux_nt",
+        "ocean_altimetry_ssh_cm",
+        "control_null_noise",
+    ]
+
+    t_calc_0 = time.perf_counter()
+    channel_results = {}
+    for ch in channels:
+        arr = df[ch].values
+        res = fast_analyze_signal(arr, fs=500.0, max_peaks=4)
+        channel_results[ch] = {
+            "total_samples": res.total_samples,
+            "execution_time_ms": res.execution_time_ms,
+            "throughput_samples_per_sec": res.throughput_samples_per_sec,
+            "dominant_frequency_hz": res.dominant_frequency_hz,
+            "dominant_power_db": res.dominant_power_db,
+            "mean": res.mean,
+            "std": res.std,
+            "peak_to_peak": res.peak_to_peak,
+            "kurtosis": res.kurtosis,
+            "is_gaussian": res.is_gaussian,
+            "is_stationary": res.is_stationary,
+            "peaks": [p.__dict__ for p in res.peaks],
+            "transients_count": len(res.transient_events),
+            "changepoints": res.changepoint_timestamps_sec,
+        }
+
+    calc_ms = round((time.perf_counter() - t_calc_0) * 1000.0, 2)
+
+    return {
+        "dataset_name": "synapse_mega_120k_benchmark.csv",
+        "total_rows": len(df),
+        "total_data_points": len(df) * len(channels),
+        "sampling_rate_hz": 500.0,
+        "csv_read_time_ms": read_ms,
+        "scientific_compute_time_ms": calc_ms,
+        "sub_second_verified": calc_ms < 1000.0,
+        "throughput_megasamples_per_sec": round((len(df) * len(channels)) / (calc_ms / 1000.0) / 1e6, 2),
+        "channels": channel_results,
     }

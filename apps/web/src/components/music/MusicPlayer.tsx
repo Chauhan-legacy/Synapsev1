@@ -17,6 +17,9 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  Link2,
+  Radio,
+  ExternalLink,
 } from 'lucide-react';
 import { useSignal } from '../../context/SignalContext';
 import {
@@ -58,6 +61,17 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   // Playlist & Tracks
   const [tracks, setTracks] = useState<TrackMetadata[]>([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
+
+  // Stream URL / Provider State (Spotify, YouTube Music, Apple Music, Direct MP3)
+  const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
+  const [streamUrl, setStreamUrl] = useState<string>('');
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [activeEmbed, setActiveEmbed] = useState<{
+    provider: 'spotify' | 'youtube' | 'apple' | 'direct';
+    embedUrl: string;
+    originalUrl: string;
+    title: string;
+  } | null>(null);
 
   // Audio Context & Analyser Refs
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -106,6 +120,162 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
       isMounted = false;
     };
   }, []);
+
+  // Parse Spotify, YouTube Music, Apple Music, and direct MP3 URLs
+  const parseStreamUrl = (url: string): {
+    provider: 'spotify' | 'youtube' | 'apple' | 'direct';
+    embedUrl: string;
+    title: string;
+  } | null => {
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+
+    // 1. Spotify
+    if (trimmed.includes('spotify.com') || trimmed.startsWith('spotify:')) {
+      const trackMatch = trimmed.match(/track\/([a-zA-Z0-9]+)/);
+      if (trackMatch) {
+        return {
+          provider: 'spotify',
+          embedUrl: `https://open.spotify.com/embed/track/${trackMatch[1]}?utm_source=generator&theme=0`,
+          title: `Spotify Track (${trackMatch[1].slice(0, 8)})`,
+        };
+      }
+      const playlistMatch = trimmed.match(/playlist\/([a-zA-Z0-9]+)/);
+      if (playlistMatch) {
+        return {
+          provider: 'spotify',
+          embedUrl: `https://open.spotify.com/embed/playlist/${playlistMatch[1]}?utm_source=generator&theme=0`,
+          title: `Spotify Playlist (${playlistMatch[1].slice(0, 8)})`,
+        };
+      }
+      const albumMatch = trimmed.match(/album\/([a-zA-Z0-9]+)/);
+      if (albumMatch) {
+        return {
+          provider: 'spotify',
+          embedUrl: `https://open.spotify.com/embed/album/${albumMatch[1]}?utm_source=generator&theme=0`,
+          title: `Spotify Album (${albumMatch[1].slice(0, 8)})`,
+        };
+      }
+    }
+
+    // 2. YouTube & YouTube Music
+    if (
+      trimmed.includes('youtube.com') ||
+      trimmed.includes('youtu.be') ||
+      trimmed.includes('music.youtube.com')
+    ) {
+      let videoId = '';
+      if (trimmed.includes('youtu.be/')) {
+        const parts = trimmed.split('youtu.be/');
+        videoId = parts[1]?.split(/[?&]/)[0] || '';
+      } else if (trimmed.includes('v=')) {
+        const match = trimmed.match(/[?&]v=([^&]+)/);
+        videoId = match ? match[1] : '';
+      } else if (trimmed.includes('embed/')) {
+        const parts = trimmed.split('embed/');
+        videoId = parts[1]?.split(/[?&]/)[0] || '';
+      }
+      if (videoId) {
+        return {
+          provider: 'youtube',
+          embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`,
+          title: `YouTube Audio (${videoId})`,
+        };
+      }
+    }
+
+    // 3. Apple Music
+    if (trimmed.includes('music.apple.com')) {
+      const embedUrl = trimmed.replace('music.apple.com', 'embed.music.apple.com');
+      return {
+        provider: 'apple',
+        embedUrl,
+        title: 'Apple Music Track',
+      };
+    }
+
+    // 4. Direct audio / MP3 stream
+    if (
+      trimmed.endsWith('.mp3') ||
+      trimmed.endsWith('.wav') ||
+      trimmed.endsWith('.ogg') ||
+      trimmed.endsWith('.aac') ||
+      trimmed.endsWith('.m4a') ||
+      trimmed.includes('audio') ||
+      trimmed.includes('stream')
+    ) {
+      const filename = trimmed.split('/').pop()?.split('?')[0] || 'Web Audio Stream';
+      return {
+        provider: 'direct',
+        embedUrl: trimmed,
+        title: filename,
+      };
+    }
+
+    try {
+      new URL(trimmed);
+      return {
+        provider: 'direct',
+        embedUrl: trimmed,
+        title: 'Live Audio Stream',
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const handleConnectStream = async (rawUrl?: string) => {
+    const targetUrl = (rawUrl || streamUrl).trim();
+    if (!targetUrl) {
+      setUrlError('Please paste a streaming or track URL.');
+      return;
+    }
+
+    const parsed = parseStreamUrl(targetUrl);
+    if (!parsed) {
+      setUrlError('Unrecognized URL format. Please paste a valid Spotify, YouTube, Apple Music or audio URL.');
+      return;
+    }
+
+    setUrlError(null);
+    setActiveEmbed({
+      provider: parsed.provider,
+      embedUrl: parsed.embedUrl,
+      originalUrl: targetUrl,
+      title: parsed.title,
+    });
+
+    const newTrack: TrackMetadata = {
+      id: `stream_${Date.now()}`,
+      title: parsed.title,
+      artist: parsed.provider.toUpperCase() + ' Stream',
+      album: 'Universal Web Audio',
+      duration: 300,
+      dateAdded: Date.now(),
+      favorite: true,
+      fileType: `stream/${parsed.provider}`,
+    };
+
+    if (parsed.provider === 'direct') {
+      if (audioRef.current) {
+        audioRef.current.src = parsed.embedUrl;
+        audioRef.current.load();
+        audioRef.current.play().catch(() => {});
+        setIsPlaying(true);
+      }
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setIsPlaying(true);
+    }
+
+    await saveTrackToDB(newTrack);
+    setTracks((prev) => [newTrack, ...prev]);
+    setCurrentTrackIndex(0);
+    setShowUrlInput(false);
+    setStreamUrl('');
+  };
 
   // Web Audio Setup for live spectrum visualization
   const setupWebAudio = () => {
@@ -448,10 +618,14 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             {!collapsedSidebar && (
               <div className="flex flex-col min-w-0">
                 <span className="text-[11px] font-bold text-[#1F2430] truncate">
-                  {currentTrack?.title || 'Ambient Chords'}
+                  {activeEmbed ? activeEmbed.title : (currentTrack?.title || 'Ambient Chords')}
                 </span>
-                <span className="text-[9px] text-[#6B6F7B] truncate">
-                  {currentTrack?.artist || '432 Hz Resonant'}
+                <span className="text-[9px] text-[#6B6F7B] truncate flex items-center gap-1">
+                  {activeEmbed ? (
+                    <span className="text-[#0F766E] font-semibold uppercase">{activeEmbed.provider} Stream</span>
+                  ) : (
+                    currentTrack?.artist || '432 Hz Resonant'
+                  )}
                 </span>
               </div>
             )}
@@ -497,7 +671,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
       {/* Main Pastel Cream Container */}
       <div className="relative rounded-2xl bg-[#F7F0D6] border border-[#E6DFC6] p-3.5 shadow-md flex flex-col gap-3 transition">
-        {/* Top Header Row: Collapse, Layout Toggle, Upload File */}
+        {/* Top Header Row: Collapse, Layout Toggle, Upload File, Link Player */}
         <div className="flex items-center justify-between text-[#6B6F7B] text-[10px]">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-[#1F2430] uppercase tracking-wider">Audio Lab</span>
@@ -507,6 +681,20 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Stream Link Player Button (Spotify, YouTube Music, Apple Music, MP3) */}
+            <button
+              type="button"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              title="Stream from Spotify, YouTube Music, Apple Music or direct audio link"
+              className={`p-1 rounded transition flex items-center gap-0.5 ${
+                showUrlInput || activeEmbed
+                  ? 'bg-[#0F766E] text-white font-bold'
+                  : 'hover:bg-[#EFE8CC] text-[#1F2430]'
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+            </button>
+
             {/* Upload Local Track */}
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -555,6 +743,129 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Link Player Ingestion Drawer */}
+        {showUrlInput && (
+          <div className="p-2.5 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-xs flex flex-col gap-2">
+            <div className="flex items-center justify-between text-[10px] font-bold text-[#1F2430]">
+              <span className="flex items-center gap-1">
+                <Radio className="w-3 h-3 text-[#0F766E]" />
+                Paste Streaming Link
+              </span>
+              <span className="text-[9px] text-[#78716C]">Spotify / YouTube / Apple / MP3</span>
+            </div>
+
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                value={streamUrl}
+                onChange={(e) => {
+                  setStreamUrl(e.target.value);
+                  if (urlError) setUrlError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleConnectStream();
+                }}
+                placeholder="Paste Spotify, YouTube or Apple Music link..."
+                className="flex-1 px-2 py-1 text-xs font-mono bg-[#FFFDF9] border border-[#DDD6C7] rounded focus:outline-hidden focus:border-[#0F766E] text-[#1F2430]"
+              />
+              <button
+                type="button"
+                onClick={() => handleConnectStream()}
+                className="px-2.5 py-1 rounded bg-[#0F766E] hover:bg-[#0B5E58] text-white text-[10px] font-bold transition flex items-center gap-1 shrink-0"
+              >
+                <span>Connect</span>
+              </button>
+            </div>
+
+            {urlError && (
+              <p className="text-[10px] text-red-600 font-sans">{urlError}</p>
+            )}
+
+            {/* Quick Demo Preset Links */}
+            <div className="flex flex-wrap gap-1 text-[9px]">
+              <span className="text-[#78716C] self-center mr-0.5">Quick demo:</span>
+              <button
+                type="button"
+                onClick={() => handleConnectStream('https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT')}
+                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
+              >
+                Spotify
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConnectStream('https://www.youtube.com/watch?v=jfKfPfyJRdk')}
+                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
+              >
+                YouTube Lofi
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConnectStream('https://music.apple.com/us/album/mozart-requiem/1452583842')}
+                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
+              >
+                Apple Music
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConnectStream('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3')}
+                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
+              >
+                Direct MP3
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Active Third-Party Embed Player (Spotify, YouTube, Apple Music) */}
+        {activeEmbed && activeEmbed.provider !== 'direct' && (
+          <div className="rounded-xl overflow-hidden border border-[#DDD6C7] bg-[#10141C] p-1.5 shadow-xs flex flex-col gap-1">
+            <div className="flex items-center justify-between px-1 text-[9px] text-[#FFFDF9]">
+              <span className="flex items-center gap-1.5 font-bold">
+                <span
+                  className={`w-2 h-2 rounded-full animate-pulse ${
+                    activeEmbed.provider === 'spotify'
+                      ? 'bg-green-500'
+                      : activeEmbed.provider === 'youtube'
+                      ? 'bg-red-500'
+                      : 'bg-pink-500'
+                  }`}
+                />
+                <span className="capitalize">{activeEmbed.provider} Stream Active</span>
+              </span>
+              <div className="flex items-center gap-2 text-[9px]">
+                <a
+                  href={activeEmbed.originalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline flex items-center gap-0.5 text-[#DDD6C7]"
+                  title="Open in native app/tab"
+                >
+                  Open <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setActiveEmbed(null)}
+                  className="text-red-400 hover:text-red-300 font-bold"
+                  title="Close streaming player and return to internal synth"
+                >
+                  Detach
+                </button>
+              </div>
+            </div>
+
+            <iframe
+              src={activeEmbed.embedUrl}
+              width="100%"
+              height={activeEmbed.provider === 'spotify' ? '80' : activeEmbed.provider === 'youtube' ? '140' : '110'}
+              frameBorder="0"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              title={activeEmbed.title}
+              className="rounded-lg w-full bg-black/40"
+            />
+          </div>
+        )}
 
         {/* Layout 1: Vertical (from reference image) */}
         {layout === 'vertical' && (

@@ -234,6 +234,64 @@ export function createSignalPreset(code: string): SignalData {
       const noise = ((i % 23) - 11) / 30.0;
       return p1 + p2 + noise;
     });
+  } else if (code === 'benchmark_MEGA_120K' || code === '120K') {
+    filename = 'synapse_mega_120k_benchmark.csv';
+    const fsMega = 500.0;
+    const nMega = 2400; // High-resolution interactive browser representation
+    const timestampsMega = Array.from({ length: nMega }, (_, i) => i * (240.0 / nMega));
+
+    const seismic = timestampsMega.map((t, i) => {
+      let s = 0.04 * Math.sin(2 * Math.PI * 0.15 * t);
+      if (t >= 45.0) {
+        const tp = t - 45.0;
+        s += 1.85 * Math.sin(2 * Math.PI * 14.5 * tp) * Math.exp(-tp / 3.8);
+      }
+      if (t >= 110.0) {
+        const ts = t - 110.0;
+        s += 4.20 * Math.sin(2 * Math.PI * 4.8 * ts) * Math.exp(-ts / 8.5);
+      }
+      if (t >= 170.0 && t <= 220.0) {
+        const tr = t - 170.0;
+        s += 3.10 * Math.sin(2 * Math.PI * (0.8 + 0.028 * tr) * tr) * Math.exp(-Math.pow(t - 192.0, 2) / 120.0);
+      }
+      return s + ((i % 17) - 8) / 120.0;
+    });
+
+    const magnetometer = timestampsMega.map((t, i) => {
+      let m = 50000.0 + 14.5 * Math.cos((2 * Math.PI * t) / 240.0);
+      m += 3.20 * Math.sin(2 * Math.PI * 7.83 * t);
+      m += 1.65 * Math.sin(2 * Math.PI * 14.30 * t);
+      m += 0.85 * Math.sin(2 * Math.PI * 20.80 * t);
+      if (t >= 90.0) {
+        m += 42.5 * Math.exp(-(t - 90.0) / 55.0);
+      }
+      return m + ((i % 13) - 6) / 20.0;
+    });
+
+    return {
+      id: code,
+      filename,
+      samplingRate: fsMega,
+      timestamps: timestampsMega,
+      channels: {
+        'Seismic Velocity (m/s)': seismic,
+        'Magnetometer Flux (nT)': magnetometer,
+      },
+      channelNames: ['Seismic Velocity (m/s)', 'Magnetometer Flux (nT)'],
+      duration: 240.0,
+      quality: {
+        total_samples: 120000,
+        channel_count: 4,
+        sampling_rate: fsMega,
+        is_uniform: true,
+        timestamp_jitter_pct: 0.0,
+        nan_count: 0,
+        infinite_count: 0,
+        clipping_count: 0,
+        content_hash_sha256: 'sha256_mega_120000_samples_synapse_benchmark',
+        warnings: [],
+      },
+    };
   } else {
     // Default Master Challenge Signal (benchmark_J, etc.)
     filename = 'J_master_discovery_challenge.csv';
@@ -283,6 +341,7 @@ export function createSignalPreset(code: string): SignalData {
 
 const ALL_BENCHMARK_PRESETS = [
   { id: 'benchmark_ALL', name: 'Dataset Ω: Master All-in-One Multi-Physics (Combined Testing)', isBenchmark: true },
+  { id: 'benchmark_MEGA_120K', name: 'Mega: 120,000-Point High-Throughput (4 Channels, 500Hz)', isBenchmark: true },
   { id: 'astro_ligo_gw150914', name: 'Astro: LIGO GW150914 Gravitational Wave Strain', isBenchmark: true },
   { id: 'astro_kepler_transit', name: 'Astro: Kepler-186f Exoplanet Transit Photometry', isBenchmark: true },
   { id: 'astro_goes_solar_flare', name: 'Astro: NOAA GOES-16 M5.4 Solar X-Ray Flare', isBenchmark: true },

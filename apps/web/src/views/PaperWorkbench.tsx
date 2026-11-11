@@ -38,6 +38,7 @@ import {
   generateBibTeX,
   generateApaCitation,
 } from '../services/arxivService';
+import { MusicPlayer } from '../components/music/MusicPlayer';
 
 export type WorkbenchTab =
   | 'charts'
@@ -803,6 +804,14 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   </span>
                 </button>
               </div>
+            </div>
+
+            {/* Audio Lab Ambient Player on Paper Workbench */}
+            <div className="pt-2">
+              <MusicPlayer
+                onOpenAnalysis={() => setActiveTab('charts')}
+                collapsedSidebar={false}
+              />
             </div>
           </div>
 

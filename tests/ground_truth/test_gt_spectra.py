@@ -84,3 +84,31 @@ def test_gt_high_res_crlb_sinusoid_efficiency():
     assert error < 0.05, f"Frequency error {error} Hz exceeds 0.05 Hz"
     assert res.cramer_rao_lower_bound_hz2 > 0
     assert res.efficiency_ratio >= 0.70
+
+
+def test_gt_fast_vectorized_120k_throughput_and_recovery():
+    """Verify 120,000-point signal analysis finishes in < 200 ms and recovers physical Schumann resonance."""
+    from synapse_spectra.fast_batch import fast_analyze_signal
+
+    fs = 500.0
+    N = 120000
+    t = np.arange(N) / fs
+    true_schumann = 7.83
+
+    # Signal with 7.83 Hz tone + noise
+    x = 3.2 * np.sin(2 * np.pi * true_schumann * t) + np.random.default_rng(42).normal(0, 1.0, N)
+
+    res = fast_analyze_signal(x, fs=fs, max_peaks=3)
+
+    # 1. Execution time must be sub-second (< 200 ms)
+    assert res.execution_time_ms < 200.0, f"Execution time {res.execution_time_ms} ms exceeded 200 ms limit"
+
+    # 2. Dominant frequency must match ground truth 7.83 Hz within frequency bin resolution
+    assert abs(res.dominant_frequency_hz - true_schumann) < 0.25, (
+        f"Detected {res.dominant_frequency_hz} Hz differs from ground truth {true_schumann} Hz"
+    )
+
+    # 3. Throughput must exceed 2 million samples/sec
+    assert res.throughput_samples_per_sec > 2_000_000, (
+        f"Throughput {res.throughput_samples_per_sec} s/s lower than 2M s/s requirement"
+    )

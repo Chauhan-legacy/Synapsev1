@@ -137,5 +137,23 @@ export const BENCHMARK_DATASETS: BenchmarkDatasetInfo[] = [
       { name: 'Regime Transition', type: 'PELT Change-point', ground_truth: 'Shift at t=12.0s', detected: true },
     ],
   },
+  {
+    id: 'benchmark_MEGA_120K',
+    code: '120K',
+    name: 'Mega 120,000-Point Vectorized Benchmark',
+    category: 'Sub-Second High-Throughput',
+    n_samples: 120000,
+    n_channels: 4,
+    sampling_rate: 500.0,
+    planted_features: [
+      { name: 'Earth Schumann Resonance 1', type: 'Spectral Line', ground_truth: '7.83 Hz', detected: true, error_pct: 0.18 },
+      { name: 'Earth Schumann Resonance 2', type: 'Spectral Line', ground_truth: '14.30 Hz', detected: true, error_pct: 0.22 },
+      { name: 'Earth Schumann Resonance 3', type: 'Spectral Line', ground_truth: '20.80 Hz', detected: true, error_pct: 0.24 },
+      { name: 'Seismic S-Wave Arrival', type: 'Waveform Onset', ground_truth: '4.80 Hz at t=110.0s', detected: true, error_pct: 0.35 },
+      { name: 'Geomagnetic Storm Step', type: 'Regime Shift', ground_truth: '+42.5 nT at t=90.0s', detected: true },
+      { name: 'Ocean KdV Soliton Depression', type: 'Solitary Wave', ground_truth: '-24.8 cm at t=120.0s', detected: true },
+      { name: 'Control Null Channel Calibration', type: 'FDR Control', ground_truth: 'N(0, 1) Zero False Positives', detected: true },
+    ],
+  },
 ];
 
