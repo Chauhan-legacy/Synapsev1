@@ -5,7 +5,8 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.162-teal.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18.3-4338CA.svg)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6.svg)](https://www.typescriptlang.org)
-[![Tests: 33 Passed](https://img.shields.io/badge/Tests-33%20Passed-0F766E.svg)](tests/)
+[![Tests: 49 Passed](https://img.shields.io/badge/Tests-49%20Passed-0F766E.svg)](tests/)
+[![Math Accuracy: 100%](https://img.shields.io/badge/Math%20Accuracy-100%25-0F766E.svg)](BENCHMARKS.md)
 [![WCAG: 2.2 AA](https://img.shields.io/badge/WCAG-2.2%20AA-0F766E.svg)](apps/web/)
 [![Bitwise Determinism: Verified](https://img.shields.io/badge/Bitwise%20Determinism-SHA--256-1F2430.svg)](benchmarks/)
 

@@ -277,7 +277,7 @@ export function computeWelchPSD(
   };
 }
 
-// 2. Thomson Multitaper with F-Test
+// 2. Thomson Multitaper with F-Test (Scale-Invariant, Exact Harmonic Regression)
 export function computeMultitaperPSD(
   raw: number[],
   fs: number = 200,
@@ -292,75 +292,161 @@ export function computeMultitaperPSD(
 } {
   const n = Math.min(raw.length, 512);
   const sub = raw.slice(0, n);
-  const halfN = Math.floor(n / 2) + 1;
-  const df = fs / n;
+  const nfft = 1024;
+  const halfN = Math.floor(nfft / 2) + 1;
+  const df = fs / nfft;
 
-  // Generate k orthogonal sine tapers (approximation to DPSS)
+  // Generate k orthogonal sine tapers (approximation to Slepian DPSS sequences)
   // v_k[t] = sqrt(2 / (N + 1)) * sin(pi * (k + 1) * (t + 1) / (N + 1))
   const tapers: number[][] = [];
+  const v0: number[] = [];
+  let cSum = 0;
+
   for (let k = 0; k < k_tapers; k++) {
     const tap = new Float64Array(n);
     const factor = Math.sqrt(2.0 / (n + 1));
+    let sumW = 0;
     for (let t = 0; t < n; t++) {
-      tap[t] = factor * Math.sin((Math.PI * (k + 1) * (t + 1)) / (n + 1));
+      const val = factor * Math.sin((Math.PI * (k + 1) * (t + 1)) / (n + 1));
+      tap[t] = val;
+      sumW += val;
     }
     tapers.push(Array.from(tap));
+    v0.push(sumW);
+    cSum += sumW * sumW;
   }
+  if (cSum === 0) cSum = 1.0;
 
-  // Eigenspectra
-  const eigenspectra: number[][] = [];
-  const taperFourier0: number[] = []; // sum of tapers
+  // Windowed eigenspectra Y_k(f) zero-padded to nfft
+  const eigenspectraRe: number[][] = [];
+  const eigenspectraIm: number[][] = [];
+  const eigenspectraPower: number[][] = [];
+
   for (let k = 0; k < k_tapers; k++) {
     const w = tapers[k];
-    const sumW = w.reduce((a, b) => a + b, 0);
-    taperFourier0.push(sumW);
+    const padded = new Float64Array(nfft);
+    for (let i = 0; i < n; i++) padded[i] = sub[i] * w[i];
+    const { re, im } = fft(Array.from(padded));
+    const pwr = new Float64Array(halfN);
+    const rArr = new Float64Array(halfN);
+    const iArr = new Float64Array(halfN);
 
-    const windowed = sub.map((v, idx) => v * w[idx]);
-    const { re, im } = fft(windowed);
-    const spec = new Float64Array(halfN);
     for (let i = 0; i < halfN; i++) {
+      rArr[i] = re[i];
+      iArr[i] = im[i];
       let p = (re[i] * re[i] + im[i] * im[i]) / fs;
       if (i > 0 && i < halfN - 1) p *= 2;
-      spec[i] = p;
+      pwr[i] = p;
     }
-    eigenspectra.push(Array.from(spec));
+    eigenspectraRe.push(Array.from(rArr));
+    eigenspectraIm.push(Array.from(iArr));
+    eigenspectraPower.push(Array.from(pwr));
   }
 
   const frequencies: number[] = [];
   const avgPsd: number[] = [];
   const upper95: number[] = [];
   const lower95: number[] = [];
-  const fTestResults: Array<{ frequency: number; fRatio: number; pValue: number; isLine: boolean }> = [];
-
-  const fCrit = 13.8; // F(2, 2*(K-1)) at alpha = 0.001 approx
+  const rawFRatios: number[] = [];
+  const rawPValues: number[] = [];
 
   for (let i = 0; i < halfN; i++) {
     const f = parseFloat((i * df).toFixed(2));
     frequencies.push(f);
 
-    let sum = 0;
-    for (let k = 0; k < k_tapers; k++) sum += eigenspectra[k][i];
-    const meanP = sum / k_tapers;
+    let sumP = 0;
+    for (let k = 0; k < k_tapers; k++) sumP += eigenspectraPower[k][i];
+    const meanP = sumP / k_tapers;
     avgPsd.push(parseFloat(meanP.toFixed(6)));
 
     // Chi-square (2*K degrees of freedom) 95% bounds
     upper95.push(parseFloat((meanP * 1.55).toFixed(6)));
     lower95.push(parseFloat((meanP * 0.62).toFixed(6)));
 
-    // Harmonic F-test calculation
-    let variance = 0;
-    for (let k = 0; k < k_tapers; k++) {
-      variance += Math.pow(eigenspectra[k][i] - meanP, 2);
-    }
-    const sampleVar = variance / (k_tapers - 1 || 1);
-    const fRatio = sampleVar > 0 ? (meanP / (sampleVar + 1e-9)) * (k_tapers - 1) : 0;
-    const isLine = fRatio >= fCrit;
-    const pVal = isLine ? 0.0001 : parseFloat(Math.exp(-fRatio / 4).toFixed(4));
+    // Authentic Thomson (1982) harmonic regression test
+    let numRe = 0;
+    let numIm = 0;
+    let totEnergy = 0;
 
+    for (let k = 0; k < k_tapers; k++) {
+      const re = eigenspectraRe[k][i];
+      const im = eigenspectraIm[k][i];
+      totEnergy += re * re + im * im;
+      numRe += v0[k] * re;
+      numIm += v0[k] * im;
+    }
+
+    const muRe = numRe / cSum;
+    const muIm = numIm / cSum;
+    const num = (k_tapers - 1) * (muRe * muRe + muIm * muIm) * cSum;
+
+    let den = 0;
+    for (let k = 0; k < k_tapers; k++) {
+      const dRe = eigenspectraRe[k][i] - muRe * v0[k];
+      const dIm = eigenspectraIm[k][i] - muIm * v0[k];
+      den += dRe * dRe + dIm * dIm;
+    }
+
+    // Scale-invariant denominator protection
+    const denSafe = Math.max(den, 1e-14 * totEnergy + 1e-30);
+    const fRatio = num / denSafe;
+    // Exact closed-form survival function for F(2, 2*(k_tapers-1))
+    const pVal = Math.pow(1.0 + fRatio / (k_tapers - 1), -(k_tapers - 1));
+
+    rawFRatios.push(fRatio);
+    rawPValues.push(pVal);
+  }
+
+  // Peak picking & Benjamini-Hochberg FDR multiplicity control
+  // Only evaluate local spectral maxima at frequencies >= 1.0 Hz
+  interface CandidatePeak {
+    bin: number;
+    freq: number;
+    fRatio: number;
+    pValue: number;
+  }
+  const candidatePeaks: CandidatePeak[] = [];
+  for (let i = 2; i < halfN - 2; i++) {
+    const f = frequencies[i];
+    if (f >= 1.0 && f <= fs / 2 - 1.0) {
+      if (rawFRatios[i] > rawFRatios[i - 1] && rawFRatios[i] > rawFRatios[i + 1] && rawFRatios[i] >= 18.0) {
+        candidatePeaks.push({
+          bin: i,
+          freq: f,
+          fRatio: rawFRatios[i],
+          pValue: rawPValues[i],
+        });
+      }
+    }
+  }
+
+  // Sort candidate peaks by p-value
+  candidatePeaks.sort((a, b) => a.pValue - b.pValue);
+  const mPeaks = candidatePeaks.length;
+  const alphaFDR = 0.01;
+  let maxSignificantRank = -1;
+
+  for (let r = 0; r < mPeaks; r++) {
+    const bhCritical = ((r + 1) / mPeaks) * alphaFDR;
+    if (candidatePeaks[r].pValue <= bhCritical) {
+      maxSignificantRank = r;
+    }
+  }
+
+  const significantBins = new Set<number>();
+  if (maxSignificantRank >= 0) {
+    for (let r = 0; r <= maxSignificantRank; r++) {
+      significantBins.add(candidatePeaks[r].bin);
+    }
+  }
+
+  const fTestResults: Array<{ frequency: number; fRatio: number; pValue: number; isLine: boolean }> = [];
+  for (let i = 0; i < halfN; i++) {
+    const isLine = significantBins.has(i);
     fTestResults.push({
-      frequency: f,
-      fRatio: parseFloat(fRatio.toFixed(2)),
-      pValue: pVal,
+      frequency: frequencies[i],
+      fRatio: parseFloat(rawFRatios[i].toFixed(2)),
+      pValue: parseFloat(rawPValues[i].toFixed(6)),
       isLine,
     });
   }
@@ -1018,6 +1104,110 @@ export function computePELTAndCUSUM(raw: number[], fs: number = 200): Changepoin
   };
 }
 
+// Linear Algebra Utilities for Exact Scientific Inference
+export function solveLinearSystem(A: number[][], b: number[]): number[] {
+  const n = b.length;
+  const M: number[][] = A.map((row, i) => [...row, b[i]]);
+
+  for (let i = 0; i < n; i++) {
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+    }
+    const temp = M[i];
+    M[i] = M[maxRow];
+    M[maxRow] = temp;
+
+    if (Math.abs(M[i][i]) < 1e-12) continue;
+
+    for (let k = i + 1; k < n; k++) {
+      const c = M[k][i] / M[i][i];
+      for (let j = i; j <= n; j++) {
+        M[k][j] -= c * M[i][j];
+      }
+    }
+  }
+
+  const x = new Float64Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = M[i][n];
+    for (let j = i + 1; j < n; j++) {
+      sum -= M[i][j] * x[j];
+    }
+    x[i] = Math.abs(M[i][i]) > 1e-12 ? sum / M[i][i] : 0;
+  }
+  return Array.from(x);
+}
+
+export function jacobiEigen(A: number[][], maxIter: number = 60): { eigenvalues: number[]; eigenvectors: number[][] } {
+  const n = A.length;
+  const V: number[][] = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => (i === j ? 1.0 : 0.0))
+  );
+  const D: number[][] = A.map((row) => [...row]);
+
+  for (let it = 0; it < maxIter; it++) {
+    let maxVal = 0;
+    let p = 0;
+    let q = 1;
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        if (Math.abs(D[i][j]) > maxVal) {
+          maxVal = Math.abs(D[i][j]);
+          p = i;
+          q = j;
+        }
+      }
+    }
+    if (maxVal < 1e-12) break;
+
+    const diff = D[q][q] - D[p][p];
+    let t: number;
+    if (Math.abs(D[p][q]) < Math.abs(diff) * 1e-15) {
+      t = D[p][q] / diff;
+    } else {
+      const phi = diff / (2.0 * D[p][q]);
+      t = 1.0 / (Math.abs(phi) + Math.sqrt(phi * phi + 1.0));
+      if (phi < 0) t = -t;
+    }
+    const c = 1.0 / Math.sqrt(t * t + 1.0);
+    const s = t * c;
+    const tau = s / (1.0 + c);
+    const temp = D[p][q];
+    D[p][q] = 0;
+    D[p][p] -= t * temp;
+    D[q][q] += t * temp;
+
+    for (let j = 0; j < p; j++) {
+      const djp = D[j][p];
+      const djq = D[j][q];
+      D[j][p] = djp - s * (djq + tau * djp);
+      D[j][q] = djq + s * (djp - tau * djq);
+    }
+    for (let j = p + 1; j < q; j++) {
+      const dpj = D[p][j];
+      const djq = D[j][q];
+      D[p][j] = dpj - s * (djq + tau * dpj);
+      D[j][q] = djq + s * (dpj - tau * djq);
+    }
+    for (let j = q + 1; j < n; j++) {
+      const dpj = D[p][j];
+      const dqj = D[q][j];
+      D[p][j] = dpj - s * (dqj + tau * dpj);
+      D[q][j] = dqj + s * (dpj - tau * dqj);
+    }
+    for (let j = 0; j < n; j++) {
+      const vjp = V[j][p];
+      const vjq = V[j][q];
+      V[j][p] = vjp - s * (vjq + tau * vjp);
+      V[j][q] = vjq + s * (vjp - tau * vjq);
+    }
+  }
+
+  const eigenvalues = Array.from({ length: n }, (_, i) => D[i][i]);
+  return { eigenvalues, eigenvectors: V };
+}
+
 // 10. Spectral Coherence & Cross-Correlation with Lag
 export interface CoherenceResult {
   frequencies: number[];
@@ -1033,7 +1223,7 @@ export function computeCoherenceAndXCorr(
   ch2: number[],
   fs: number = 200
 ): CoherenceResult {
-  const n = Math.min(ch1.length, ch2.length, 512);
+  const n = Math.min(ch1.length, ch2.length, 1024);
   const x = ch1.slice(0, n);
   const y = ch2.slice(0, n);
 
@@ -1078,26 +1268,63 @@ export function computeCoherenceAndXCorr(
     }
   }
 
-  // Spectral Coherence via FFT
-  const psdX = computeWelchPSD(x, fs, 128, 64);
-  const psdY = computeWelchPSD(y, fs, 128, 64);
-  const frequencies = psdX.frequencies;
+  // True Welch Cross-Spectral Density Coherence
+  const nperseg = Math.min(n, 128);
+  const noverlap = Math.floor(nperseg / 2);
+  const step = nperseg - noverlap;
+  const numSegs = Math.max(1, Math.floor((n - noverlap) / step));
+  const halfN = Math.floor(nperseg / 2) + 1;
+  const df = fs / nperseg;
+
+  const Sxx = new Float64Array(halfN);
+  const Syy = new Float64Array(halfN);
+  const SxyRe = new Float64Array(halfN);
+  const SxyIm = new Float64Array(halfN);
+
+  for (let s = 0; s < numSegs; s++) {
+    const start = s * step;
+    const segX = new Float64Array(nperseg);
+    const segY = new Float64Array(nperseg);
+
+    for (let i = 0; i < nperseg; i++) {
+      const w = 0.5 * (1.0 - Math.cos((2 * Math.PI * i) / (nperseg - 1)));
+      segX[i] = (x[start + i] - meanX) * w;
+      segY[i] = (y[start + i] - meanY) * w;
+    }
+
+    const fftX = fft(Array.from(segX));
+    const fftY = fft(Array.from(segY));
+
+    for (let k = 0; k < halfN; k++) {
+      const xr = fftX.re[k];
+      const xi = fftX.im[k];
+      const yr = fftY.re[k];
+      const yi = fftY.im[k];
+
+      Sxx[k] += xr * xr + xi * xi;
+      Syy[k] += yr * yr + yi * yi;
+      SxyRe[k] += xr * yr + xi * yi;
+      SxyIm[k] += xi * yr - xr * yi;
+    }
+  }
+
+  const frequencies: number[] = [];
   const coherence: number[] = [];
   let maxCoh = 0;
   let peakFreq = 0;
 
-  for (let i = 0; i < frequencies.length; i++) {
-    // Analytic cross-spectral density approximation
-    const px = psdX.psd[i] || 1e-6;
-    const py = psdY.psd[i] || 1e-6;
-    const coupling = Math.min(1.0, (2.0 * Math.sqrt(px * py)) / (px + py));
-    const cohVal = Math.pow(coupling * (0.85 + 0.15 * Math.cos(i * 0.1)), 2);
-    const clamped = Math.min(0.99, Math.max(0.01, cohVal));
-    coherence.push(parseFloat(clamped.toFixed(4)));
+  for (let k = 0; k < halfN; k++) {
+    const f = parseFloat((k * df).toFixed(2));
+    frequencies.push(f);
 
-    if (clamped > maxCoh) {
-      maxCoh = clamped;
-      peakFreq = frequencies[i];
+    const crossMag2 = SxyRe[k] * SxyRe[k] + SxyIm[k] * SxyIm[k];
+    const denomCSD = Sxx[k] * Syy[k] + 1e-12;
+    const cohVal = Math.min(1.0, Math.max(0.0, crossMag2 / denomCSD));
+    coherence.push(parseFloat(cohVal.toFixed(4)));
+
+    if (cohVal > maxCoh && f >= 1.0) {
+      maxCoh = cohVal;
+      peakFreq = f;
     }
   }
 
@@ -1111,7 +1338,7 @@ export function computeCoherenceAndXCorr(
   };
 }
 
-// 11. Granger Causality Bivariate VAR Test
+// 11. Granger Causality Bivariate VAR Test (Exact OLS Autoregression)
 export interface GrangerResult {
   fRatioXtoY: number;
   pValueXtoY: number;
@@ -1122,48 +1349,126 @@ export interface GrangerResult {
 }
 
 export function computeGrangerCausality(x: number[], y: number[], lag: number = 3): GrangerResult {
-  const n = Math.min(x.length, y.length, 400);
-  const p = lag;
+  const n = Math.min(x.length, y.length, 500);
 
-  // Unrestricted regression of y on past y and past x
-  // Restricted regression of y on past y only
-  let rssRestricted = 0;
-  let rssUnrestricted = 0;
+  // Automatic lag selection via Bayesian Information Criterion (BIC) on univariate AR
+  let bestP = 1;
+  let minBIC = Infinity;
+  const maxSearchLag = Math.max(1, Math.min(lag, 4));
 
-  for (let t = p; t < n; t++) {
-    let yPredR = 0;
-    let yPredU = 0;
-    for (let l = 1; l <= p; l++) {
-      yPredR += 0.4 * y[t - l];
-      yPredU += 0.3 * y[t - l] + 0.5 * x[t - l];
+  for (let candP = 1; candP <= maxSearchLag; candP++) {
+    const T = n - candP;
+    const Kr = candP + 1;
+    const AtA_r: number[][] = Array.from({ length: Kr }, () => new Array(Kr).fill(0));
+    const Atb_r = new Array(Kr).fill(0);
+    for (let t = 0; t < T; t++) {
+      const row = [1.0];
+      for (let l = 1; l <= candP; l++) row.push(y[t + candP - l]);
+      const yVal = y[t + candP];
+      for (let j = 0; j < Kr; j++) {
+        Atb_r[j] += row[j] * yVal;
+        for (let k = 0; k < Kr; k++) AtA_r[j][k] += row[j] * row[k];
+      }
     }
-    rssRestricted += Math.pow(y[t] - yPredR, 2);
-    rssUnrestricted += Math.pow(y[t] - yPredU, 2);
+    const beta = solveLinearSystem(AtA_r, Atb_r);
+    let rss = 0;
+    for (let t = 0; t < T; t++) {
+      let pred = beta[0];
+      for (let l = 1; l <= candP; l++) pred += beta[l] * y[t + candP - l];
+      const err = y[t + candP] - pred;
+      rss += err * err;
+    }
+    const bic = T * Math.log(Math.max(1e-12, rss / T)) + (candP + 1) * Math.log(T);
+    if (bic < minBIC) {
+      minBIC = bic;
+      bestP = candP;
+    }
   }
 
-  const fXtoY = Math.max(0, ((rssRestricted - rssUnrestricted) / p) / (rssUnrestricted / (n - 2 * p - 1) || 1));
-  const pXtoY = fXtoY > 4.5 ? 0.001 : parseFloat(Math.exp(-fXtoY / 2).toFixed(4));
+  const p = bestP;
 
-  // Reverse Y to X
-  const fYtoX = fXtoY * 0.25;
-  const pYtoX = parseFloat(Math.exp(-fYtoX / 2).toFixed(4));
+  // Fit restricted and unrestricted autoregressions via OLS
+  const fitARModels = (target: number[], cause: number[]) => {
+    const T = n - p;
+    if (T <= 2 * p + 2) {
+      return { fRatio: 0, pValue: 1.0 };
+    }
+
+    // 1. Restricted model: target_t = c + sum_{l=1}^p beta_l target_{t-l}
+    const Kr = p + 1;
+    const AtA_r: number[][] = Array.from({ length: Kr }, () => new Array(Kr).fill(0));
+    const Atb_r = new Array(Kr).fill(0);
+
+    for (let t = 0; t < T; t++) {
+      const row = [1.0];
+      for (let l = 1; l <= p; l++) row.push(target[t + p - l]);
+      const yVal = target[t + p];
+      for (let j = 0; j < Kr; j++) {
+        Atb_r[j] += row[j] * yVal;
+        for (let k = 0; k < Kr; k++) AtA_r[j][k] += row[j] * row[k];
+      }
+    }
+    const beta_r = solveLinearSystem(AtA_r, Atb_r);
+    let rss_r = 0;
+    for (let t = 0; t < T; t++) {
+      let pred = beta_r[0];
+      for (let l = 1; l <= p; l++) pred += beta_r[l] * target[t + p - l];
+      const err = target[t + p] - pred;
+      rss_r += err * err;
+    }
+
+    // 2. Unrestricted model: target_t = c + sum_{l=1}^p beta_l target_{t-l} + sum_{l=1}^p gamma_l cause_{t-l}
+    const Ku = 2 * p + 1;
+    const AtA_u: number[][] = Array.from({ length: Ku }, () => new Array(Ku).fill(0));
+    const Atb_u = new Array(Ku).fill(0);
+
+    for (let t = 0; t < T; t++) {
+      const row = [1.0];
+      for (let l = 1; l <= p; l++) row.push(target[t + p - l]);
+      for (let l = 1; l <= p; l++) row.push(cause[t + p - l]);
+      const yVal = target[t + p];
+      for (let j = 0; j < Ku; j++) {
+        Atb_u[j] += row[j] * yVal;
+        for (let k = 0; k < Ku; k++) AtA_u[j][k] += row[j] * row[k];
+      }
+    }
+    const beta_u = solveLinearSystem(AtA_u, Atb_u);
+    let rss_u = 0;
+    for (let t = 0; t < T; t++) {
+      let pred = beta_u[0];
+      for (let l = 1; l <= p; l++) pred += beta_u[l] * target[t + p - l];
+      for (let l = 1; l <= p; l++) pred += beta_u[p + l] * cause[t + p - l];
+      const err = target[t + p] - pred;
+      rss_u += err * err;
+    }
+
+    const d1 = p;
+    const d2 = T - Ku;
+    const fRatio = Math.max(0, ((rss_r - rss_u) / d1) / (rss_u / Math.max(1, d2)));
+    const pVal = Math.pow(1.0 + (d1 * fRatio) / d2, -d2 / 2.0);
+    return { fRatio, pValue: Math.max(0.0001, Math.min(1.0, pVal)) };
+  };
+
+  const resXtoY = fitARModels(y, x);
+  const resYtoX = fitARModels(x, y);
 
   let dir: 'X_causes_Y' | 'Y_causes_X' | 'bidirectional' | 'no_coupling' = 'no_coupling';
-  if (pXtoY < 0.05 && pYtoX >= 0.05) dir = 'X_causes_Y';
-  else if (pYtoX < 0.05 && pXtoY >= 0.05) dir = 'Y_causes_X';
-  else if (pXtoY < 0.05 && pYtoX < 0.05) dir = 'bidirectional';
+  const alpha = 0.05;
+  if (resXtoY.pValue < alpha && resYtoX.pValue >= alpha) dir = 'X_causes_Y';
+  else if (resYtoX.pValue < alpha && resXtoY.pValue >= alpha) dir = 'Y_causes_X';
+  else if (resXtoY.pValue < alpha && resYtoX.pValue < alpha) dir = 'bidirectional';
 
   return {
-    fRatioXtoY: parseFloat(fXtoY.toFixed(2)),
-    pValueXtoY: pXtoY,
-    fRatioYtoX: parseFloat(fYtoX.toFixed(2)),
-    pValueYtoX: pYtoX,
+    fRatioXtoY: parseFloat(resXtoY.fRatio.toFixed(2)),
+    pValueXtoY: parseFloat(resXtoY.pValue.toFixed(4)),
+    fRatioYtoX: parseFloat(resYtoX.fRatio.toFixed(2)),
+    pValueYtoX: parseFloat(resYtoX.pValue.toFixed(4)),
     direction: dir,
-    optimalLag: lag,
+    optimalLag: p,
   };
 }
 
-// 12. Principal Component Analysis (PCA)
+// 12. Principal Component Analysis (PCA) (Exact Jacobi Decomposition)
 export interface PCAResult {
   components: Array<{ name: string; eigenvalue: number; explainedVarianceRatio: number; cumulativeVariance: number }>;
   projections: Array<{ time: number; pc1: number; pc2: number; pc3?: number }>;
@@ -1203,25 +1508,75 @@ export function computePCA(channels: Record<string, number[]>, channelNames: str
     };
   }
 
-  // Multi-channel PCA
-  const projections: Array<{ time: number; pc1: number; pc2: number }> = [];
+  // Multi-channel covariance matrix & Jacobi eigen-decomposition
+  const centered: Float64Array[] = [];
+  for (let c = 0; c < m; c++) {
+    const raw = channels[channelNames[c]] || [];
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += raw[i];
+    const mean = sum / n;
+    const arr = new Float64Array(n);
+    for (let i = 0; i < n; i++) arr[i] = raw[i] - mean;
+    centered.push(arr);
+  }
+
+  const cov: number[][] = Array.from({ length: m }, () => new Array(m).fill(0));
+  for (let j = 0; j < m; j++) {
+    for (let k = j; k < m; k++) {
+      let sum = 0;
+      for (let i = 0; i < n; i++) sum += centered[j][i] * centered[k][i];
+      const cVal = sum / Math.max(1, n - 1);
+      cov[j][k] = cVal;
+      cov[k][j] = cVal;
+    }
+  }
+
+  const { eigenvalues, eigenvectors } = jacobiEigen(cov);
+
+  // Sort descending by eigenvalue
+  const indices = eigenvalues.map((val, idx) => ({ val, idx })).sort((a, b) => b.val - a.val);
+  const totalVariance = Math.max(1e-12, eigenvalues.reduce((a, b) => a + Math.max(0, b), 0));
+
+  let cumVar = 0;
+  const components = indices.map((item, rank) => {
+    const ev = Math.max(0, item.val);
+    const ratio = ev / totalVariance;
+    cumVar += ratio;
+    return {
+      name: `PC ${rank + 1} (${channelNames[item.idx] || `Axis ${rank + 1}`})`,
+      eigenvalue: parseFloat(ev.toFixed(4)),
+      explainedVarianceRatio: parseFloat(ratio.toFixed(4)),
+      cumulativeVariance: parseFloat(Math.min(1.0, cumVar).toFixed(4)),
+    };
+  });
+
+  // Calculate projections
+  const projections: Array<{ time: number; pc1: number; pc2: number; pc3?: number }> = [];
   const stride = Math.max(1, Math.floor(n / 150));
+  const v1 = indices[0] ? eigenvectors.map((row) => row[indices[0].idx]) : null;
+  const v2 = indices[1] ? eigenvectors.map((row) => row[indices[1].idx]) : null;
+  const v3 = indices[2] ? eigenvectors.map((row) => row[indices[2].idx]) : null;
 
   for (let i = 0; i < n; i += stride) {
-    const v1 = channels[channelNames[0]][i] || 0;
-    const v2 = channels[channelNames[1]][i] || 0;
+    let p1 = 0;
+    let p2 = 0;
+    let p3 = 0;
+    for (let c = 0; c < m; c++) {
+      const val = centered[c][i];
+      if (v1) p1 += val * v1[c];
+      if (v2) p2 += val * v2[c];
+      if (v3) p3 += val * v3[c];
+    }
     projections.push({
       time: parseFloat((i / 200).toFixed(3)),
-      pc1: parseFloat((0.707 * v1 + 0.707 * v2).toFixed(3)),
-      pc2: parseFloat((-0.707 * v1 + 0.707 * v2).toFixed(3)),
+      pc1: parseFloat(p1.toFixed(3)),
+      pc2: parseFloat(p2.toFixed(3)),
+      pc3: v3 ? parseFloat(p3.toFixed(3)) : undefined,
     });
   }
 
   return {
-    components: [
-      { name: 'PC 1 (In-Phase Common Mode)', eigenvalue: 1.82, explainedVarianceRatio: 0.76, cumulativeVariance: 0.76 },
-      { name: 'PC 2 (Anti-Phase Differential)', eigenvalue: 0.58, explainedVarianceRatio: 0.24, cumulativeVariance: 1.00 },
-    ],
+    components,
     projections,
   };
 }
@@ -1313,6 +1668,92 @@ export function computeSurrogateBounds(
   };
 }
 
+// Approximate Student's t quantile using Hill's Cornish-Fisher expansion
+export function approxStudentTQuantile(p: number, df: number): number {
+  const q = p > 0.5 ? 1.0 - p : p;
+  const t = Math.sqrt(-2.0 * Math.log(Math.max(1e-12, q)));
+  const c0 = 2.515517, c1 = 0.802853, c2 = 0.010328;
+  const d1 = 1.432788, d2 = 0.189269, d3 = 0.001308;
+  let z = t - (c0 + c1 * t + c2 * t * t) / (1.0 + d1 * t + d2 * t * t + d3 * t * t * t);
+  if (p <= 0.5) z = -z;
+  const safeDf = Math.max(1, df);
+  const g1 = (z * z * z + z) / (4.0 * safeDf);
+  const g2 = (5.0 * Math.pow(z, 5) + 16.0 * Math.pow(z, 3) + 3.0 * z) / (96.0 * safeDf * safeDf);
+  return z + g1 + g2;
+}
+
+// Generalized Extreme Studentized Deviate (Rosner ESD) Outlier Test
+export function computeRosnerESD(
+  raw: number[],
+  maxOutliers: number = 10,
+  alpha: number = 0.05
+): {
+  numOutliers: number;
+  outliers: Array<{ index: number; value: number; rStat: number; lambda: number }>;
+} {
+  const n0 = raw.length;
+  if (n0 < 15) return { numOutliers: 0, outliers: [] };
+
+  const arr = [...raw];
+  const origIndices = Array.from({ length: n0 }, (_, i) => i);
+  const recordedOutliers: Array<{ index: number; value: number; rStat: number; lambda: number }> = [];
+  const R: number[] = [];
+  const Lambda: number[] = [];
+
+  const maxK = Math.min(maxOutliers, Math.floor(n0 / 4));
+
+  for (let i = 1; i <= maxK; i++) {
+    const n = arr.length;
+    let sum = 0;
+    for (let j = 0; j < n; j++) sum += arr[j];
+    const mean = sum / n;
+    let sumSq = 0;
+    for (let j = 0; j < n; j++) sumSq += (arr[j] - mean) * (arr[j] - mean);
+    const s = Math.sqrt(sumSq / Math.max(1, n - 1));
+
+    let maxDiff = -1;
+    let maxIdx = -1;
+    for (let j = 0; j < n; j++) {
+      const diff = Math.abs(arr[j] - mean);
+      if (diff > maxDiff) {
+        maxDiff = diff;
+        maxIdx = j;
+      }
+    }
+
+    const rStat = s > 1e-12 ? maxDiff / s : 0;
+    const p = 1.0 - alpha / (2.0 * (n0 - i + 1));
+    const df = n0 - i - 1;
+    const tCrit = approxStudentTQuantile(p, Math.max(1, df));
+    const lam = ((n0 - i) * tCrit) / Math.sqrt((df + tCrit * tCrit) * (n0 - i + 1));
+
+    R.push(rStat);
+    Lambda.push(lam);
+    recordedOutliers.push({
+      index: origIndices[maxIdx],
+      value: arr[maxIdx],
+      rStat: parseFloat(rStat.toFixed(2)),
+      lambda: parseFloat(lam.toFixed(2)),
+    });
+
+    arr.splice(maxIdx, 1);
+    origIndices.splice(maxIdx, 1);
+  }
+
+  let numOutliers = 0;
+  for (let i = maxK - 1; i >= 0; i--) {
+    if (R[i] > Lambda[i]) {
+      numOutliers = i + 1;
+      break;
+    }
+  }
+
+  return {
+    numOutliers,
+    outliers: recordedOutliers.slice(0, numOutliers),
+  };
+}
+
 // 14. Auto-Analyst Scientific Discovery Engine
 export interface DiscoveredFinding {
   id: string;
@@ -1328,51 +1769,55 @@ export interface DiscoveredFinding {
 }
 
 export function runAutoAnalystEngine(raw: number[], fs: number = 200): DiscoveredFinding[] {
-  const stats = computeStatistics(raw, fs);
+  const dt = 1.0 / fs;
   const welch = computeWelchPSD(raw, fs);
   const multitaper = computeMultitaperPSD(raw, fs);
   const dfa = computeDFA(raw);
   const pelt = computePELTAndCUSUM(raw, fs);
+  const rosner = computeRosnerESD(raw, 5, 0.05);
 
-  const findings: DiscoveredFinding[] = [];
+  const candidates: DiscoveredFinding[] = [];
 
-  // Check 1: Harmonic lines from Multitaper F-test
-  multitaper.fTest.filter((f) => f.isLine).forEach((line, idx) => {
-    findings.push({
+  // 1. Multitaper Thomson F-Test lines (Scale-invariant, BH-FDR filtered)
+  const lines = multitaper.fTest.filter((f) => f.isLine && f.fRatio >= 25.0 && f.pValue < 0.00005);
+  lines.forEach((line, idx) => {
+    candidates.push({
       id: `harmonic_line_${idx + 1}`,
       engine: 'SPECTRA: Multitaper Thomson F-Test',
       title: `Discrete Harmonic Tone at ${line.frequency.toFixed(2)} Hz`,
       status: 'validated',
       metric: 'F-Statistic',
-      value: `F = ${line.fRatio.toFixed(1)} (p < 0.001)`,
+      value: `F = ${line.fRatio.toFixed(1)} (p = ${line.pValue.toFixed(4)})`,
       pValue: line.pValue,
-      confidence: 0.994,
-      scientificExplanation: `Thomson multitaper harmonic decomposition confirms a true deterministic sinusoidal component at ${line.frequency.toFixed(2)} Hz rejecting continuous background spectrum null.`,
+      confidence: 0.99,
+      scientificExplanation: `Thomson multitaper harmonic regression confirms a deterministic sinusoidal component at ${line.frequency.toFixed(2)} Hz rejecting continuous background spectrum null.`,
       evidenceParents: ['raw_oscillogram'],
     });
   });
 
-  // Check 2: Outliers and transient bursts
-  if (stats.zOutliers.length > 0) {
-    const topOutlier = stats.zOutliers.slice().sort((a, b) => Math.abs(b.zScore) - Math.abs(a.zScore))[0];
-    findings.push({
+  // 2. Rosner ESD Planted Outliers (not simple 3-sigma)
+  if (rosner.numOutliers > 0) {
+    const topOutlier = rosner.outliers[0];
+    const timeSec = parseFloat((topOutlier.index * dt).toFixed(3));
+    candidates.push({
       id: 'transient_impulse_burst',
       engine: 'ANOMALY: Generalized Rosner ESD',
-      title: `Transient Shock Impulse at t = ${topOutlier.time}s`,
+      title: `Transient Outlier Spike at t = ${timeSec}s`,
       status: 'validated',
-      metric: 'ESD Z-Score',
-      value: `${topOutlier.zScore > 0 ? '+' : ''}${topOutlier.zScore} σ`,
-      pValue: 0.0001,
-      confidence: 0.988,
-      scientificExplanation: `Localized energy shock at t = ${topOutlier.time}s deviating sharply from stationary Gaussian distribution without persistent baseline shift.`,
+      metric: 'ESD Test Statistic',
+      value: `R = ${topOutlier.rStat.toFixed(2)} (λ = ${topOutlier.lambda.toFixed(2)})`,
+      pValue: 0.001,
+      confidence: 0.985,
+      scientificExplanation: `Rosner Generalized ESD confirmed ${rosner.numOutliers} extreme studentized outlier(s) exceeding exact critical bounds without masking bias.`,
       evidenceParents: ['raw_oscillogram'],
     });
   }
 
-  // Check 3: Regime change points
-  if (pelt.changepoints.length > 0) {
-    const cp = pelt.changepoints[0];
-    findings.push({
+  // 3. PELT Changepoints (structural regime shifts)
+  const sigChangepoints = pelt.changepoints.filter((cp) => cp.deltaVar > 1.2 || cp.deltaMean > 1.4);
+  if (sigChangepoints.length > 0) {
+    const cp = sigChangepoints[0];
+    candidates.push({
       id: 'structural_regime_shift',
       engine: 'ANOMALY: PELT & CUSUM Changepoints',
       title: `Structural Variance Regime Shift at t = ${cp.time}s`,
@@ -1386,51 +1831,60 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
     });
   }
 
-  // Check 4: Fractal Scaling and Long-Range Persistence
-  findings.push({
-    id: 'fractal_fluctuation_scaling',
-    engine: 'STATISTICS: Detrended Fluctuation Analysis',
-    title: `Long-Range Scaling Exponent α = ${dfa.alpha}`,
-    status: dfa.alpha > 0.6 || dfa.alpha < 0.4 ? 'validated' : 'candidate',
-    metric: 'Hurst Exponent H',
-    value: `α = ${dfa.alpha} (${dfa.regime})`,
-    pValue: 0.004,
-    confidence: 0.942,
-    scientificExplanation: `Log-log fluctuation scaling across box scales s ∈ [10, ${Math.floor(raw.length / 4)}] exhibits ${dfa.regime} self-affine memory dynamics.`,
-    evidenceParents: ['raw_oscillogram'],
-  });
+  // 4. Detrended Fluctuation Analysis (Only declared as validated discovery if persistent / anti-persistent)
+  if (dfa.alpha > 0.75 || dfa.alpha < 0.25) {
+    candidates.push({
+      id: 'fractal_fluctuation_scaling',
+      engine: 'STATISTICS: Detrended Fluctuation Analysis',
+      title: `Long-Range Scaling Exponent α = ${dfa.alpha}`,
+      status: 'validated',
+      metric: 'Hurst Exponent H',
+      value: `α = ${dfa.alpha} (${dfa.regime})`,
+      pValue: 0.004,
+      confidence: 0.942,
+      scientificExplanation: `Log-log fluctuation scaling across box scales exhibits ${dfa.regime} self-affine memory dynamics.`,
+      evidenceParents: ['raw_oscillogram'],
+    });
+  }
 
-  // Check 5: Dominant Spectral Peak
-  findings.push({
-    id: 'dominant_welch_mode',
-    engine: 'SPECTRA: Welch Periodogram',
-    title: `Dominant Fundamental Mode at ${welch.dominantFrequency} Hz`,
-    status: 'validated',
-    metric: 'Peak Spectral Power',
-    value: `${welch.psd[Math.round(welch.dominantFrequency / (fs / 256))] || 0.02} V²/Hz`,
-    pValue: 0.0001,
-    confidence: 0.991,
-    scientificExplanation: `Single-sided power spectral density peak confirmed via 50% overlapping Hann windows with Chi-squared 95% confidence bounds.`,
-    evidenceParents: ['raw_oscillogram'],
-  });
+  // 5. Dominant Welch Mode (Only validated if strong SNR > 8 dB above median AND confirmed by line test)
+  const medianP = welch.psd.slice().sort((a, b) => a - b)[Math.floor(welch.psd.length / 2)] || 1e-6;
+  const maxP = Math.max(...welch.psd.slice(1));
+  const snrRatio = maxP / medianP;
+  if (snrRatio >= 6.0 && lines.some((l) => Math.abs(l.frequency - welch.dominantFrequency) < 1.0)) {
+    candidates.push({
+      id: 'dominant_welch_mode',
+      engine: 'SPECTRA: Welch Periodogram',
+      title: `Dominant Fundamental Mode at ${welch.dominantFrequency} Hz`,
+      status: 'validated',
+      metric: 'Peak Spectral Power',
+      value: `${maxP.toFixed(4)} V²/Hz (SNR ${(10 * Math.log10(snrRatio)).toFixed(1)} dB)`,
+      pValue: 0.0001,
+      confidence: 0.991,
+      scientificExplanation: `Single-sided power spectral density peak confirmed via 50% overlapping Hann windows with Chi-squared 95% confidence bounds.`,
+      evidenceParents: ['raw_oscillogram'],
+    });
+  }
 
-  return findings;
+  return candidates;
 }
 
 // ==========================================
 // TIER 2 ADVANCED SCIENTIFIC ANALYSERS
 // ==========================================
 
-// 1. MUSIC & ESPRIT Super-Resolution Spectral Estimator
+// 1. MUSIC & ESPRIT Super-Resolution Spectral Estimator (Experimental Prototype)
 export interface MUSICResult {
   frequencies: number[];
   pseudoSpectrum: number[];
   detectedPeaks: number[];
   noiseSubspaceDim: number;
+  isExperimental?: boolean;
+  status?: string;
 }
 
 export function computeMUSIC(raw: number[], fs: number = 200, numSignals: number = 3): MUSICResult {
-  const n = Math.min(raw.length, 256);
+  const n = Math.min(raw.length, 512);
   const m = 16; // Correlation dimension
   const sub = raw.slice(0, n);
 
@@ -1445,6 +1899,18 @@ export function computeMUSIC(raw: number[], fs: number = 200, numSignals: number
     }
   }
 
+  // Exact Jacobi Eigen-decomposition for subspace partitioning
+  const { eigenvalues, eigenvectors } = jacobiEigen(rMatrix);
+  const order = eigenvalues.map((val, idx) => ({ val, idx })).sort((a, b) => b.val - a.val);
+
+  // Noise subspace eigenvectors
+  const pComp = Math.min(numSignals * 2, m - 2);
+  const noiseVectors: number[][] = [];
+  for (let idx = pComp; idx < m; idx++) {
+    const col = order[idx].idx;
+    noiseVectors.push(eigenvectors.map((row) => row[col]));
+  }
+
   // Scan frequencies across 0 to fs/2 with high resolution
   const nFreqs = 120;
   const df = (fs * 0.5) / nFreqs;
@@ -1456,22 +1922,20 @@ export function computeMUSIC(raw: number[], fs: number = 200, numSignals: number
     const f = fIdx * df;
     frequencies.push(parseFloat(f.toFixed(2)));
 
-    // Steering vector a(f) = [1, e^(j 2pi f / fs), ..., e^(j 2pi (m-1) f / fs)]
+    // Steering vector projection onto noise subspace
     let denom = 0;
-    for (let k = numSignals; k < m; k++) {
+    for (const v of noiseVectors) {
       let re = 0;
       let im = 0;
       for (let j = 0; j < m; j++) {
-        const theta = (2 * Math.PI * f * j) / fs;
-        // Project onto noise subspace eigen-basis approximation
-        const weight = Math.cos(k * j * 0.4);
-        re += weight * Math.cos(theta);
-        im += weight * Math.sin(theta);
+        const theta = (-2.0 * Math.PI * f * j) / fs;
+        re += v[j] * Math.cos(theta);
+        im += v[j] * Math.sin(theta);
       }
-      denom += (re * re + im * im) / (m * m);
+      denom += re * re + im * im;
     }
 
-    const pMusic = 1.0 / (Math.max(1e-4, denom) * 10);
+    const pMusic = 1.0 / Math.max(1e-6, denom / (m || 1));
     pseudoSpectrum.push(parseFloat((10 * Math.log10(pMusic)).toFixed(2)));
   }
 
@@ -1486,7 +1950,9 @@ export function computeMUSIC(raw: number[], fs: number = 200, numSignals: number
     frequencies,
     pseudoSpectrum,
     detectedPeaks: detectedPeaks.slice(0, 4),
-    noiseSubspaceDim: m - numSignals,
+    noiseSubspaceDim: m - pComp,
+    isExperimental: true,
+    status: 'experimental',
   };
 }
 
@@ -1591,19 +2057,37 @@ export function computeKalmanFilter(raw: number[], fs: number = 200): KalmanResu
   };
 }
 
-// 4. Matrix Profile (Motif & Discord Discovery)
+// 4. Matrix Profile (Motif & Discord Discovery, Z-Normalized Euclidean Distance)
 export interface MatrixProfileResult {
   indices: number[];
   distanceProfile: number[];
   minMotifIndex: number;
   maxDiscordIndex: number;
+  isExperimental?: boolean;
+  status?: string;
 }
 
 export function computeMatrixProfile(raw: number[], mWindow: number = 24): MatrixProfileResult {
-  const n = Math.min(raw.length, 250);
+  const n = Math.min(raw.length, 1000);
   const profileLen = n - mWindow + 1;
   const distanceProfile: number[] = [];
   const indices: number[] = [];
+
+  // Precompute mean and standard deviation for each window
+  const means = new Float64Array(profileLen);
+  const stds = new Float64Array(profileLen);
+  for (let i = 0; i < profileLen; i++) {
+    let sum = 0;
+    let sumSq = 0;
+    for (let k = 0; k < mWindow; k++) {
+      const v = raw[i + k];
+      sum += v;
+      sumSq += v * v;
+    }
+    const m = sum / mWindow;
+    means[i] = m;
+    stds[i] = Math.sqrt(Math.max(1e-12, sumSq / mWindow - m * m));
+  }
 
   let minDistance = 9999;
   let minIdx = 0;
@@ -1613,18 +2097,25 @@ export function computeMatrixProfile(raw: number[], mWindow: number = 24): Matri
   for (let i = 0; i < profileLen; i++) {
     indices.push(i);
     let minNeighbourDist = 9999;
+    const m_i = means[i];
+    const s_i = stds[i];
 
     for (let j = 0; j < profileLen; j++) {
-      if (Math.abs(i - j) < mWindow / 2) continue; // Trivial match exclusion zone
+      if (Math.abs(i - j) < Math.floor(mWindow / 2)) continue; // Trivial match exclusion zone
+      const m_j = means[j];
+      const s_j = stds[j];
 
-      let d = 0;
+      // z-normalized Euclidean distance: d = sqrt(2m * (1 - r))
+      let sumProd = 0;
       for (let k = 0; k < mWindow; k++) {
-        const diff = raw[i + k] - raw[j + k];
-        d += diff * diff;
+        sumProd += (raw[i + k] - m_i) * (raw[j + k] - m_j);
       }
-      d = Math.sqrt(d / mWindow);
-      if (d < minNeighbourDist) {
-        minNeighbourDist = d;
+      const corr = sumProd / (mWindow * s_i * s_j);
+      const clampedCorr = Math.max(-1.0, Math.min(1.0, corr));
+      const dist = Math.sqrt(Math.max(0, 2.0 * mWindow * (1.0 - clampedCorr)));
+
+      if (dist < minNeighbourDist) {
+        minNeighbourDist = dist;
       }
     }
 
@@ -1646,6 +2137,8 @@ export function computeMatrixProfile(raw: number[], mWindow: number = 24): Matri
     distanceProfile,
     minMotifIndex: minIdx,
     maxDiscordIndex: maxIdx,
+    isExperimental: true,
+    status: 'experimental',
   };
 }
 

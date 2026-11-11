@@ -44,6 +44,7 @@ data/cache/
 node_modules/
 dist/
 .vite/
+tmp_math/
 
 .DS_Store
 Thumbs.db

@@ -1,0 +1,65 @@
+name: SYNAPSE Continuous Integration
+
+on:
+  push:
+    branches: [ main, master, 'fix/**', 'feat/**' ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-python:
+    name: Python Scientific Engines (Ground-Truth & Unit Tests)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[test]
+          pip install pytest pytest-asyncio anyio
+
+      - name: Run Ground-Truth & Engine Regression Tests
+        run: |
+          pytest -v tests/
+
+  test-frontend:
+    name: Frontend TypeScript Build & In-Browser Math Benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "apps/web/package-lock.json"
+
+      - name: Install dependencies
+        run: |
+          cd apps/web
+          npm ci
+
+      - name: Typecheck and Build Web App
+        run: |
+          cd apps/web
+          npm run build
+
+      - name: Verify In-Browser TypeScript Math Benchmarks
+        run: |
+          ./apps/web/node_modules/.bin/tsc apps/web/src/utils/signalMath.ts --outDir tmp_math --module commonjs --target es2022 --skipLibCheck
+          node scripts/test_math_benchmarks.js

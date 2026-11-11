@@ -63,21 +63,22 @@ def compute_multitaper_psd(
     # Detrend constant mean
     x_centered = x - np.mean(x)
 
-    # Frequency grid
-    freqs = sfft.rfftfreq(n, d=1.0 / sampling_rate)
+    # Frequency grid with zero-padding for fine sub-bin harmonic resolution
+    n_fft = max(2048, int(2 ** np.ceil(np.log2(n) + 1)))
+    freqs = sfft.rfftfreq(n_fft, d=1.0 / sampling_rate)
     n_freqs = len(freqs)
 
     # Tapered spectra Y_k(f)
     yk = np.zeros((k, n_freqs), dtype=np.complex128)
     for i in range(k):
         tapered_x = x_centered * dpss_tapers[i]
-        yk[i] = sfft.rfft(tapered_x)
+        yk[i] = sfft.rfft(tapered_x, n=n_fft)
 
     # PSD estimate: averaged energy across tapers, normalized by sampling rate
     psd_individual = (np.abs(yk) ** 2) / sampling_rate
     psd = np.mean(psd_individual, axis=0) * 2.0
     psd[0] /= 2.0
-    if n % 2 == 0 and len(psd) > 1:
+    if n_fft % 2 == 0 and len(psd) > 1:
         psd[-1] /= 2.0
 
     # Thomson Harmonic F-Test:
