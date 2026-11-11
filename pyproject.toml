@@ -23,6 +23,7 @@ dependencies = [
     "PyWavelets>=1.5.0",
     "fastapi>=0.110.0",
     "pydantic>=2.6.0",
+    "numba>=0.58.0",
 ]
 
 [project.optional-dependencies]

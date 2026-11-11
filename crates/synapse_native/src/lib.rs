@@ -144,3 +144,4 @@ pub unsafe extern "C" fn rust_fast_rqa_determinism(
         (diagonal_line_points as f64) / (total_recurrence_points as f64)
     }
 }
+

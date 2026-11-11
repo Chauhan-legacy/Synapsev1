@@ -1778,19 +1778,28 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
 
   const candidates: DiscoveredFinding[] = [];
 
-  // 1. Multitaper Thomson F-Test lines (Scale-invariant, BH-FDR filtered)
+  // 1. Multitaper Thomson F-Test lines (Scale-invariant, BH-FDR filtered, Consensus-calibrated)
+  const medianPsd = welch.psd.slice().sort((a, b) => a - b)[Math.floor(welch.psd.length / 2)] || 1e-6;
   const lines = multitaper.fTest.filter((f) => f.isLine && f.fRatio >= 25.0 && f.pValue < 0.00005);
   lines.forEach((line, idx) => {
+    // Consensus validation: cross-verify with Welch spectral power elevation
+    const dfWelch = fs / (2 * (welch.psd.length - 1));
+    const binWelch = Math.min(welch.psd.length - 1, Math.max(0, Math.round(line.frequency / dfWelch)));
+    const welchElev = welch.psd[binWelch] / medianPsd;
+    const isValidated = line.fRatio >= 28.0 && welchElev >= 2.2;
+
     candidates.push({
       id: `harmonic_line_${idx + 1}`,
       engine: 'SPECTRA: Multitaper Thomson F-Test',
       title: `Discrete Harmonic Tone at ${line.frequency.toFixed(2)} Hz`,
-      status: 'validated',
+      status: isValidated ? 'validated' : 'candidate',
       metric: 'F-Statistic',
       value: `F = ${line.fRatio.toFixed(1)} (p = ${line.pValue.toFixed(4)})`,
       pValue: line.pValue,
-      confidence: 0.99,
-      scientificExplanation: `Thomson multitaper harmonic regression confirms a deterministic sinusoidal component at ${line.frequency.toFixed(2)} Hz rejecting continuous background spectrum null.`,
+      confidence: isValidated ? 0.99 : 0.75,
+      scientificExplanation: isValidated
+        ? `Thomson multitaper harmonic regression and Welch spectral consensus confirm a deterministic sinusoidal component at ${line.frequency.toFixed(2)} Hz rejecting continuous background spectrum null.`
+        : `Candidate harmonic frequency line at ${line.frequency.toFixed(2)} Hz pending secondary spectral power consensus.`,
       evidenceParents: ['raw_oscillogram'],
     });
   });
