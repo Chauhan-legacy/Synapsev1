@@ -33,3 +33,4 @@ if __name__ == "__main__":
     # 1M dataset
     generate_csv("data/synapse_stress_1m.csv", 1_000_000, 500.0, ["strain_primary", "strain_reference"])
     print("All stress test datasets generated successfully.")
+

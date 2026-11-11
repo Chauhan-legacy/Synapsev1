@@ -103,3 +103,4 @@ benchmarkFile('data/synapse_test_10k.csv', '10K Rows (2 Channels)');
 benchmarkFile('data/synapse_mega_120k_benchmark.csv', '120K Rows (4 Channels)');
 benchmarkFile('data/synapse_stress_300k.csv', '300K Rows (3 Channels)');
 benchmarkFile('data/synapse_stress_1m.csv', '1 Million Rows (2 Channels)');
+

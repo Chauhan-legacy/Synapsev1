@@ -12,3 +12,4 @@ declare module 'fft.js' {
     completeSpectrum(out: ArrayLike<number>): void;
   }
 }
+
