@@ -92,3 +92,4 @@ def get_teaching_explanation(method_name: str) -> TeachingExplanation:
         reference_citation="doi:10.1111/j.2517-6161.1995.tb02031.x",
         recommended_reading="Efron (2012), 'Large-Scale Inference: Empirical Bayes Methods for Estimation, Testing, and Prediction', Cambridge.",
     )
+

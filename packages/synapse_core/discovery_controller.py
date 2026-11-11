@@ -175,3 +175,4 @@ class DiscoveryController:
             fdr_threshold_q=self.fdr_q,
             results=controlled_results,
         )
+

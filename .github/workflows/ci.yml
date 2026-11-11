@@ -63,3 +63,4 @@ jobs:
         run: |
           ./apps/web/node_modules/.bin/tsc apps/web/src/utils/signalMath.ts --outDir tmp_math --module commonjs --target es2022 --skipLibCheck
           node scripts/test_math_benchmarks.js
+

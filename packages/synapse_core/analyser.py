@@ -129,3 +129,4 @@ class Analyser(ABC):
     def run(self, signal: Signal, params: Optional[Dict[str, Any]] = None) -> AnalyserResult:
         """Execute the analysis and produce evidence-backed result."""
         pass
+

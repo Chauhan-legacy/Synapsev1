@@ -4,6 +4,17 @@ Provides dataset ingestion, asynchronous experiment execution, evidence graphs, 
 """
 
 from __future__ import annotations
+import sys
+from pathlib import Path
+
+# Ensure monorepo packages are discoverable
+_ROOT = Path(__file__).resolve().parent.parent.parent
+_PACKAGES = _ROOT / "packages"
+if str(_PACKAGES) not in sys.path:
+    sys.path.insert(0, str(_PACKAGES))
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 import os
 import uuid
 import datetime
