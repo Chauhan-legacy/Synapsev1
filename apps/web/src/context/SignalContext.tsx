@@ -413,7 +413,9 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (hash) {
         const validViews: WorkbenchView[] = [
           'overview', 'rack', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
-          'anomalies', 'dynamics', 'relations', 'astronomy', 'physics', 'satellite', 'geophysics',
+          'anomalies', 'dynamics', 'relations', 'astronomy', 'physics',
+          'biosignals', 'chaos', 'earth_systems', 'quantum', 'feynman',
+          'satellite', 'geophysics',
           'inference', 'findings', 'evidence', 'reproducibility', 'benchmarks', 'methods',
           'workbench', 'papergraph'
         ];

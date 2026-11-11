@@ -53,6 +53,21 @@ const AstronomyLabView = React.lazy(() =>
 const PhysicsLabView = React.lazy(() =>
   import('./views/PhysicsLabView').then((m) => ({ default: m.PhysicsLabView }))
 );
+const BioSignalsLabView = React.lazy(() =>
+  import('./views/BioSignalsLabView').then((m) => ({ default: m.BioSignalsLabView }))
+);
+const ChaosLabView = React.lazy(() =>
+  import('./views/ChaosLabView').then((m) => ({ default: m.ChaosLabView }))
+);
+const EarthSystemsLabView = React.lazy(() =>
+  import('./views/EarthSystemsLabView').then((m) => ({ default: m.EarthSystemsLabView }))
+);
+const QuantumLabView = React.lazy(() =>
+  import('./views/QuantumLabView').then((m) => ({ default: m.QuantumLabView }))
+);
+const FeynmanLabView = React.lazy(() =>
+  import('./views/FeynmanLabView').then((m) => ({ default: m.FeynmanLabView }))
+);
 const SatelliteLabView = React.lazy(() =>
   import('./views/SatelliteLabView').then((m) => ({ default: m.SatelliteLabView }))
 );
@@ -126,6 +141,11 @@ const AppInner: React.FC = () => {
       hash.includes('relations') ||
       hash.includes('astronomy') ||
       hash.includes('physics') ||
+      hash.includes('biosignals') ||
+      hash.includes('chaos') ||
+      hash.includes('earth_systems') ||
+      hash.includes('quantum') ||
+      hash.includes('feynman') ||
       hash.includes('satellite') ||
       hash.includes('geophysics') ||
       hash.includes('inference') ||
@@ -160,6 +180,11 @@ const AppInner: React.FC = () => {
         hash.includes('relations') ||
         hash.includes('astronomy') ||
         hash.includes('physics') ||
+        hash.includes('biosignals') ||
+        hash.includes('chaos') ||
+        hash.includes('earth_systems') ||
+        hash.includes('quantum') ||
+        hash.includes('feynman') ||
         hash.includes('satellite') ||
         hash.includes('geophysics') ||
         hash.includes('inference') ||
@@ -386,6 +411,16 @@ const AppInner: React.FC = () => {
         return <AstronomyLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'physics':
         return <PhysicsLabView onOpenMethodCard={handleOpenMethodCard} />;
+      case 'biosignals':
+        return <BioSignalsLabView />;
+      case 'chaos':
+        return <ChaosLabView />;
+      case 'earth_systems':
+        return <EarthSystemsLabView />;
+      case 'quantum':
+        return <QuantumLabView />;
+      case 'feynman':
+        return <FeynmanLabView />;
       case 'satellite':
         return <SatelliteLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'geophysics':

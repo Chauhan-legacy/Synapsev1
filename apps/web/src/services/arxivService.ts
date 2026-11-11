@@ -375,16 +375,16 @@ export async function searchArxiv(
 ): Promise<{ source: string; query: string; total: number; papers: ArXivPaper[] }> {
   const trimmed = query.trim().toLowerCase();
 
-  // Try backend proxy if available
+  // Try backend proxy if available (queries Seminal Canon, live arXiv API, and OpenAlex)
   try {
     const res = await fetch(`/api/arxiv/search?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`, {
-      signal: AbortSignal.timeout(1200),
+      signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {
       const data = await res.json();
       if (data.papers && data.papers.length > 0) {
         return {
-          source: 'arXiv Official API (Live Gateway)',
+          source: data.source || 'SYNAPSE Universal Literature Gateway (arXiv & OpenAlex)',
           query,
           total: data.total_results || data.papers.length,
           papers: data.papers.map((p: any) => ({
@@ -395,7 +395,7 @@ export async function searchArxiv(
       }
     }
   } catch {
-    // Backend proxy skipped — instantaneous client resolver
+    // Backend proxy skipped — instantaneous client resolver fallback
   }
 
   // 1. Filter curated catalog

@@ -24,6 +24,11 @@ import {
   Atom,
   Satellite,
   Globe2,
+  Brain,
+  Flame,
+  Waves,
+  Sparkles,
+  GraduationCap,
 } from 'lucide-react';
 import { MusicPlayer } from '../music/MusicPlayer';
 
@@ -42,6 +47,11 @@ export type WorkbenchView =
   | 'relations'
   | 'astronomy'
   | 'physics'
+  | 'biosignals'
+  | 'chaos'
+  | 'earth_systems'
+  | 'quantum'
+  | 'feynman'
   | 'satellite'
   | 'geophysics'
   | 'inference'
@@ -129,9 +139,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: 'Physics & Nuclear',
+      title: 'Physics & Advanced Labs',
       items: [
         { id: 'physics', label: 'Physics & Nuclear Lab', icon: Atom },
+        { id: 'biosignals', label: 'Bio & Neuro Signals (Dim 1)', icon: Brain },
+        { id: 'chaos', label: 'Chaos & Nonlinear (Dim 3)', icon: Flame },
+        { id: 'earth_systems', label: 'Earth & Tidal Systems (Dim 4)', icon: Waves },
+        { id: 'quantum', label: 'Quantum & Spectroscopy (Dim 5)', icon: Sparkles },
+        { id: 'feynman', label: 'Feynman Teaching Lab (Dim 6)', icon: GraduationCap },
       ],
     },
     {
