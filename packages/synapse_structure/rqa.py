@@ -2,6 +2,7 @@
 Recurrence Quantification Analysis (RQA) for SYNAPSE STRUCTURE.
 Extracts nonlinear dynamical complexity metrics: Recurrence Rate (RR), Determinism (DET),
 Laminarity (LAM), and Diagonal Line Entropy (ENTR) from thresholded recurrence matrices.
+Preserves full contiguous phase trajectory to avoid breaking diagonal recurrence structures.
 """
 
 from __future__ import annotations
@@ -34,9 +35,11 @@ def compute_rqa(
     threshold_pct_std: float = 0.20,
     l_min: int = 2,
     v_min: int = 2,
+    max_contiguous_points: int = 2500,
 ) -> RQAResult:
     """
     Compute full Recurrence Quantification Analysis (RQA) on embedded phase space.
+    Retains contiguous time-ordering up to max_contiguous_points to preserve diagonal lines.
     """
     x = np.asarray(values, dtype=np.float64)
     n = len(x)
@@ -47,11 +50,10 @@ def compute_rqa(
     if n_vectors < 16:
         raise ValidationError("Insufficient points for embedded RQA.")
 
-    # Subsample if too large to prevent N^2 memory exhaustion
-    max_pts = 400
-    if n_vectors > max_pts:
-        step = int(np.ceil(n_vectors / max_pts))
-        indices = np.arange(0, n_vectors, step)
+    # Retain contiguous trajectory up to max_contiguous_points (do not stride-sample,
+    # which destroys diagonal continuity)
+    if n_vectors > max_contiguous_points:
+        indices = np.arange(max_contiguous_points)
     else:
         indices = np.arange(n_vectors)
 
@@ -62,7 +64,7 @@ def compute_rqa(
     # Pairwise Euclidean distance matrix
     dists = squareform(pdist(Y, metric="euclidean"))
 
-    # Threshold epsilon = 20% of standard deviation of distances
+    # Threshold epsilon = threshold_pct_std * standard deviation of series
     eps = float(threshold_pct_std * (np.std(x) or 1.0))
     R = (dists <= eps).astype(int)
 
@@ -74,7 +76,6 @@ def compute_rqa(
     # 2. Diagonal Lines Analysis (Determinism & Entropy)
     diag_lengths: List[int] = []
     for d in range(1, k_pts - 1):
-        # Extract diagonal elements at offset d
         diag = np.diagonal(R, offset=d)
         cur_len = 0
         for val in diag:
@@ -134,4 +135,3 @@ def compute_rqa(
         embedding_dimension=m,
         embedding_delay=tau,
     )
-

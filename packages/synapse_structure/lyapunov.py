@@ -2,6 +2,7 @@
 Largest Lyapunov Exponent Estimation for SYNAPSE STRUCTURE.
 Implements the Rosenstein, Collins, De Luca (1993) algorithm to detect chaotic divergence
 in reconstructed phase space with Theiler window exclusion and fit diagnostics.
+Gracefully handles periodic and deterministic regular signals without throwing runtime errors.
 """
 
 from __future__ import annotations
@@ -28,9 +29,12 @@ def compute_largest_lyapunov_exponent(
     dimension: int = 3,
     delay: int = 1,
     max_steps: int = 30,
+    theiler_window: Optional[int] = None,
 ) -> LyapunovResult:
     """
     Estimate Largest Lyapunov Exponent using Rosenstein's algorithm.
+
+    Gracefully detects regular periodic orbits and zero divergence without raising exceptions.
     """
     x = np.asarray(values, dtype=np.float64)
     n = len(x)
@@ -45,10 +49,21 @@ def compute_largest_lyapunov_exponent(
     Y = np.column_stack([x[k * tau : k * tau + n_vectors] for k in range(m)])
 
     # Theiler window to prevent temporal autocorrelations from mimicking spatial neighbors
-    theiler_window = max(1, (m - 1) * tau)
+    w_theiler = theiler_window if theiler_window is not None else max(1, (m - 1) * tau)
 
     # Subsample reference trajectories if large
     n_refs = min(300, n_vectors - max_steps - 1)
+    if n_refs <= 0:
+        steps = np.arange(max_steps)
+        return LyapunovResult(
+            largest_lyapunov_exponent=0.0,
+            r_squared_fit=0.0,
+            is_chaotic=False,
+            divergence_steps=steps,
+            mean_log_divergence=np.zeros(max_steps),
+            fit_status="Indicative (series too short for divergence tracking)",
+        )
+
     ref_step = max(1, (n_vectors - max_steps - 1) // n_refs)
     ref_indices = np.arange(0, n_vectors - max_steps - 1, ref_step)
 
@@ -60,8 +75,8 @@ def compute_largest_lyapunov_exponent(
         dists = np.sqrt(np.sum(diffs ** 2, axis=1))
 
         # Mask Theiler window
-        t_low = max(0, j - theiler_window)
-        t_high = min(n_vectors, j + theiler_window + 1)
+        t_low = max(0, j - w_theiler)
+        t_high = min(n_vectors, j + w_theiler + 1)
         dists[t_low:t_high] = np.inf
         # Also ensure neighbor has room for max_steps ahead
         dists[n_vectors - max_steps :] = np.inf
@@ -70,11 +85,20 @@ def compute_largest_lyapunov_exponent(
         if dists[nn] < np.inf and dists[nn] > 0:
             nearest_neighbors.append((j, nn))
 
+    steps = np.arange(max_steps)
+
+    # If insufficient neighbors found (e.g. constant or degenerate manifold), return 0.0 non-chaotic
     if len(nearest_neighbors) < 10:
-        raise ValidationError("Insufficient valid nearest neighbors for Lyapunov calculation.")
+        return LyapunovResult(
+            largest_lyapunov_exponent=0.0,
+            r_squared_fit=0.0,
+            is_chaotic=False,
+            divergence_steps=steps,
+            mean_log_divergence=np.zeros(max_steps),
+            fit_status="Indicative (regular periodic or constant trajectory, non-chaotic)",
+        )
 
     # Track divergence over i = 0..max_steps
-    steps = np.arange(max_steps)
     divergences_by_step = np.zeros(max_steps, dtype=np.float64)
     counts_by_step = np.zeros(max_steps, dtype=int)
 
@@ -90,7 +114,15 @@ def compute_largest_lyapunov_exponent(
 
     valid_step_mask = counts_by_step > 0
     if np.sum(valid_step_mask) < 4:
-        raise ValidationError("Insufficient divergence points across time steps.")
+        # Periodic orbit with near-identical parallel trajectories
+        return LyapunovResult(
+            largest_lyapunov_exponent=0.0,
+            r_squared_fit=0.0,
+            is_chaotic=False,
+            divergence_steps=steps,
+            mean_log_divergence=np.zeros(max_steps),
+            fit_status="Indicative (periodic trajectory, zero divergence, non-chaotic)",
+        )
 
     mean_log_div = np.zeros(max_steps, dtype=np.float64)
     mean_log_div[valid_step_mask] = divergences_by_step[valid_step_mask] / counts_by_step[valid_step_mask]
@@ -103,7 +135,7 @@ def compute_largest_lyapunov_exponent(
 
     res = stats.linregress(fit_steps, fit_div)
     lambda1 = float(res.slope)
-    r2 = float(res.rvalue ** 2)
+    r2 = float(res.rvalue ** 2) if not np.isnan(res.rvalue) else 0.0
 
     is_ch = bool(lambda1 > 0.01 and r2 >= 0.85)
     status_str = "Supported (chaotic divergence verified)" if is_ch else "Indicative (non-chaotic or weak fit)"
@@ -116,4 +148,3 @@ def compute_largest_lyapunov_exponent(
         mean_log_divergence=mean_log_div,
         fit_status=status_str,
     )
-

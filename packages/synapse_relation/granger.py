@@ -1,6 +1,7 @@
 """
 Granger Causality Analysis for SYNAPSE RELATION.
 Evaluates directional predictive causality using Vector Autoregression (VAR) F-tests in both directions.
+Uses restricted-model BIC lag selection to eliminate selection bias and prevent inflated false-positive rates under the null.
 """
 
 from __future__ import annotations
@@ -51,61 +52,63 @@ def compute_granger_causality(
         # We test if source Granger-causes target.
         # Restricted model: target_t = sum_{k=1}^p a_k target_{t-k} + eps_R
         # Unrestricted model: target_t = sum_{k=1}^p a_k target_{t-k} + sum_{k=1}^p b_k source_{t-k} + eps_U
+
+        # 1. Select optimal lag p on the RESTRICTED univariate AR model of the target using BIC.
+        # This prevents selection bias from searching over unrestricted combinations under H0.
         best_p = 1
-        best_aic = float("inf")
-        models = {}
+        best_bic = float("inf")
 
         for p in range(1, p_max + 1):
             n_eff = n - p
-            # Target response vector: shape (n_eff,)
             Y_vec = target[p:]
-
-            # Restricted design matrix: past of target
             X_R = np.column_stack([target[p - k : n - k] for k in range(1, p + 1)])
             X_R = np.column_stack([np.ones(n_eff), X_R])
 
-            # Unrestricted design matrix: past of target + past of source
-            X_U = np.column_stack([
-                X_R,
-                np.column_stack([source[p - k : n - k] for k in range(1, p + 1)])
-            ])
-
-            # OLS for Restricted
             beta_R, _, _, _ = np.linalg.lstsq(X_R, Y_vec, rcond=None)
             resid_R = Y_vec - X_R @ beta_R
             rss_R = float(np.sum(resid_R ** 2))
+            sigma2_R = max(1e-12, rss_R / n_eff)
+            bic = n_eff * np.log(sigma2_R) + (p + 1) * np.log(n_eff)
 
-            # OLS for Unrestricted
-            beta_U, _, _, _ = np.linalg.lstsq(X_U, Y_vec, rcond=None)
-            resid_U = Y_vec - X_U @ beta_U
-            rss_U = float(np.sum(resid_U ** 2))
-
-            # AIC for unrestricted model
-            sigma2_U = max(1e-12, rss_U / n_eff)
-            aic = n_eff * np.log(sigma2_U) + 2.0 * (2 * p + 1)
-
-            # F-statistic: ((RSS_R - RSS_U) / p) / (RSS_U / (n_eff - 2*p - 1))
-            df1 = p
-            df2 = n_eff - 2 * p - 1
-            if df2 > 0 and rss_U > 0:
-                f_stat = ((rss_R - rss_U) / df1) / (rss_U / df2)
-                f_stat = max(0.0, float(f_stat))
-                p_val = float(stats.f.sf(f_stat, df1, df2))
-            else:
-                f_stat = 0.0
-                p_val = 1.0
-
-            models[p] = (f_stat, p_val)
-            if aic < best_aic:
-                best_aic = aic
+            if bic < best_bic:
+                best_bic = bic
                 best_p = p
 
-        f_best, p_best = models[best_p]
+        # 2. Fit restricted and unrestricted models at best_p
+        p = best_p
+        n_eff = n - p
+        Y_vec = target[p:]
+
+        X_R = np.column_stack([target[p - k : n - k] for k in range(1, p + 1)])
+        X_R = np.column_stack([np.ones(n_eff), X_R])
+        beta_R, _, _, _ = np.linalg.lstsq(X_R, Y_vec, rcond=None)
+        resid_R = Y_vec - X_R @ beta_R
+        rss_R = float(np.sum(resid_R ** 2))
+
+        X_U = np.column_stack([
+            X_R,
+            np.column_stack([source[p - k : n - k] for k in range(1, p + 1)])
+        ])
+        beta_U, _, _, _ = np.linalg.lstsq(X_U, Y_vec, rcond=None)
+        resid_U = Y_vec - X_U @ beta_U
+        rss_U = float(np.sum(resid_U ** 2))
+
+        # F-statistic: ((RSS_R - RSS_U) / p) / (RSS_U / (n_eff - 2*p - 1))
+        df1 = p
+        df2 = n_eff - 2 * p - 1
+        if df2 > 0 and rss_U > 0:
+            f_stat = ((rss_R - rss_U) / df1) / (rss_U / df2)
+            f_stat = max(0.0, float(f_stat))
+            p_val = float(stats.f.sf(f_stat, df1, df2))
+        else:
+            f_stat = 0.0
+            p_val = 1.0
+
         return GrangerDirectionResult(
-            f_statistic=f_best,
-            p_value=p_best,
+            f_statistic=f_stat,
+            p_value=p_val,
             optimal_lag_p=best_p,
-            is_significant=bool(p_best < alpha),
+            is_significant=bool(p_val < alpha),
         )
 
     res_xy = test_single_direction(x, y) # X -> Y
@@ -125,4 +128,3 @@ def compute_granger_causality(
         y_causes_x=res_yx,
         directional_summary=summary,
     )
-

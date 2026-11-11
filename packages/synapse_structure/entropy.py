@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Tuple, Optional, Dict, Any, List
 import itertools
+import math
 import numpy as np
 
 from synapse_core.exceptions import ValidationError
@@ -94,7 +95,7 @@ def compute_permutation_entropy(
     # Shannon entropy of permutations
     pe = -np.sum(probs * np.log2(probs))
     # Maximum entropy is log2(d!)
-    max_pe = np.log2(float(np.math.factorial(d)))
+    max_pe = np.log2(float(math.factorial(d)))
     normalized_pe = float(pe / max_pe) if max_pe > 0 else 0.0
 
     return min(1.0, max(0.0, normalized_pe))
