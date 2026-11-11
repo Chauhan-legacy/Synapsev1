@@ -6,9 +6,10 @@ import { TopBar } from './components/shell/TopBar';
 import { CommandPalette } from './components/shell/CommandPalette';
 import { AccessibilityModal } from './components/shell/AccessibilityModal';
 import { ShortcutsModal } from './components/shell/ShortcutsModal';
-import { Compass } from 'lucide-react';
+import { Compass, Loader2 } from 'lucide-react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { parseUniversalSignalCSV } from './utils/csvParser';
+import { parseCsvWithStreamingWorker } from './utils/streamingCsvParser';
 
 // Lazy-Loaded Views for Fast Initial Bundle
 const LandingHero = React.lazy(() =>
@@ -228,28 +229,53 @@ const AppInner: React.FC = () => {
     [setCurrentView]
   );
 
-  // Real CSV Upload Handler with Multi-Channel & High-Capacity Support
+  // Real CSV Upload Handler with Papa Parse Web Worker Streaming
+  const [uploadProgress, setUploadProgress] = useState<{ percent: number; rows: number } | null>(null);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
+    setUploadProgress({ percent: 5, rows: 0 });
 
-      const parsed = parseUniversalSignalCSV(text, file.name);
-      if (parsed) {
+    const handle = parseCsvWithStreamingWorker(file, file.name, {
+      onProgress: (prog) => {
+        setUploadProgress({ percent: prog.percent, rows: prog.rowsParsed });
+      },
+    });
+
+    handle.promise
+      .then((parsed) => {
         loadCustomSignal(parsed);
-        // If coming from landing hero, open advanced lab overview; otherwise keep current view
+        setUploadProgress(null);
         if (pageMode === 'hero') {
           setPageMode('advanced');
           setCurrentView('overview');
           window.location.hash = '#/overview';
         }
-      }
-    };
-    reader.readAsText(file);
+      })
+      .catch((err) => {
+        console.warn('Papa Parse worker failed, attempting fallback parser:', err);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target?.result as string;
+          if (text) {
+            const fallback = parseUniversalSignalCSV(text, file.name);
+            if (fallback) {
+              loadCustomSignal(fallback);
+              if (pageMode === 'hero') {
+                setPageMode('advanced');
+                setCurrentView('overview');
+                window.location.hash = '#/overview';
+              }
+            }
+          }
+          setUploadProgress(null);
+        };
+        reader.onerror = () => setUploadProgress(null);
+        reader.readAsText(file);
+      });
+
     // Reset file input so re-uploading the same file triggers change
     e.target.value = '';
   };
@@ -383,6 +409,22 @@ const AppInner: React.FC = () => {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#F8F6F1] text-[#10141C] font-sans antialiased">
+      {/* Floating Streaming CSV Upload Progress */}
+      {uploadProgress && (
+        <div className="fixed top-3 right-4 z-50 flex items-center gap-3 px-4 py-2.5 bg-[#FFFDF9] border border-[#0F766E] rounded-xl shadow-lg font-mono text-xs">
+          <Loader2 className="w-4 h-4 text-[#0F766E] animate-spin" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[#1F2430]">Streaming CSV Ingestion</span>
+              <span className="text-[#0F766E] font-bold">{uploadProgress.percent}%</span>
+            </div>
+            <div className="text-[10px] text-[#78716C]">
+              Papa Parse Web Worker &bull; {uploadProgress.rows.toLocaleString()} rows parsed
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hidden Global File Input for CSV Ingestion */}
       <input
         ref={fileInputRef}

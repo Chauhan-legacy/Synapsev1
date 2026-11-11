@@ -11,13 +11,19 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.5",
     "@types/katex": "^0.16.8",
+    "arquero": "^8.0.3",
+    "fft.js": "^4.0.4",
     "katex": "^0.19.1",
     "lucide-react": "^0.383.0",
+    "ml-matrix": "^6.15.1",
+    "papaparse": "^5.7.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "uplot": "^1.6.32"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.0",

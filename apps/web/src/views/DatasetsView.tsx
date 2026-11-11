@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useSignal } from '../context/SignalContext';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
-import { Upload, Database, CheckCircle2, Filter, Trash2 } from 'lucide-react';
+import { Upload, Database, CheckCircle2, Filter, Trash2, Loader2 } from 'lucide-react';
 import { parseUniversalSignalCSV } from '../utils/csvParser';
+import { parseCsvWithStreamingWorker } from '../utils/streamingCsvParser';
 
 interface DatasetsViewProps {
   onOpenMethodCard?: (name: string) => void;
@@ -15,22 +16,38 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
   // Preprocessing reversible pipeline state
   const [detrendActive, setDetrendActive] = useState(false);
   const [normalizeActive, setNormalizeActive] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ percent: number; rows: number } | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
+    setUploadProgress({ percent: 10, rows: 0 });
 
-      const parsed = parseUniversalSignalCSV(text, file.name);
-      if (parsed) {
+    const handle = parseCsvWithStreamingWorker(file, file.name, {
+      onProgress: (p) => setUploadProgress({ percent: p.percent, rows: p.rowsParsed }),
+    });
+
+    handle.promise
+      .then((parsed) => {
         loadCustomSignal(parsed);
-      }
-    };
-    reader.readAsText(file);
+        setUploadProgress(null);
+      })
+      .catch(() => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target?.result as string;
+          if (text) {
+            const parsed = parseUniversalSignalCSV(text, file.name);
+            if (parsed) loadCustomSignal(parsed);
+          }
+          setUploadProgress(null);
+        };
+        reader.onerror = () => setUploadProgress(null);
+        reader.readAsText(file);
+      });
+
+    e.target.value = '';
   };
 
   return (
@@ -127,9 +144,21 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-[#E6E1D6] hover:border-[#10141C] rounded-md p-6 text-center cursor-pointer transition-colors surface-subtle space-y-2"
           >
-            <Upload className="w-6 h-6 text-muted mx-auto" />
-            <div className="text-xs font-medium text-primary">Click to select CSV / TSV file</div>
-            <div className="text-[10px] text-muted font-mono">Max size: 50 MB</div>
+            {uploadProgress ? (
+              <div className="flex flex-col items-center justify-center space-y-2 py-2">
+                <Loader2 className="w-6 h-6 text-[#0F766E] animate-spin" />
+                <div className="text-xs font-bold text-[#0F766E]">Streaming Papa Parse Ingestion...</div>
+                <div className="text-[11px] font-mono text-[#1F2430]">
+                  {uploadProgress.percent}% ({uploadProgress.rows.toLocaleString()} rows)
+                </div>
+              </div>
+            ) : (
+              <>
+                <Upload className="w-6 h-6 text-muted mx-auto" />
+                <div className="text-xs font-medium text-primary">Click to select CSV / TSV file</div>
+                <div className="text-[10px] text-muted font-mono">Web Worker Streaming &bull; Up to 1M+ rows</div>
+              </>
+            )}
             <input
               ref={fileInputRef}
               type="file"

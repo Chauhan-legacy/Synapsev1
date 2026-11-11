@@ -41,6 +41,7 @@ import {
 import { MusicPlayer } from '../components/music/MusicPlayer';
 import { useSignal } from '../context/SignalContext';
 import { parseUniversalSignalCSV } from '../utils/csvParser';
+import { parseCsvWithStreamingWorker } from '../utils/streamingCsvParser';
 
 export type WorkbenchTab =
   | 'charts'
@@ -506,29 +507,46 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     };
   }, [customData, activeSignal]);
 
-  // Handle Custom Dataset Upload
+  // Handle Custom Dataset Upload with Streaming Worker
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
+    const handle = parseCsvWithStreamingWorker(file, file.name);
+    handle.promise
+      .then((parsed) => {
+        if (parsed && parsed.channelNames.length > 0) {
+          const primary = parsed.channelNames[0];
+          setCustomData({
+            name: parsed.filename,
+            samplingRate: parsed.samplingRate,
+            timestamps: parsed.timestamps,
+            values: parsed.channels[primary] || [],
+          });
+          loadCustomSignal(parsed);
+        }
+      })
+      .catch(() => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target?.result as string;
+          if (!text) return;
+          const parsed = parseUniversalSignalCSV(text, file.name);
+          if (parsed && parsed.channelNames.length > 0) {
+            const primary = parsed.channelNames[0];
+            setCustomData({
+              name: parsed.filename,
+              samplingRate: parsed.samplingRate,
+              timestamps: parsed.timestamps,
+              values: parsed.channels[primary] || [],
+            });
+            loadCustomSignal(parsed);
+          }
+        };
+        reader.readAsText(file);
+      });
 
-      const parsed = parseUniversalSignalCSV(text, file.name);
-      if (parsed && parsed.channelNames.length > 0) {
-        const primary = parsed.channelNames[0];
-        setCustomData({
-          name: parsed.filename,
-          samplingRate: parsed.samplingRate,
-          timestamps: parsed.timestamps,
-          values: parsed.channels[primary] || [],
-        });
-        loadCustomSignal(parsed);
-      }
-    };
-    reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleDeleteCustomData = () => {
