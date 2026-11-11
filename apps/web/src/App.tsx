@@ -95,6 +95,12 @@ const MethodsLibraryView = React.lazy(() =>
 const InstrumentRackView = React.lazy(() =>
   import('./views/InstrumentRackView').then((m) => ({ default: m.InstrumentRackView }))
 );
+const PaperGraphView = React.lazy(() =>
+  import('./views/PaperGraphView').then((m) => ({ default: m.PaperGraphView }))
+);
+const PaperGraphRackWorkspaceView = React.lazy(() =>
+  import('./views/PaperGraphRackWorkspaceView').then((m) => ({ default: m.PaperGraphRackWorkspaceView }))
+);
 
 // Minimal Skeleton Loader
 const SkeletonLoader: React.FC = () => (
@@ -153,7 +159,8 @@ const AppInner: React.FC = () => {
       hash.includes('evidence') ||
       hash.includes('reproducibility') ||
       hash.includes('benchmarks') ||
-      hash.includes('methods')
+      hash.includes('methods') ||
+      hash.includes('papergraph')
     ) {
       return 'advanced';
     }
@@ -192,7 +199,8 @@ const AppInner: React.FC = () => {
         hash.includes('evidence') ||
         hash.includes('reproducibility') ||
         hash.includes('benchmarks') ||
-        hash.includes('methods')
+        hash.includes('methods') ||
+        hash.includes('papergraph')
       ) {
         setPageMode('advanced');
       }
@@ -374,17 +382,24 @@ const AppInner: React.FC = () => {
         );
       case 'papergraph':
         return (
-          <PaperWorkbench
-            onBackToHero={() => {
-              setPageMode('hero');
-              window.location.hash = '';
+          <PaperGraphView
+            onOpenRackWorkspace={() => {
+              setCurrentView('papergraph_rack' as any);
+              window.location.hash = '#/papergraph-rack';
             }}
-            onOpenAdvancedLab={(labView) => {
-              setCurrentView(labView as any);
-              window.location.hash = `#/${labView}`;
+            onOpenPaperWorkbench={() => {
+              setPageMode('workbench');
+              window.location.hash = '#/workbench';
             }}
-            realTestCount={33}
-            initialTab="papergraph"
+          />
+        );
+      case 'papergraph_rack':
+        return (
+          <PaperGraphRackWorkspaceView
+            onBackToLiterature={() => {
+              setCurrentView('papergraph');
+              window.location.hash = '#/papergraph';
+            }}
           />
         );
       case 'overview':

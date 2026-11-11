@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSignal } from '../context/SignalContext';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
-import { ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Check, X } from 'lucide-react';
 import { CommonResultSchema, FindingStatus } from '../types/analysis';
 
 interface FindingsViewProps {
@@ -245,10 +245,12 @@ export const FindingsView: React.FC<FindingsViewProps> = ({ onOpenMethodCard }) 
                       <div className="p-3 rounded border bg-surface-base space-y-1">
                         <span className="font-bold text-primary uppercase text-[10px]">Assumptions Verified:</span>
                         {f.assumptions.map((a, aIdx) => (
-                          <div key={aIdx} className="text-secondary flex items-center gap-1.5">
-                            <span className={a.passed ? 'text-status-success' : 'text-status-danger'}>
-                              {a.passed ? '✓' : '✗'}
-                            </span>
+                          <div key={aIdx} className="text-secondary flex items-center gap-1.5 text-xs">
+                            {a.passed ? (
+                              <Check className="w-3.5 h-3.5 text-status-success shrink-0" />
+                            ) : (
+                              <X className="w-3.5 h-3.5 text-status-danger shrink-0" />
+                            )}
                             <span>{a.text}</span>
                           </div>
                         ))}

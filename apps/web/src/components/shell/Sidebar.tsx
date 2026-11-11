@@ -35,6 +35,7 @@ import { MusicPlayer } from '../music/MusicPlayer';
 export type WorkbenchView =
   | 'workbench'
   | 'papergraph'
+  | 'papergraph_rack'
   | 'overview'
   | 'rack'
   | 'datasets'

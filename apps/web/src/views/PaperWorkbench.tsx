@@ -298,7 +298,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     );
 
     setGraphifyNotice(
-      `⚡ Graphify™ Implemented! Synthesized ${nodes.length} nodes, ${edges.length} edges across ${stats.clusters} thematic clusters.`
+      `Graphify™ Implemented! Synthesized ${nodes.length} nodes, ${edges.length} edges across ${stats.clusters} thematic clusters.`
     );
     setTimeout(() => setGraphifyNotice(null), 5000);
   };
@@ -1595,7 +1595,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs font-mono font-bold shadow-xs transition-all ring-2 ring-[#0F766E]/20"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>⚡ Implement Graphify™ ({activeSet?.papers.length || 0} Papers)</span>
+                        <span>Implement Graphify™ ({activeSet?.papers.length || 0} Papers)</span>
                       </button>
 
                       <button
@@ -1680,8 +1680,18 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <span className="font-bold text-[#1F2430]">
                         Active: <span className="text-[#0F766E]">{activeSet?.name}</span>
                       </span>
-                      <span className="text-[#78716C] text-[11px]">
-                        {activeSet?.isImplemented ? '✓ Graphify Active' : '⚠ Synthesis Pending (Click Implement)'}
+                      <span className="text-[#78716C] text-[11px] flex items-center gap-1">
+                        {activeSet?.isImplemented ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-[#0F766E]" />
+                            <span className="text-[#0F766E] font-semibold">Graphify Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-[#B45F1B]" />
+                            <span className="text-[#B45F1B]">Synthesis Pending (Click Implement)</span>
+                          </>
+                        )}
                       </span>
                     </div>
 

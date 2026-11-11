@@ -122,7 +122,7 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
         </div>
       </div>
 
-      {/* ⚡ Mega 120,000-Point Vectorized Benchmark Panel */}
+      {/* Mega 120,000-Point Vectorized Benchmark Panel */}
       <div className="surface-base border-2 border-[#0F766E]/40 rounded-xl p-4 space-y-3 font-mono bg-[#0F766E]/5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#0F766E]/20 pb-3">
           <div className="space-y-0.5">
@@ -162,8 +162,9 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
           <div className="space-y-3 pt-1">
             {/* Acceleration Tier Badge */}
             <div className="px-3 py-1.5 rounded-lg bg-[#0F766E]/10 border border-[#0F766E]/30 text-[11px] text-[#0F766E] flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-mono">
-              <span className="font-bold">
-                ⚡ Acceleration Core: {megaBenchmarkResult.acceleration_tier || 'Numba LLVM JIT / Rust FFI'}
+              <span className="font-bold flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-[#0F766E]" />
+                <span>Acceleration Core: {megaBenchmarkResult.acceleration_tier || 'Numba LLVM JIT / Rust FFI'}</span>
               </span>
               <span className="text-[10px] text-muted">
                 Zero compiler installation hassle for open-source learners

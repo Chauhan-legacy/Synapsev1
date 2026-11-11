@@ -168,6 +168,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       icon: BookOpen,
       action: () => onNavigate('methods'),
     },
+    {
+      id: 'nav-papergraph',
+      category: 'Navigation',
+      title: 'Go to PaperGraph Citations',
+      subtitle: 'Search arXiv literature, export BibTeX, stage papers',
+      icon: BookOpen,
+      action: () => onNavigate('papergraph'),
+    },
+    {
+      id: 'nav-papergraph-rack',
+      category: 'Navigation',
+      title: 'Go to PaperGraph Rack & Graphify Workspace',
+      subtitle: 'Multi-set staging workspaces and interactive citation DAG',
+      icon: Navigation,
+      action: () => onNavigate('papergraph_rack'),
+    },
 
     // Actions
     {

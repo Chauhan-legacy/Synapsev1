@@ -29,6 +29,7 @@ interface TopBarProps {
 const VIEW_TITLES: Record<WorkbenchView, string> = {
   workbench: 'Paper Workbench',
   papergraph: 'PaperGraph Citations',
+  papergraph_rack: 'PaperGraph Rack & Graphify Workspace',
   overview: 'Overview',
   rack: 'Full Instrument Rack',
   datasets: 'Datasets & Preprocessing',

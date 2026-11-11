@@ -989,13 +989,13 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height={340}>
                   <LineChart data={liveMuonData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                    <XAxis dataKey="altitudeKm" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} unit=" km" />
+                    <XAxis dataKey="altitudeKm" type="number" domain={[0, 15]} tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} unit=" km" />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Ground Level (0 km)', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <ReferenceLine x={15} stroke="#0F766E" strokeDasharray="3 3" label={{ value: 'Atmosphere Peak (15 km)', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                    <Line type="monotone" dataKey="relativisticRate" stroke="#0F766E" strokeWidth={2.5} name="Relativistic Dilation (Observed)" dot={false} isAnimationActive={false} />
-                    <Line type="monotone" dataKey="classicalRate" stroke="#C0392B" strokeWidth={1.5} strokeDasharray="3 3" name="Classical Newtonian (No Dilation)" dot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="relativisticRate" stroke="#0F766E" strokeWidth={2.5} name="Relativistic Dilation (Observed)" dot={false} />
+                    <Line type="monotone" dataKey="classicalRate" stroke="#C0392B" strokeWidth={1.5} strokeDasharray="3 3" name="Classical Newtonian (No Dilation)" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

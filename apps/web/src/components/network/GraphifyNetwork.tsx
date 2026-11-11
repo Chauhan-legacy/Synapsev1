@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Share2, RotateCcw, ExternalLink } from 'lucide-react';
+import { Share2, RotateCcw, ExternalLink, Layers } from 'lucide-react';
 
 export interface GraphNode {
   id: string;
@@ -232,7 +232,8 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [nodes, setNodes] = useState<GraphNode[]>(() => {
-    const sourceNodes = (customNodes && customNodes.length > 0) ? customNodes : INITIAL_NODES;
+    const sourceNodes = customNodes !== undefined ? customNodes : INITIAL_NODES;
+    if (sourceNodes.length === 0) return [];
     const w = 700;
     const h = height;
     return sourceNodes.map((n, i) => {
@@ -249,13 +250,19 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
   });
 
   const [edges, setEdges] = useState<GraphEdge[]>(() => {
-    return (customEdges && customEdges.length > 0) ? customEdges : INITIAL_EDGES;
+    const sourceEdges = customEdges !== undefined ? customEdges : INITIAL_EDGES;
+    return customNodes && customNodes.length === 0 ? [] : sourceEdges;
   });
 
   // Re-synchronize when customNodes or customEdges change (e.g. from "Implement Graphify")
   useEffect(() => {
-    const sourceNodes = (customNodes && customNodes.length > 0) ? customNodes : INITIAL_NODES;
-    const sourceEdges = (customEdges && customEdges.length > 0) ? customEdges : INITIAL_EDGES;
+    const sourceNodes = customNodes !== undefined ? customNodes : INITIAL_NODES;
+    const sourceEdges = customEdges !== undefined ? customEdges : INITIAL_EDGES;
+    if (sourceNodes.length === 0) {
+      setNodes([]);
+      setEdges([]);
+      return;
+    }
     const w = 760;
     const h = height;
 
@@ -292,6 +299,14 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
 
   // Force simulation loop
   useEffect(() => {
+    if (nodes.length === 0) {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      return;
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -300,7 +315,7 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
     let isRunning = true;
 
     const simulate = () => {
-      if (!isRunning) return;
+      if (!isRunning || nodes.length === 0) return;
 
       const width = canvas.width;
       const height = canvas.height;
@@ -425,6 +440,10 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
     // Subtle Paper Background Grid
     ctx.fillStyle = '#FFFDF9';
     ctx.fillRect(0, 0, width, height);
+
+    if (nodes.length === 0) {
+      return; // Clean plain page - no animations or dummy nodes
+    }
 
     ctx.strokeStyle = '#F1ECE1';
     ctx.lineWidth = 1;
@@ -605,7 +624,8 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
               onClick={onOpenRack}
               className="flex items-center gap-1 px-2.5 py-0.5 rounded bg-[#0F766E] text-white hover:bg-[#0D655E] text-[10px] font-bold shadow-2xs transition-all ml-1"
             >
-              <span>📚 PaperGraph Rack ({stagedCount})</span>
+              <Layers className="w-3 h-3" />
+              <span>PaperGraph Rack ({stagedCount})</span>
             </button>
           )}
         </div>
@@ -613,22 +633,25 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
         {/* Filter Pills */}
         <div className="flex items-center gap-1 overflow-x-auto text-[10px]">
           {[
-            { id: 'all', label: 'All Nodes' },
-            { id: 'finding', label: '● Empirical Findings' },
-            { id: 'math', label: '● Mathematical Formulations' },
-            { id: 'paper', label: '● ArXiv Preprints' },
+            { id: 'all', label: 'All Nodes', dotColor: 'bg-[#1F2430]' },
+            { id: 'finding', label: 'Empirical Findings', dotColor: 'bg-[#0F766E]' },
+            { id: 'math', label: 'Mathematical Formulations', dotColor: 'bg-[#B45F1B]' },
+            { id: 'paper', label: 'arXiv Preprints', dotColor: 'bg-[#4338CA]' },
           ].map((pill) => (
             <button
               key={pill.id}
               type="button"
               onClick={() => setFilterType(pill.id)}
-              className={`px-2 py-1 rounded transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-1 px-2 py-1 rounded transition-colors whitespace-nowrap ${
                 filterType === pill.id
                   ? 'bg-[#0F766E] text-white font-bold'
                   : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#57534E] hover:bg-[#EFEBE0]'
               }`}
             >
-              {pill.label}
+              {pill.id !== 'all' && (
+                <span className={`w-1.5 h-1.5 rounded-full ${filterType === pill.id ? 'bg-white' : pill.dotColor}`} />
+              )}
+              <span>{pill.label}</span>
             </button>
           ))}
         </div>
@@ -646,6 +669,23 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
           onMouseLeave={handleMouseUp}
           className="w-full h-auto cursor-grab active:cursor-grabbing block"
         />
+
+        {/* Clean Plain Page Empty State */}
+        {nodes.length === 0 && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#FFFDF9] z-10 select-none">
+            <div className="max-w-md p-6 rounded-xl border border-[#E6E1D6] bg-white shadow-xs space-y-3 font-mono">
+              <div className="w-10 h-10 mx-auto rounded-full bg-[#FAF8F5] border border-[#DDD6C7] flex items-center justify-center text-[#0F766E]">
+                <Layers className="w-5 h-5 text-[#0F766E]" />
+              </div>
+              <h3 className="font-serif italic font-bold text-base text-[#1F2430]">
+                Clean Slate • No Staged Literature
+              </h3>
+              <p className="text-xs text-[#6B6F7B] leading-relaxed">
+                Active testing set has no staged papers. Upload a research CSV or add papers from literature search, then run <strong>Implement Graphify™</strong> to synthesize the citation DAG.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Canvas Controls Overlay */}
         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#FFFFFF]/90 backdrop-blur-xs p-1 rounded-lg border border-[#DDD6C7] shadow-xs">

@@ -417,10 +417,11 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           'biosignals', 'chaos', 'earth_systems', 'quantum', 'feynman',
           'satellite', 'geophysics',
           'inference', 'findings', 'evidence', 'reproducibility', 'benchmarks', 'methods',
-          'workbench', 'papergraph'
+          'workbench', 'papergraph', 'papergraph_rack'
         ];
-        if (validViews.includes(hash as WorkbenchView)) {
-          setCurrentView(hash as WorkbenchView);
+        const normalizedHash = hash.replace(/-/g, '_');
+        if (validViews.includes(normalizedHash as WorkbenchView)) {
+          setCurrentView(normalizedHash as WorkbenchView);
         }
       }
     };
