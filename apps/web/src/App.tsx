@@ -50,6 +50,12 @@ const AstronomyLabView = React.lazy(() =>
 const PhysicsLabView = React.lazy(() =>
   import('./views/PhysicsLabView').then((m) => ({ default: m.PhysicsLabView }))
 );
+const SatelliteLabView = React.lazy(() =>
+  import('./views/SatelliteLabView').then((m) => ({ default: m.SatelliteLabView }))
+);
+const GeophysicsLabView = React.lazy(() =>
+  import('./views/GeophysicsLabView').then((m) => ({ default: m.GeophysicsLabView }))
+);
 const InferenceView = React.lazy(() =>
   import('./views/InferenceView').then((m) => ({ default: m.InferenceView }))
 );
@@ -360,6 +366,10 @@ const AppInner: React.FC = () => {
         return <AstronomyLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'physics':
         return <PhysicsLabView onOpenMethodCard={handleOpenMethodCard} />;
+      case 'satellite':
+        return <SatelliteLabView onOpenMethodCard={handleOpenMethodCard} />;
+      case 'geophysics':
+        return <GeophysicsLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'inference':
         return <InferenceView onOpenMethodCard={handleOpenMethodCard} />;
       case 'findings':

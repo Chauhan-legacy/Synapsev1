@@ -22,6 +22,8 @@ import {
   X,
   Orbit,
   Atom,
+  Satellite,
+  Globe2,
 } from 'lucide-react';
 
 export type WorkbenchView =
@@ -37,6 +39,8 @@ export type WorkbenchView =
   | 'relations'
   | 'astronomy'
   | 'physics'
+  | 'satellite'
+  | 'geophysics'
   | 'inference'
   | 'findings'
   | 'evidence'
@@ -124,6 +128,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Physics & Nuclear',
       items: [
         { id: 'physics', label: 'Physics & Nuclear Lab', icon: Atom },
+      ],
+    },
+    {
+      title: 'Earth & Satellite Systems',
+      items: [
+        { id: 'satellite', label: 'Satellite Systems Lab', icon: Satellite },
+        { id: 'geophysics', label: 'Earth & Geophysics Lab', icon: Globe2 },
       ],
     },
     {

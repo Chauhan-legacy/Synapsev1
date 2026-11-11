@@ -46,10 +46,27 @@ import { Hilbert3DHelix } from '../components/dynamics/Hilbert3DHelix';
 import { WignerVille3DSurface } from '../components/dynamics/WignerVille3DSurface';
 import { SpectrogramHeatmap2D } from '../components/dynamics/SpectrogramHeatmap2D';
 
+// Earth Observation & Satellite Visualizers
+import { Gnss3DIonosphere } from '../components/geo/Gnss3DIonosphere';
+import { SpacecraftAttitude3D } from '../components/geo/SpacecraftAttitude3D';
+import { SeismicHodogram3D } from '../components/geo/SeismicHodogram3D';
+import { OceanSoliton3D } from '../components/geo/OceanSoliton3D';
+import { GraceTwinOrbit3D } from '../components/geo/GraceTwinOrbit3D';
+import {
+  getGnssTecData,
+  getSpacecraftAttitudeData,
+  getInSarInterferogramData,
+  getTriaxialSeismologyData,
+  getSchumannResonanceData,
+  getInfrasoundBeamformData,
+  getOceanSolitonData,
+  getGraceGravityRecoveryData,
+} from '../services/earthObservationService';
+
 export interface PanelConfig {
   id: string;
   title: string;
-  category: 'Spectral' | 'Time-Frequency' | 'Complexity' | 'Anomalies' | 'Relations' | 'Inference' | 'Astronomy';
+  category: 'Spectral' | 'Time-Frequency' | 'Complexity' | 'Anomalies' | 'Relations' | 'Inference' | 'Astronomy' | 'Satellite' | 'Geophysics';
   caption: string;
   latexBasis: string;
   legend: Array<{ name: string; color: string; unit?: string }>;
@@ -360,6 +377,127 @@ const ALL_INSTRUMENT_CATALOG: PanelConfig[] = [
     collapsed: false,
     fullscreen: false,
   },
+  // 21. GNSS Dual-Frequency Ionospheric TEC & S4
+  {
+    id: 'gnss_ionosphere',
+    title: 'GNSS Dual-Frequency Ionosphere & S₄ Profiler',
+    category: 'Satellite',
+    caption: 'Carrier phase dispersion Delta Phi and S4 amplitude scintillation tracking equatorial plasma bubble depletion',
+    latexBasis: '\\text{STEC} = \\frac{1}{40.3}\\left(\\frac{f_1^2 f_2^2}{f_1^2 - f_2^2}\\right)(\\Phi_1 \\lambda_1 - \\Phi_2 \\lambda_2), \\quad S_4 = \\sqrt{\\frac{\\langle I^2\\rangle - \\langle I\\rangle^2}{\\langle I\\rangle^2}}',
+    legend: [
+      { name: 'Slant TEC (TECU)', color: '#0F766E', unit: 'TECU' },
+      { name: 'Vertical TEC', color: '#4338CA', unit: 'TECU' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 22. Spacecraft Attitude Dynamics & RWA Jitter
+  {
+    id: 'spacecraft_attitude',
+    title: 'Spacecraft Attitude Dynamics & RWA Jitter',
+    category: 'Satellite',
+    caption: 'Euler rotational dynamics coupled with reaction wheel unbalance harmonic orders (1X, 2X, BSF)',
+    latexBasis: '\\mathbf{I}\\dot{\\boldsymbol{\\omega}} + \\boldsymbol{\\omega} \\times (\\mathbf{I}\\boldsymbol{\\omega} + \\mathbf{h}_{\\text{wheel}}) = \\mathbf{T}_{\\text{ext}}, \\quad F(t) = \\sum_h C_h \\Omega^2 \\cos(h\\Omega t)',
+    legend: [
+      { name: 'Micro-Jitter (µrad)', color: '#D97706', unit: 'µrad' },
+      { name: 'Harmonic Power', color: '#1F2430', unit: 'dB' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 23. Spaceborne InSAR Phase Fringe & Coherence
+  {
+    id: 'insar_interferogram',
+    title: 'InSAR Radar Phase Fringes & Coherence',
+    category: 'Satellite',
+    caption: 'Radar repeat-pass interferometric phase Delta phi and spatial coherence gamma mapping tectonic fault displacement',
+    latexBasis: '\\Delta \\phi = \\frac{4\\pi}{\\lambda}\\Delta R + \\phi_{\\text{atmo}}, \\quad \\gamma = \\frac{|\\sum s_1 s_2^*|}{\\sqrt{\\sum |s_1|^2 \\sum |s_2|^2}}',
+    legend: [
+      { name: 'Wrapped Phase', color: '#0F766E', unit: 'rad' },
+      { name: 'Fault Slip (mm)', color: '#C0392B', unit: 'mm' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 24. Oceanic Altimetry KdV Soliton Profiler
+  {
+    id: 'ocean_kdv_soliton',
+    title: 'Oceanic Internal Solitary Wave (ISW) Soliton (KdV)',
+    category: 'Satellite',
+    caption: 'Satellite altimeter Sea Surface Height (SSH) anomaly inverting sub-surface pycnocline KdV soliton depression',
+    latexBasis: '\\frac{\\partial \\eta}{\\partial t} + c_0 \\frac{\\partial \\eta}{\\partial x} + \\alpha \\eta \\frac{\\partial \\eta}{\\partial x} + \\beta \\frac{\\partial^3 \\eta}{\\partial x^3} = 0, \\quad \\eta(x) = -\\eta_0 \\operatorname{sech}^2(x/L)',
+    legend: [
+      { name: 'Altimeter SSH', color: '#0284C7', unit: 'cm' },
+      { name: 'Radar σ₀ Backscatter', color: '#F59E0B', unit: 'dB' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 25. GRACE Gravity Recovery
+  {
+    id: 'grace_gravity_recovery',
+    title: 'GRACE-FO Tandem Satellite Gravity Inversion',
+    category: 'Satellite',
+    caption: 'Inter-satellite range-rate acceleration ddot{rho} inverting terrestrial groundwater Equivalent Water Thickness (EWT)',
+    latexBasis: '\\ddot{\\rho} = \\mathbf{e}_{12} \\cdot (\\mathbf{a}_2 - \\mathbf{a}_1) + \\frac{|\\Delta \\mathbf{v}|^2 - \\dot{\\rho}^2}{\\rho}, \\quad V = \\frac{GM}{r}\\sum \\bar{P}_{nm}(\\cos\\theta)\\bar{C}_{nm}e^{im\\lambda}',
+    legend: [
+      { name: 'Range-Rate Residual', color: '#F59E0B', unit: 'µm/s' },
+      { name: 'Gravity Anomaly', color: '#0F766E', unit: 'µGal' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 26. Tri-Axial Seismology Hodogram
+  {
+    id: 'seismic_hodogram',
+    title: 'Tri-Axial Broadband Seismology Hodogram',
+    category: 'Geophysics',
+    caption: '3D particle motion covariance eigenvalues resolving Flinn rectilinearity L and epicenter back-azimuth',
+    latexBasis: '\\mathbf{C} = \\frac{1}{N}\\sum \\mathbf{v}_t \\mathbf{v}_t^T, \\quad L = 1 - \\frac{\\lambda_2 + \\lambda_3}{2\\lambda_1}, \\quad P = 1 - \\frac{2\\lambda_3}{\\lambda_1 + \\lambda_2}',
+    legend: [
+      { name: 'Z (Vertical)', color: '#0F766E', unit: 'mm/s' },
+      { name: 'N (North)', color: '#4338CA', unit: 'mm/s' },
+      { name: 'E (East)', color: '#D97706', unit: 'mm/s' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 27. Global Schumann Resonance Cavity
+  {
+    id: 'schumann_resonance',
+    title: 'Geomagnetic Schumann Resonance Cavity (7.83 Hz)',
+    category: 'Geophysics',
+    caption: 'Lorentzian multi-mode waveguide resonances n=1..5 with magnetotelluric crustal skin depth delta(f)',
+    latexBasis: 'f_n = \\frac{c}{2\\pi R_\\oplus}\\sqrt{n(n+1)}, \\quad \\delta(f) \\approx 503\\sqrt{\\rho_a / f} \\quad [\\text{m}]',
+    legend: [
+      { name: 'B-Field Spectrum (pT²/Hz)', color: '#1F2430', unit: 'pT²/Hz' },
+      { name: 'Lorentzian Q-Fit', color: '#0F766E' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
+  // 28. Infrasound Array Beamformer
+  {
+    id: 'infrasound_beamformer',
+    title: 'Atmospheric Infrasound Slowness Beamformer (PMCC)',
+    category: 'Geophysics',
+    caption: 'Progressive Multi-Channel Cross-Correlation (PMCC) slowness vector s = (s_x, s_y) resolving volcanic shock azimuth',
+    latexBasis: '\\mathbf{s} = (s_x, s_y), \\quad \\theta_{\\text{az}} = \\arctan(s_x / s_y), \\quad v_{\\text{trace}} = 1/\\|\\mathbf{s}\\|',
+    legend: [
+      { name: 'Differential Pressure (hPa)', color: '#0F766E', unit: 'hPa' },
+      { name: 'Beamformer Slowness', color: '#F59E0B', unit: 's/km' },
+    ],
+    pinned: false,
+    collapsed: false,
+    fullscreen: false,
+  },
 ];
 
 export const InstrumentRackView: React.FC = () => {
@@ -381,6 +519,11 @@ export const InstrumentRackView: React.FC = () => {
     'kepler_transit',
     'goes_solar_flare',
     'pulsar_folding',
+    'gnss_ionosphere',
+    'spacecraft_attitude',
+    'seismic_hodogram',
+    'ocean_kdv_soliton',
+    'grace_gravity_recovery',
   ];
 
   const isAll3DActive = compatible3DIds.every((id) => panel3DModes[id]);
@@ -699,6 +842,72 @@ export const InstrumentRackView: React.FC = () => {
     const goesData = getGoesSolarFlareData();
     const pulsarData = getPulsarFoldingData();
 
+    // 19-26. Earth Observation & Satellite Physical Data Streams
+    const gnssRaw = getGnssTecData();
+    const gnssSeries = gnssRaw.timeSec.slice(0, 120).map((t, idx) => ({
+      epochMin: (t / 60).toFixed(1),
+      slantTec: gnssRaw.slantTecUnits[idx],
+      verticalTec: gnssRaw.verticalTecUnits[idx],
+    }));
+    const gnssData = { ...gnssRaw, series: gnssSeries };
+
+    const attitudeRaw = getSpacecraftAttitudeData();
+    const attitudeOrder = attitudeRaw.orderWaterfall.map((o) => ({
+      order: `${o.order}X`,
+      powerDb: o.amplitudeDb,
+      harmonic: o.harmonic,
+    }));
+    const attitudeData = { ...attitudeRaw, orderTracking: attitudeOrder };
+
+    const insarRaw = getInSarInterferogramData();
+    const insarSeries = insarRaw.rangeKm.map((r, idx) => ({
+      distKm: r,
+      wrappedPhase: insarRaw.phaseWrappedRad[idx],
+      faultSlipMm: insarRaw.deformationMm[idx],
+    }));
+    const insarData = { ...insarRaw, series: insarSeries };
+
+    const solitonRaw = getOceanSolitonData();
+    const solitonSeries = solitonRaw.distanceKm.map((d, idx) => ({
+      distKm: d,
+      sshAnomalyCm: solitonRaw.seaSurfaceHeightCm[idx],
+      backscatterModDb: solitonRaw.radarBackscatterDb[idx],
+    }));
+    const solitonData = { ...solitonRaw, series: solitonSeries };
+
+    const graceRaw = getGraceGravityRecoveryData();
+    const graceSeries = graceRaw.orbitTimeSec.slice(0, 100).map((t, idx) => ({
+      lat: (t * 0.1 - 5).toFixed(1),
+      rangeRateResidualMicronSec: graceRaw.rangeRateResidualUmS[idx],
+      gravityAnomalyMicroGal: graceRaw.gravityAccelerationUgal[idx],
+    }));
+    const graceData = { ...graceRaw, series: graceSeries };
+
+    const seismicRaw = getTriaxialSeismologyData();
+    const seismicSeries = seismicRaw.timeSec.slice(0, 150).map((t, idx) => ({
+      timeSec: t,
+      vz: seismicRaw.vz[idx],
+      vn: seismicRaw.vn[idx],
+      ve: seismicRaw.ve[idx],
+    }));
+    const seismicData = { ...seismicRaw, series: seismicSeries };
+
+    const schumannRaw = getSchumannResonanceData();
+    const schumannSeries = schumannRaw.frequencyHz.map((f, idx) => ({
+      freqHz: f,
+      psd: schumannRaw.magneticPsdPt2Hz[idx],
+      lorentzianFit: schumannRaw.lorentzianFit[idx],
+    }));
+    const schumannData = { ...schumannRaw, series: schumannSeries };
+
+    const infrasoundRaw = getInfrasoundBeamformData();
+    const infrasoundSeries = infrasoundRaw.timeSec.map((t, idx) => ({
+      timeSec: t,
+      differentialPressureHPa: infrasoundRaw.pressureHpa[idx],
+      beamSlowness: Number((1000.0 / infrasoundRaw.apparentVelocityMS).toFixed(2)),
+    }));
+    const infrasoundData = { ...infrasoundRaw, series: infrasoundSeries };
+
     return {
       timeData,
       spectrumData,
@@ -725,6 +934,14 @@ export const InstrumentRackView: React.FC = () => {
       keplerData,
       goesData,
       pulsarData,
+      gnssData,
+      attitudeData,
+      insarData,
+      solitonData,
+      graceData,
+      seismicData,
+      schumannData,
+      infrasoundData,
       rawSignal: raw,
       hilbertEnvelope: hilbertData.map((h) => h.env),
       stats: { fs, n, mean, std },
@@ -751,12 +968,16 @@ export const InstrumentRackView: React.FC = () => {
     setShowAddMenu(false);
   };
 
-  const handleApplyPreset = (preset: 'all' | 'discovery' | 'spectral' | 'dynamics' | 'astronomy') => {
+  const handleApplyPreset = (preset: 'all' | 'discovery' | 'spectral' | 'dynamics' | 'astronomy' | 'satellite' | 'geophysics') => {
     setDeletedPanelIds([]);
     if (preset === 'all') {
       setPanels(ALL_INSTRUMENT_CATALOG);
     } else if (preset === 'astronomy') {
       setPanels(ALL_INSTRUMENT_CATALOG.filter((p) => p.category === 'Astronomy'));
+    } else if (preset === 'satellite') {
+      setPanels(ALL_INSTRUMENT_CATALOG.filter((p) => p.category === 'Satellite'));
+    } else if (preset === 'geophysics') {
+      setPanels(ALL_INSTRUMENT_CATALOG.filter((p) => p.category === 'Geophysics'));
     } else if (preset === 'spectral') {
       setPanels(ALL_INSTRUMENT_CATALOG.filter((p) => p.category === 'Spectral' || p.id === 'stft_spectrogram' || p.id === 'cwt_scalogram'));
     } else if (preset === 'dynamics') {
@@ -854,7 +1075,7 @@ export const InstrumentRackView: React.FC = () => {
               <div className="absolute right-0 mt-1.5 w-80 bg-[#FFFFFF] border border-[#DDD6C7] rounded-lg shadow-xl p-2 z-50 font-mono text-xs max-h-96 overflow-y-auto">
                 <div className="px-2 py-1 text-[10px] uppercase font-bold text-[#6B6F7B] border-b border-[#DDD6C7] flex justify-between">
                   <span>Available Instruments Catalog</span>
-                  <span>16 Tools</span>
+                  <span>{ALL_INSTRUMENT_CATALOG.length} Tools</span>
                 </div>
                 <div className="py-1 space-y-1">
                   {ALL_INSTRUMENT_CATALOG.map((inst) => {
@@ -893,9 +1114,9 @@ export const InstrumentRackView: React.FC = () => {
               type="button"
               onClick={() => handleApplyPreset('all')}
               className="px-2.5 py-1 rounded text-xs font-semibold text-[#1F2430] hover:bg-[#FFFFFF] transition-colors"
-              title="Load all 20 instruments simultaneously"
+              title="Load all 28 instruments simultaneously"
             >
-              All 20 Mega Rack
+              All 28 Mega Rack
             </button>
             <button
               type="button"
@@ -912,6 +1133,22 @@ export const InstrumentRackView: React.FC = () => {
               title="Astrophysical instruments (LIGO, Kepler, GOES, Pulsars)"
             >
               Astronomy
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('satellite')}
+              className="px-2 py-1 rounded text-xs text-[#0284C7] font-bold hover:bg-[#FFFFFF] transition-colors"
+              title="Satellite systems (GNSS TEC, Attitude RWA, InSAR, Soliton KdV, GRACE)"
+            >
+              Satellite
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('geophysics')}
+              className="px-2 py-1 rounded text-xs text-[#7C3AED] font-bold hover:bg-[#FFFFFF] transition-colors"
+              title="Earth & Geophysics (Seismology, Schumann Resonance, Infrasound)"
+            >
+              Geophysics
             </button>
             <button
               type="button"
@@ -986,7 +1223,7 @@ export const InstrumentRackView: React.FC = () => {
       {/* 2. CATEGORY PILLS & SEARCH */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {['all', 'Astronomy', 'Spectral', 'Time-Frequency', 'Complexity', 'Anomalies', 'Relations', 'Inference'].map((cat) => (
+          {['all', 'Astronomy', 'Satellite', 'Geophysics', 'Spectral', 'Time-Frequency', 'Complexity', 'Anomalies', 'Relations', 'Inference'].map((cat) => (
             <button
               key={cat}
               type="button"
@@ -1024,7 +1261,7 @@ export const InstrumentRackView: React.FC = () => {
             onClick={() => handleApplyPreset('all')}
             className="px-4 py-2 bg-[#0F766E] text-white rounded-md text-xs font-semibold hover:bg-[#0B5E58]"
           >
-            Load 16-Instrument Mega Rack
+            Load 28-Instrument Mega Rack
           </button>
         </div>
       ) : (
@@ -1053,17 +1290,7 @@ export const InstrumentRackView: React.FC = () => {
 
                     {/* Window Controls */}
                     <div className="flex items-center space-x-1 text-[#6B6F7B] shrink-0">
-                      {[
-                        'oscillogram',
-                        'stft_spectrogram',
-                        'cwt_scalogram',
-                        'phase_space',
-                        'ligo_gw_strain',
-                        'kepler_transit',
-                        'goes_solar_flare',
-                        'pulsar_folding',
-                        'hilbert',
-                      ].includes(panel.id) && (
+                      {compatible3DIds.includes(panel.id) && (
                         <button
                           type="button"
                           onClick={() => togglePanel3D(panel.id)}
@@ -1201,6 +1428,43 @@ export const InstrumentRackView: React.FC = () => {
                           {panel.id === 'kepler_transit' && <Exoplanet3DTransit />}
                           {panel.id === 'goes_solar_flare' && <Solar3DFlare />}
                           {panel.id === 'pulsar_folding' && <Pulsar3DLighthouse />}
+                          {panel.id === 'gnss_ionosphere' && (
+                            <Gnss3DIonosphere
+                              s4Index={processedData.gnssData.s4Index}
+                              elevationDeg={45}
+                              ippLat={-12.4}
+                              ippLon={-76.8}
+                            />
+                          )}
+                          {panel.id === 'spacecraft_attitude' && (
+                            <SpacecraftAttitude3D
+                              wheelRpm={processedData.attitudeData.wheelRpm}
+                              jitterMicroRad={processedData.attitudeData.jitterMicroRad[100]}
+                              pointingErrorArcsec={processedData.attitudeData.pointingErrorArcsec}
+                            />
+                          )}
+                          {panel.id === 'seismic_hodogram' && (
+                            <SeismicHodogram3D
+                              vz={processedData.seismicData.vz}
+                              vn={processedData.seismicData.vn}
+                              ve={processedData.seismicData.ve}
+                              rectilinearityL={processedData.seismicData.rectilinearityL[120]}
+                              planarityP={processedData.seismicData.planarityP[280]}
+                              backAzimuthDeg={processedData.seismicData.backAzimuthDeg}
+                            />
+                          )}
+                          {panel.id === 'ocean_kdv_soliton' && (
+                            <OceanSoliton3D
+                              solitonAmplitudeM={processedData.solitonData.solitonAmplitudeM}
+                              solitonPhaseSpeedMs={processedData.solitonData.solitonPhaseSpeedMs}
+                              characteristicWidthM={processedData.solitonData.characteristicWidthM}
+                            />
+                          )}
+                          {panel.id === 'grace_gravity_recovery' && (
+                            <GraceTwinOrbit3D
+                              equivalentWaterThicknessCm={processedData.graceData.equivalentWaterThicknessCm}
+                            />
+                          )}
                           {panel.id === 'hilbert' && (
                             <Hilbert3DHelix
                               signal={processedData.rawSignal}
@@ -1397,6 +1661,85 @@ export const InstrumentRackView: React.FC = () => {
                               <ReferenceLine x={0.75} stroke="#B7791F" strokeDasharray="2 2" label={{ value: 'Interpulse', fill: '#B7791F', fontSize: 9 }} />
                               <Line type="monotone" dataKey="intensity" stroke="#1F2430" strokeWidth={2} dot={false} isAnimationActive={false} />
                               <Line type="monotone" dataKey="baseline" stroke="#6B6F7B" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'gnss_ionosphere' ? (
+                            <LineChart data={processedData.gnssData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="epochMin" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <Line type="monotone" dataKey="slantTec" stroke="#0F766E" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="verticalTec" stroke="#4338CA" strokeWidth={1.5} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'spacecraft_attitude' ? (
+                            <BarChart data={processedData.attitudeData.orderTracking} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="order" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <Bar dataKey="powerDb" fill="#D97706" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                            </BarChart>
+                          ) : panel.id === 'insar_interferogram' ? (
+                            <LineChart data={processedData.insarData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="distKm" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={20} stroke="#C0392B" strokeDasharray="2 2" label={{ value: 'Fault Trace', fill: '#C0392B', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="wrappedPhase" stroke="#0F766E" strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="faultSlipMm" stroke="#C0392B" strokeWidth={1.8} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'ocean_kdv_soliton' ? (
+                            <LineChart data={processedData.solitonData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="distKm" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={30} stroke="#0284C7" strokeDasharray="2 2" label={{ value: 'Soliton Crest', fill: '#0284C7', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="sshAnomalyCm" stroke="#0284C7" strokeWidth={2} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="backscatterModDb" stroke="#F59E0B" strokeWidth={1.5} strokeDasharray="2 2" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'grace_gravity_recovery' ? (
+                            <LineChart data={processedData.graceData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="lat" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={28} stroke="#F59E0B" strokeDasharray="2 2" label={{ value: 'Amazon Basin', fill: '#F59E0B', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="rangeRateResidualMicronSec" stroke="#F59E0B" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="gravityAnomalyMicroGal" stroke="#0F766E" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'seismic_hodogram' ? (
+                            <LineChart data={processedData.seismicData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="timeSec" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={4.8} stroke="#0F766E" strokeDasharray="2 2" label={{ value: 'P-Arrival', fill: '#0F766E', fontSize: 9 }} />
+                              <ReferenceLine x={11.2} stroke="#4338CA" strokeDasharray="2 2" label={{ value: 'S-Arrival', fill: '#4338CA', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="vz" stroke="#0F766E" strokeWidth={1.6} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="vn" stroke="#4338CA" strokeWidth={1.4} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="ve" stroke="#D97706" strokeWidth={1.4} dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'schumann_resonance' ? (
+                            <LineChart data={processedData.schumannData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="freqHz" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <ReferenceLine x={7.83} stroke="#0F766E" strokeDasharray="2 2" label={{ value: 'f1=7.83Hz', fill: '#0F766E', fontSize: 9 }} />
+                              <ReferenceLine x={14.3} stroke="#0F766E" strokeDasharray="2 2" label={{ value: 'f2=14.3Hz', fill: '#0F766E', fontSize: 9 }} />
+                              <Line type="monotone" dataKey="psd" stroke="#1F2430" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="lorentzianFit" stroke="#0F766E" strokeWidth={1.8} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+                            </LineChart>
+                          ) : panel.id === 'infrasound_beamformer' ? (
+                            <LineChart data={processedData.infrasoundData.series} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>
+                              <CartesianGrid stroke="#DDD6C7" strokeDasharray="3 3" vertical={false} />
+                              <XAxis dataKey="timeSec" tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <YAxis tick={{ fill: '#6B6F7B', fontSize: 9, fontFamily: 'JetBrains Mono' }} />
+                              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
+                              <Line type="monotone" dataKey="differentialPressureHPa" stroke="#0F766E" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                              <Line type="monotone" dataKey="beamSlowness" stroke="#F59E0B" strokeWidth={1.5} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
                             </LineChart>
                           ) : (
                             <BarChart data={processedData.surrogateBins} margin={{ top: 8, right: 10, left: -15, bottom: 0 }}>

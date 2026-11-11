@@ -39,6 +39,8 @@ const VIEW_TITLES: Record<WorkbenchView, string> = {
   relations: 'Relations Lab',
   astronomy: 'Astronomy & Cosmic Lab',
   physics: 'Physics & Nuclear Lab',
+  satellite: 'Satellite Systems Lab',
+  geophysics: 'Earth & Geophysics Lab',
   inference: 'Inference & Null Models',
   findings: 'Scientific Findings',
   evidence: 'Evidence Graph',
