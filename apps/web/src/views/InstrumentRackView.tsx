@@ -1054,9 +1054,9 @@ export const InstrumentRackView: React.FC = () => {
   }[layoutPreset];
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto font-sans pb-16">
+    <div className="space-y-5 w-full max-w-[1680px] mx-auto font-sans pb-16 px-1 sm:px-2">
       {/* 1. RACK COMMAND HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-[#0F766E] flex items-center justify-center text-white shadow-2xs">
@@ -1283,7 +1283,7 @@ export const InstrumentRackView: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className={`grid ${isAll3DActive ? 'grid-cols-1 md:grid-cols-2 gap-6' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+        <div className={`grid ${isAll3DActive ? 'grid-cols-1 lg:grid-cols-2 gap-6' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5'}`}>
           {activePanels.map((panel) => {
             const isFullscreen = panel.fullscreen;
             const is3DActive = !!panel3DModes[panel.id];

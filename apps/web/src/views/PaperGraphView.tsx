@@ -299,7 +299,7 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
   const [inspectPaper, setInspectPaper] = useState<ArXivPaper | null>(null);
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-5 font-mono text-xs pb-12">
+    <div className="w-full max-w-[1680px] mx-auto space-y-5 font-mono text-xs pb-12 px-1 sm:px-2">
       {/* Hidden File Input for CSV ingestion */}
       <input
         ref={csvInputRef}

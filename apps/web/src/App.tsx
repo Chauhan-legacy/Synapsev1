@@ -6,7 +6,7 @@ import { TopBar } from './components/shell/TopBar';
 import { CommandPalette } from './components/shell/CommandPalette';
 import { AccessibilityModal } from './components/shell/AccessibilityModal';
 import { ShortcutsModal } from './components/shell/ShortcutsModal';
-import { Compass, Loader2 } from 'lucide-react';
+import { Compass, Loader2, Sliders, ArrowLeft } from 'lucide-react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { parseUniversalSignalCSV } from './utils/csvParser';
 import { parseCsvWithStreamingWorker } from './utils/streamingCsvParser';
@@ -500,20 +500,35 @@ const AppInner: React.FC = () => {
       {/* Main Workbench Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F6F3EC]">
         {/* Switcher Banner back to Paper Workbench */}
-        <div className="h-8 bg-[#EFEBE0] border-b border-[#DDD6C7] px-4 flex items-center justify-between text-xs font-mono shrink-0">
-          <div className="flex items-center gap-2 text-[#4A5060]">
-            <span className="w-2 h-2 rounded-full bg-[#0F766E]" />
-            <span className="font-semibold text-[#1F2430]">SYNAPSE Multi-Tool Instrument Rack</span>
+        <div className="h-12 bg-[#F1ECE1] border-b border-[#DDD6C7] px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs font-mono shrink-0 shadow-2xs">
+          <div className="flex items-center gap-3 text-[#4A5060]">
+            <div className="w-6 h-6 rounded-md bg-[#0F766E] flex items-center justify-center text-white shadow-2xs shrink-0">
+              <Sliders className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="font-bold text-[#1F2430] text-sm tracking-tight">SYNAPSE Multi-Tool Instrument Rack</span>
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold border border-[#0F766E]/20">
+                28 Scientific Instruments Loaded
+              </span>
+            </div>
           </div>
+
+          <div className="hidden lg:flex items-center gap-2 text-[11px] text-[#78716C] font-mono">
+            <span>Synchronized Temporal Cursors</span>
+            <span>&bull;</span>
+            <span>Bitwise Analytical Engine</span>
+          </div>
+
           <button
             type="button"
             onClick={() => {
               setPageMode('workbench');
               window.location.hash = '#/workbench';
             }}
-            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#DDD6C7]/50 text-[#1F2430] font-semibold transition-colors"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#DDD6C7] hover:border-[#0F766E]/50 hover:bg-[#FAF8F5] text-[#1F2430] font-semibold text-xs transition-all shadow-2xs group"
           >
-            <span>&larr; Switch to Paper Workbench</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-[#0F766E] transition-transform group-hover:-translate-x-0.5" />
+            <span>Switch to Paper Workbench</span>
           </button>
         </div>
 

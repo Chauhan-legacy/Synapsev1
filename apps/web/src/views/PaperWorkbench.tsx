@@ -146,8 +146,20 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   const [isCreatingNewSet, setIsCreatingNewSet] = useState<boolean>(false);
   const [newSetNameInput, setNewSetNameInput] = useState<string>('');
   const [graphifyNotice, setGraphifyNotice] = useState<string | null>(null);
-  const [activeGraphNodes, setActiveGraphNodes] = useState<any[] | undefined>(undefined);
-  const [activeGraphEdges, setActiveGraphEdges] = useState<any[] | undefined>(undefined);
+  const [activeGraphNodes, setActiveGraphNodes] = useState<any[]>(() => {
+    const s = paperGraphSets.find((x) => x.id === activeSetId) || paperGraphSets[0];
+    if (s?.isImplemented && s.papers.length > 0) {
+      return synthesizeGraphifyFromPapers(s.papers).nodes;
+    }
+    return [];
+  });
+  const [activeGraphEdges, setActiveGraphEdges] = useState<any[]>(() => {
+    const s = paperGraphSets.find((x) => x.id === activeSetId) || paperGraphSets[0];
+    if (s?.isImplemented && s.papers.length > 0) {
+      return synthesizeGraphifyFromPapers(s.papers).edges;
+    }
+    return [];
+  });
   const papersCsvInputRef = useRef<HTMLInputElement | null>(null);
 
   // Active Set reference
@@ -159,6 +171,18 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   useEffect(() => {
     savePaperGraphSets(paperGraphSets);
   }, [paperGraphSets]);
+
+  // Re-synchronize Graphify nodes and edges with active set changes
+  useEffect(() => {
+    if (activeSet?.isImplemented && activeSet.papers.length > 0) {
+      const { nodes, edges } = synthesizeGraphifyFromPapers(activeSet.papers);
+      setActiveGraphNodes(nodes);
+      setActiveGraphEdges(edges);
+    } else {
+      setActiveGraphNodes([]);
+      setActiveGraphEdges([]);
+    }
+  }, [activeSetId, activeSet?.isImplemented, activeSet?.papers.length]);
 
   // 1. Toggle paper in active set (Add or Remove)
   const handleTogglePaperInRack = (paper: ArXivPaper) => {

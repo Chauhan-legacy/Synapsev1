@@ -36,189 +36,6 @@ export interface GraphifyNetworkProps {
   stagedCount?: number;
 }
 
-const INITIAL_NODES: Omit<GraphNode, 'x' | 'y' | 'vx' | 'vy'>[] = [
-  // Empirical Findings
-  {
-    id: 'f_higgs',
-    label: 'CERN Di-Photon 125.09 GeV',
-    type: 'finding',
-    category: 'High-Energy Physics',
-    formula: 'm_{\\gamma\\gamma} = 125.09\\,\\text{GeV} \\ (5.4\\sigma)',
-    description: 'Di-photon invariant mass resonance observed by ATLAS & CMS.',
-    radius: 18,
-    color: '#0F766E', // Paper Teal
-  },
-  {
-    id: 'f_gw150914',
-    label: 'LIGO GW150914 Chirp',
-    type: 'finding',
-    category: 'Astrophysics & Gravitation',
-    formula: 'h(t) \\approx 1.0 \\times 10^{-21}, \\ f_{\\text{merge}} = 250\\,\\text{Hz}',
-    description: 'Binary black hole merger gravitational wave strain detected at Hanford & Livingston.',
-    radius: 17,
-    color: '#0F766E',
-  },
-  {
-    id: 'f_muon',
-    label: 'Relativistic Muon Dilation',
-    type: 'finding',
-    category: 'Relativistic Physics',
-    formula: '\\gamma = 28.87, \\ \\tau = 63.42\\,\\mu\\text{s}',
-    description: 'Cosmic ray atmospheric muon survival verified at sea level.',
-    radius: 16,
-    color: '#0F766E',
-  },
-  {
-    id: 'f_chaos',
-    label: 'Takens Attractor (λ = +0.42)',
-    type: 'finding',
-    category: 'Nonlinear Dynamics',
-    formula: '\\lambda_1 > 0 \\implies \\text{Deterministic Chaos}',
-    description: 'Positive largest Lyapunov exponent from delay-coordinate phase reconstruction.',
-    radius: 16,
-    color: '#0F766E',
-  },
-  {
-    id: 'f_pelt',
-    label: 'PELT Breakpoint at t = 2.6s',
-    type: 'finding',
-    category: 'Statistical Change',
-    formula: '\\min_{\\tau} \\sum [\\mathcal{C}(y) + \\beta]',
-    description: 'Optimal linear-time non-stationary regime shift identification.',
-    radius: 15,
-    color: '#0F766E',
-  },
-
-  // Mathematical & Theoretical Foundations
-  {
-    id: 'm_breit_wigner',
-    label: 'Relativistic Breit-Wigner',
-    type: 'math',
-    category: 'Quantum Mechanics',
-    formula: '\\sigma(E) \\propto \\frac{\\Gamma^2}{(E^2 - M^2)^2 + M^2 \\Gamma^2}',
-    description: 'Cross-section propagator for unstable quantum resonance states.',
-    radius: 15,
-    color: '#B45F1B', // Amber
-  },
-  {
-    id: 'm_lorentz',
-    label: 'Lorentz Metric & Time Dilation',
-    type: 'math',
-    category: 'Special Relativity',
-    formula: 'ds^2 = -c^2 dt^2 + dx^2 + dy^2 + dz^2',
-    description: 'Invariance of spacetime interval across inertial reference frames.',
-    radius: 15,
-    color: '#B45F1B',
-  },
-  {
-    id: 'm_dpss',
-    label: 'Thomson Multitaper DPSS',
-    type: 'math',
-    category: 'Signal Processing',
-    formula: 'v_k^{(n)}(N, W) \\implies \\text{Slepian Prolate Spheroidal}',
-    description: 'Optimal spectral leakage suppression using discrete prolate spheroidal sequences.',
-    radius: 14,
-    color: '#B45F1B',
-  },
-  {
-    id: 'm_attention',
-    label: 'Scaled Dot-Product Attention',
-    type: 'math',
-    category: 'Deep Learning',
-    formula: '\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right) V',
-    description: 'All-to-all sequence transduction mechanism replacing recurrence.',
-    radius: 17,
-    color: '#B45F1B',
-  },
-
-  // Foundational Preprints / Literature Nodes
-  {
-    id: 'arxiv_1706_03762',
-    label: 'Vaswani et al. 2017',
-    type: 'paper',
-    category: 'Computation & Language',
-    arxivId: '1706.03762',
-    citations: 136165,
-    description: 'Attention Is All You Need — Foundational paper introducing the Transformer.',
-    radius: 20,
-    color: '#4338CA', // Indigo
-  },
-  {
-    id: 'arxiv_1602_03837',
-    label: 'Abbott et al. 2016 (LIGO)',
-    type: 'paper',
-    category: 'Astrophysics & Gravitation',
-    arxivId: '1602.03837',
-    citations: 14200,
-    description: 'Observation of Gravitational Waves from a Binary Black Hole Merger.',
-    radius: 19,
-    color: '#4338CA',
-  },
-  {
-    id: 'arxiv_1207_7214',
-    label: 'Aad et al. 2012 (ATLAS Higgs)',
-    type: 'paper',
-    category: 'High Energy Physics',
-    arxivId: '1207.7214',
-    citations: 18500,
-    description: 'Observation of a New Particle in the Search for the Standard Model Higgs Boson.',
-    radius: 19,
-    color: '#4338CA',
-  },
-  {
-    id: 'arxiv_1802_03456',
-    label: 'Thomson et al. (DPSS Multitaper)',
-    type: 'paper',
-    category: 'Signal Processing',
-    arxivId: '1802.03456',
-    citations: 142,
-    description: 'Multitaper Spectral Analysis of Gravitational Wave & Geophysical Data.',
-    radius: 14,
-    color: '#4338CA',
-  },
-  {
-    id: 'arxiv_2104_09876',
-    label: 'Killick et al. (PELT Break)',
-    type: 'paper',
-    category: 'Statistics & Time Series',
-    arxivId: '2104.09876',
-    citations: 188,
-    description: 'Change Point Detection in High Dimensional Non-Stationary Time Series via PELT.',
-    radius: 14,
-    color: '#4338CA',
-  },
-  {
-    id: 'arxiv_2205_11223',
-    label: 'Rosenstein et al. (Takens Chaos)',
-    type: 'paper',
-    category: 'Chaotic Dynamics',
-    arxivId: '2205.11223',
-    citations: 96,
-    description: 'Deterministic Chaos and Phase Space Reconstruction from Single-Channel Time Series.',
-    radius: 13,
-    color: '#4338CA',
-  },
-];
-
-const INITIAL_EDGES: GraphEdge[] = [
-  { source: 'f_higgs', target: 'm_breit_wigner', weight: 2 },
-  { source: 'f_higgs', target: 'arxiv_1207_7214', weight: 3 },
-  { source: 'm_breit_wigner', target: 'arxiv_1207_7214', weight: 2 },
-
-  { source: 'f_gw150914', target: 'm_dpss', weight: 2 },
-  { source: 'f_gw150914', target: 'arxiv_1602_03837', weight: 3 },
-  { source: 'm_dpss', target: 'arxiv_1802_03456', weight: 3 },
-
-  { source: 'f_muon', target: 'm_lorentz', weight: 3 },
-
-  { source: 'f_chaos', target: 'arxiv_2205_11223', weight: 3 },
-
-  { source: 'f_pelt', target: 'arxiv_2104_09876', weight: 3 },
-
-  { source: 'm_attention', target: 'arxiv_1706_03762', weight: 3 },
-  { source: 'arxiv_1706_03762', target: 'arxiv_1602_03837', weight: 1 },
-];
-
 export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
   onSelectPaper,
   selectedPaperId,
@@ -232,7 +49,7 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [nodes, setNodes] = useState<GraphNode[]>(() => {
-    const sourceNodes = customNodes !== undefined ? customNodes : INITIAL_NODES;
+    const sourceNodes = (customNodes && customNodes.length > 0) ? customNodes : [];
     if (sourceNodes.length === 0) return [];
     const w = 700;
     const h = height;
@@ -250,14 +67,13 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
   });
 
   const [edges, setEdges] = useState<GraphEdge[]>(() => {
-    const sourceEdges = customEdges !== undefined ? customEdges : INITIAL_EDGES;
-    return customNodes && customNodes.length === 0 ? [] : sourceEdges;
+    return (customEdges && customEdges.length > 0) ? customEdges : [];
   });
 
   // Re-synchronize when customNodes or customEdges change (e.g. from "Implement Graphify")
   useEffect(() => {
-    const sourceNodes = customNodes !== undefined ? customNodes : INITIAL_NODES;
-    const sourceEdges = customEdges !== undefined ? customEdges : INITIAL_EDGES;
+    const sourceNodes = (customNodes && customNodes.length > 0) ? customNodes : [];
+    const sourceEdges = (customEdges && customEdges.length > 0) ? customEdges : [];
     if (sourceNodes.length === 0) {
       setNodes([]);
       setEdges([]);
