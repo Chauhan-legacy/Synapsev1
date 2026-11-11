@@ -25,10 +25,15 @@ export interface GraphEdge {
   weight: number;
 }
 
-interface GraphifyNetworkProps {
+export interface GraphifyNetworkProps {
   onSelectPaper?: (paperId: string) => void;
   selectedPaperId?: string | null;
   height?: number;
+  customNodes?: Omit<GraphNode, 'x' | 'y' | 'vx' | 'vy'>[];
+  customEdges?: GraphEdge[];
+  sessionLabel?: string;
+  onOpenRack?: () => void;
+  stagedCount?: number;
 }
 
 const INITIAL_NODES: Omit<GraphNode, 'x' | 'y' | 'vx' | 'vy'>[] = [
@@ -218,14 +223,20 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
   onSelectPaper,
   selectedPaperId,
   height = 360,
+  customNodes,
+  customEdges,
+  sessionLabel,
+  onOpenRack,
+  stagedCount = 0,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [nodes, setNodes] = useState<GraphNode[]>(() => {
+    const sourceNodes = (customNodes && customNodes.length > 0) ? customNodes : INITIAL_NODES;
     const w = 700;
     const h = height;
-    return INITIAL_NODES.map((n, i) => {
-      const angle = (i / INITIAL_NODES.length) * Math.PI * 2;
+    return sourceNodes.map((n, i) => {
+      const angle = (i / sourceNodes.length) * Math.PI * 2;
       const radius = 120 + (i % 3) * 60;
       return {
         ...n,
@@ -237,7 +248,33 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
     });
   });
 
-  const [edges] = useState<GraphEdge[]>(INITIAL_EDGES);
+  const [edges, setEdges] = useState<GraphEdge[]>(() => {
+    return (customEdges && customEdges.length > 0) ? customEdges : INITIAL_EDGES;
+  });
+
+  // Re-synchronize when customNodes or customEdges change (e.g. from "Implement Graphify")
+  useEffect(() => {
+    const sourceNodes = (customNodes && customNodes.length > 0) ? customNodes : INITIAL_NODES;
+    const sourceEdges = (customEdges && customEdges.length > 0) ? customEdges : INITIAL_EDGES;
+    const w = 760;
+    const h = height;
+
+    const initialized = sourceNodes.map((n, i) => {
+      const angle = (i / sourceNodes.length) * Math.PI * 2;
+      const radius = 125 + (i % 3) * 55;
+      return {
+        ...n,
+        x: w / 2 + Math.cos(angle) * radius,
+        y: h / 2 + Math.sin(angle) * radius,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+      };
+    });
+
+    setNodes(initialized);
+    setEdges(sourceEdges);
+  }, [customNodes, customEdges, height]);
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(selectedPaperId || null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
@@ -550,12 +587,27 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
     <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl shadow-xs overflow-hidden font-mono text-xs">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#FAF8F5] border-b border-[#DDD6C7]">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Share2 className="w-4 h-4 text-[#0F766E]" />
-          <span className="font-bold text-[#1F2430]">Graphify™ Discovery &amp; Literature Neural Graph</span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
-            Interactive Physics DAG
-          </span>
+          <span className="font-bold text-[#1F2430]">Graphify™ Literature Network</span>
+          {sessionLabel ? (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-bold border border-[#F59E0B]/30 truncate max-w-[200px]" title={sessionLabel}>
+              {sessionLabel}
+            </span>
+          ) : (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
+              Interactive Physics DAG
+            </span>
+          )}
+          {onOpenRack && (
+            <button
+              type="button"
+              onClick={onOpenRack}
+              className="flex items-center gap-1 px-2.5 py-0.5 rounded bg-[#0F766E] text-white hover:bg-[#0D655E] text-[10px] font-bold shadow-2xs transition-all ml-1"
+            >
+              <span>📚 PaperGraph Rack ({stagedCount})</span>
+            </button>
+          )}
         </div>
 
         {/* Filter Pills */}
@@ -661,3 +713,4 @@ export const GraphifyNetwork: React.FC<GraphifyNetworkProps> = ({
     </div>
   );
 };
+

@@ -30,6 +30,8 @@ import {
   Download,
   X,
   Sparkles,
+  Plus,
+  Layers,
 } from 'lucide-react';
 import {
   CURATED_ARXIV_CATALOG,
@@ -43,6 +45,14 @@ import { MusicPlayer } from '../components/music/MusicPlayer';
 import { useSignal } from '../context/SignalContext';
 import { parseUniversalSignalCSV } from '../utils/csvParser';
 import { parseCsvWithStreamingWorker } from '../utils/streamingCsvParser';
+import { parsePaperCsv, generateSamplePapersCsv } from '../utils/paperCsvParser';
+import {
+  PaperGraphSet,
+  loadStoredPaperGraphSets,
+  savePaperGraphSets,
+  getDefaultPaperGraphSets,
+  synthesizeGraphifyFromPapers,
+} from '../services/paperGraphRackService';
 
 export type WorkbenchTab =
   | 'charts'
@@ -123,6 +133,175 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       clearTimeout(debounceTimer);
     };
   }, [arxivQuery, arxivCategory]);
+
+  // ============================================================================
+  // PaperGraph Rack & Multi-Set Graphify Testing State
+  // ============================================================================
+  const [paperGraphSets, setPaperGraphSets] = useState<PaperGraphSet[]>(() => loadStoredPaperGraphSets());
+  const [activeSetId, setActiveSetId] = useState<string>(() => {
+    const sets = loadStoredPaperGraphSets();
+    return sets[0]?.id || 'set_foundational_physics';
+  });
+  const [isRackOpen, setIsRackOpen] = useState<boolean>(false);
+  const [isCreatingNewSet, setIsCreatingNewSet] = useState<boolean>(false);
+  const [newSetNameInput, setNewSetNameInput] = useState<string>('');
+  const [graphifyNotice, setGraphifyNotice] = useState<string | null>(null);
+  const [activeGraphNodes, setActiveGraphNodes] = useState<any[] | undefined>(undefined);
+  const [activeGraphEdges, setActiveGraphEdges] = useState<any[] | undefined>(undefined);
+  const papersCsvInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Active Set reference
+  const activeSet = useMemo(() => {
+    return paperGraphSets.find((s) => s.id === activeSetId) || paperGraphSets[0];
+  }, [paperGraphSets, activeSetId]);
+
+  // Persist sets to storage
+  useEffect(() => {
+    savePaperGraphSets(paperGraphSets);
+  }, [paperGraphSets]);
+
+  // 1. Toggle paper in active set (Add or Remove)
+  const handleTogglePaperInRack = (paper: ArXivPaper) => {
+    if (!activeSet) return;
+    const exists = activeSet.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id);
+    setPaperGraphSets((prev) =>
+      prev.map((s) => {
+        if (s.id !== activeSet.id) return s;
+        const nextPapers = exists
+          ? s.papers.filter((p) => p.id !== paper.id && p.arxiv_id !== paper.arxiv_id)
+          : [paper, ...s.papers];
+        return {
+          ...s,
+          papers: nextPapers,
+          isImplemented: false,
+        };
+      })
+    );
+    setGraphifyNotice(
+      exists
+        ? `Removed "${paper.title.slice(0, 35)}..." from ${activeSet.name}`
+        : `Added "${paper.title.slice(0, 35)}..." to ${activeSet.name}`
+    );
+    setTimeout(() => setGraphifyNotice(null), 3000);
+  };
+
+  // 2. Remove paper from specific set
+  const handleRemovePaperFromSet = (setId: string, paperId: string) => {
+    setPaperGraphSets((prev) =>
+      prev.map((s) => {
+        if (s.id !== setId) return s;
+        return {
+          ...s,
+          papers: s.papers.filter((p) => p.id !== paperId),
+          isImplemented: false,
+        };
+      })
+    );
+  };
+
+  // 3. Create new Graphify set
+  const handleCreateNewSet = (name?: string, initialPapers: ArXivPaper[] = []) => {
+    const newId = `set_${Date.now()}`;
+    const setName = name?.trim() || `Set ${paperGraphSets.length + 1}: Custom Literature Test`;
+    const newSet: PaperGraphSet = {
+      id: newId,
+      name: setName,
+      createdAt: Date.now(),
+      papers: initialPapers,
+      isDefault: false,
+      isImplemented: false,
+    };
+    setPaperGraphSets((prev) => [...prev, newSet]);
+    setActiveSetId(newId);
+    setIsCreatingNewSet(false);
+    setNewSetNameInput('');
+    setIsRackOpen(true);
+    setGraphifyNotice(`Created new Graphify test set: "${setName}".`);
+    setTimeout(() => setGraphifyNotice(null), 3500);
+  };
+
+  // 4. Delete active set
+  const handleDeleteActiveSet = (setId: string) => {
+    if (paperGraphSets.length <= 1) {
+      const defs = getDefaultPaperGraphSets();
+      setPaperGraphSets(defs);
+      setActiveSetId(defs[0].id);
+      setGraphifyNotice(`Reset to default Graphify test sets.`);
+      setTimeout(() => setGraphifyNotice(null), 3000);
+      return;
+    }
+    const remaining = paperGraphSets.filter((s) => s.id !== setId);
+    setPaperGraphSets(remaining);
+    setActiveSetId(remaining[0].id);
+    setGraphifyNotice(`Deleted set. Switched to "${remaining[0].name}".`);
+    setTimeout(() => setGraphifyNotice(null), 3000);
+  };
+
+  // 5. Upload papers CSV
+  const handlePapersCsvUpload = async (file: File) => {
+    try {
+      const { papers, errors } = await parsePaperCsv(file);
+      if (papers.length === 0) {
+        setGraphifyNotice(`CSV Ingestion Error: ${errors[0] || 'No valid papers detected.'}`);
+        setTimeout(() => setGraphifyNotice(null), 4000);
+        return;
+      }
+      const cleanedFileName = file.name.replace(/\.[^/.]+$/, '');
+      const setName = `Imported: ${cleanedFileName}`;
+      handleCreateNewSet(setName, papers);
+      setGraphifyNotice(`Imported ${papers.length} research papers from ${file.name}. Ready to Implement Graphify™!`);
+      setTimeout(() => setGraphifyNotice(null), 4500);
+    } catch {
+      setGraphifyNotice(`Failed to parse research papers CSV.`);
+      setTimeout(() => setGraphifyNotice(null), 3500);
+    }
+  };
+
+  // 6. Download Sample CSV
+  const handleDownloadSamplePapersCsv = () => {
+    const csvContent = generateSamplePapersCsv();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_synapse_research_papers.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setGraphifyNotice(`Downloaded sample_synapse_research_papers.csv`);
+    setTimeout(() => setGraphifyNotice(null), 3000);
+  };
+
+  // 7. Implement Graphify™ on Active Set
+  const handleImplementGraphify = () => {
+    if (!activeSet || activeSet.papers.length === 0) {
+      setGraphifyNotice(`No papers in active set. Add papers before implementing Graphify.`);
+      setTimeout(() => setGraphifyNotice(null), 3500);
+      return;
+    }
+
+    const { nodes, edges, stats } = synthesizeGraphifyFromPapers(activeSet.papers);
+    setActiveGraphNodes(nodes);
+    setActiveGraphEdges(edges);
+
+    setPaperGraphSets((prev) =>
+      prev.map((s) => {
+        if (s.id !== activeSet.id) return s;
+        return {
+          ...s,
+          isImplemented: true,
+          lastSynthesizedAt: Date.now(),
+          stats,
+        };
+      })
+    );
+
+    setGraphifyNotice(
+      `⚡ Graphify™ Implemented! Synthesized ${nodes.length} nodes, ${edges.length} edges across ${stats.clusters} thematic clusters.`
+    );
+    setTimeout(() => setGraphifyNotice(null), 5000);
+  };
 
   // Full Mathematical Computation on Active Signal
   const {
@@ -1292,7 +1471,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           {activeTab === 'papergraph' && (
             <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-6 rounded-xl shadow-xs space-y-6">
               {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E6E1D6] pb-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#E6E1D6] pb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5 text-[#0F766E]" />
@@ -1308,21 +1487,279 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   </p>
                 </div>
 
-                {/* 1-Click Export All BibTeX */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allBib = CURATED_ARXIV_CATALOG.map((p) => generateBibTeX(p)).join('\n\n');
-                    navigator.clipboard.writeText(allBib);
-                    setCopiedBibId('all');
-                    setTimeout(() => setCopiedBibId(null), 3000);
-                  }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#0F766E] text-white hover:bg-[#0D655E] text-xs font-mono font-bold transition-all shadow-2xs shrink-0"
-                >
-                  {copiedBibId === 'all' ? <Check className="w-4 h-4 text-emerald-300" /> : <Download className="w-4 h-4" />}
-                  <span>{copiedBibId === 'all' ? 'All BibTeX Copied!' : 'Export All Citations (.bib)'}</span>
-                </button>
+                {/* PaperGraph Action Bar: Upload CSV, Sample CSV, Rack Toggle, Export BibTeX */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="file"
+                    ref={papersCsvInputRef}
+                    accept=".csv,.tsv,.txt"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handlePapersCsvUpload(f);
+                      e.target.value = '';
+                    }}
+                    className="hidden"
+                  />
+
+                  {/* Upload Research Papers CSV */}
+                  <button
+                    type="button"
+                    onClick={() => papersCsvInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] text-xs font-mono font-bold transition-all shadow-2xs"
+                    title="Upload CSV list of research papers"
+                  >
+                    <Upload className="w-4 h-4 text-[#0F766E]" />
+                    <span>Upload Papers CSV</span>
+                  </button>
+
+                  {/* Download Sample Papers CSV */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadSamplePapersCsv}
+                    className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-[#FAF8F5] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#78716C] hover:text-[#1F2430] text-xs font-mono transition-all shadow-2xs"
+                    title="Download sample research papers CSV template"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Sample CSV</span>
+                  </button>
+
+                  {/* Toggle PaperGraph Staging Rack */}
+                  <button
+                    type="button"
+                    onClick={() => setIsRackOpen(!isRackOpen)}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold transition-all shadow-2xs shrink-0 ${
+                      isRackOpen
+                        ? 'bg-[#1F2430] text-white ring-2 ring-[#0F766E]'
+                        : 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/40 hover:bg-[#D4EBE7]'
+                    }`}
+                  >
+                    <Layers className="w-4 h-4 text-[#0F766E]" />
+                    <span>PaperGraph Rack</span>
+                    <span className="px-1.5 py-0.2 rounded-full bg-[#0F766E] text-white text-[10px] font-bold">
+                      {activeSet?.papers.length || 0}
+                    </span>
+                  </button>
+
+                  {/* 1-Click Export All BibTeX */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allBib = CURATED_ARXIV_CATALOG.map((p) => generateBibTeX(p)).join('\n\n');
+                      navigator.clipboard.writeText(allBib);
+                      setCopiedBibId('all');
+                      setTimeout(() => setCopiedBibId(null), 3000);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0F766E] text-white hover:bg-[#0D655E] text-xs font-mono font-bold transition-all shadow-2xs shrink-0"
+                  >
+                    {copiedBibId === 'all' ? <Check className="w-4 h-4 text-emerald-300" /> : <Download className="w-4 h-4" />}
+                    <span>{copiedBibId === 'all' ? 'Copied!' : 'Export All (.bib)'}</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Status / Feedback Banner */}
+              {graphifyNotice && (
+                <div className="p-3 bg-[#E6F4F2] border border-[#0F766E]/40 rounded-xl text-xs font-mono text-[#0F766E] flex items-center justify-between font-bold shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#0F766E] shrink-0" />
+                    <span>{graphifyNotice}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setGraphifyNotice(null)}
+                    className="p-1 text-[#0F766E] hover:text-[#0D655E] rounded"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* PaperGraph Staging Rack Panel */}
+              {isRackOpen && (
+                <div className="bg-[#FFFFFF] border-2 border-[#0F766E]/40 rounded-xl p-4 shadow-sm space-y-4 font-mono text-xs">
+                  {/* Rack Header & Action Button */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#E6E1D6] pb-3">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-[#0F766E]" />
+                      <span className="font-bold text-[#1F2430] text-sm">PaperGraph™ Staging Rack</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
+                        {paperGraphSets.length} Test Sets Available
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Implement Graphify Button */}
+                      <button
+                        type="button"
+                        onClick={handleImplementGraphify}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs font-mono font-bold shadow-xs transition-all ring-2 ring-[#0F766E]/20"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>⚡ Implement Graphify™ ({activeSet?.papers.length || 0} Papers)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsRackOpen(false)}
+                        className="p-1 rounded text-[#78716C] hover:text-[#1F2430] hover:bg-[#EFEBE0]"
+                        title="Close Rack"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Set Switcher Tabs */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    {paperGraphSets.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setActiveSetId(s.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                          activeSetId === s.id
+                            ? 'bg-[#0F766E] text-white shadow-2xs'
+                            : 'bg-[#FAF8F5] border border-[#DDD6C7] text-[#57534E] hover:bg-[#EFEBE0]'
+                        }`}
+                      >
+                        <span>{s.name}</span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded text-[10px] ${
+                            activeSetId === s.id ? 'bg-white/20 text-white' : 'bg-[#EAE6DC] text-[#78716C]'
+                          }`}
+                        >
+                          {s.papers.length}
+                        </span>
+                      </button>
+                    ))}
+
+                    {/* New Set Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingNewSet(true)}
+                      className="px-2.5 py-1.5 rounded-lg border border-dashed border-[#0F766E] text-[#0F766E] hover:bg-[#E6F4F2] text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>New Test Set</span>
+                    </button>
+                  </div>
+
+                  {/* Create New Set Form if active */}
+                  {isCreatingNewSet && (
+                    <div className="p-3 bg-[#FAF8F5] border border-[#DDD6C7] rounded-lg flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter set name (e.g. Astrophysics Literature, Quantum Optics...)"
+                        value={newSetNameInput}
+                        onChange={(e) => setNewSetNameInput(e.target.value)}
+                        className="flex-1 px-3 py-1.5 bg-white border border-[#DDD6C7] rounded text-xs text-[#1F2430] focus:outline-none focus:ring-1 focus:ring-[#0F766E]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleCreateNewSet(newSetNameInput)}
+                        className="px-3 py-1.5 bg-[#0F766E] text-white rounded text-xs font-bold hover:bg-[#0D655E]"
+                      >
+                        Create Set
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsCreatingNewSet(false);
+                          setNewSetNameInput('');
+                        }}
+                        className="px-2 py-1.5 text-[#78716C] hover:text-[#1F2430]"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Set Metadata Toolbar & Delete Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[#FAF8F5] border border-[#DDD6C7] rounded-lg text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-[#1F2430]">
+                        Active: <span className="text-[#0F766E]">{activeSet?.name}</span>
+                      </span>
+                      <span className="text-[#78716C] text-[11px]">
+                        {activeSet?.isImplemented ? '✓ Graphify Active' : '⚠ Synthesis Pending (Click Implement)'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => papersCsvInputRef.current?.click()}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] text-[11px] font-bold"
+                      >
+                        <Upload className="w-3 h-3 text-[#0F766E]" />
+                        <span>Upload CSV to Set</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadSamplePapersCsv}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] text-[11px]"
+                        title="Download sample research papers CSV template"
+                      >
+                        <Download className="w-3 h-3 text-[#78716C]" />
+                        <span>Sample CSV</span>
+                      </button>
+
+                      {paperGraphSets.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => activeSet && handleDeleteActiveSet(activeSet.id)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 text-[11px] font-bold"
+                          title="Delete this Graphify set"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete Set</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Staged Papers Cards in Active Set */}
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {!activeSet || activeSet.papers.length === 0 ? (
+                      <div className="p-6 text-center text-[#78716C] bg-[#FAF8F5] rounded-lg border border-dashed border-[#DDD6C7] space-y-2">
+                        <div>No papers in this rack set yet.</div>
+                        <div className="text-[11px]">
+                          Use the <span className="font-bold text-[#0F766E]">+ Add to Rack</span> button on search results below or <span className="font-bold text-[#0F766E]">Upload CSV</span>.
+                        </div>
+                      </div>
+                    ) : (
+                      activeSet.papers.map((p, idx) => (
+                        <div
+                          key={p.id || idx}
+                          className="p-2.5 bg-[#FAF8F5] border border-[#E6E1D6] rounded-lg flex items-center justify-between gap-3 hover:border-[#0F766E]/40 transition-colors"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[#1F2430] truncate text-xs">{p.title}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold shrink-0">
+                                {p.arxiv_id}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-[#78716C] truncate mt-0.5">
+                              {p.authors.join(', ')} • {p.year} • {p.category} • {p.citationCount || 0} citations
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePaperFromSet(activeSet.id, p.id)}
+                            className="p-1 text-[#78716C] hover:text-red-700 hover:bg-red-50 rounded shrink-0 transition-colors"
+                            title="Remove from this set"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Search & Category Filter Strip */}
               <div className="space-y-3">
@@ -1425,6 +1862,11 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 selectedPaperId={selectedPaperId}
                 onSelectPaper={(id) => setSelectedPaperId(id)}
                 height={340}
+                customNodes={activeGraphNodes}
+                customEdges={activeGraphEdges}
+                sessionLabel={activeSet ? `${activeSet.name} (${activeSet.papers.length} Papers)` : undefined}
+                onOpenRack={() => setIsRackOpen(!isRackOpen)}
+                stagedCount={activeSet?.papers.length || 0}
               />
 
               {/* Filtered Peer-Reviewed Literature Catalog Cards */}
@@ -1519,9 +1961,37 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                           {paper.abstract}
                         </p>
 
-                        {/* Action Buttons: Prominent Ruby Red PDF Button, BibTeX, APA */}
+                        {/* Action Buttons: Prominent Ruby Red PDF Button, BibTeX, APA, and + Add to Rack */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E6E1D6] font-mono text-xs">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* + Add to Rack Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaperInRack(paper)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all shadow-xs shrink-0 ${
+                                activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
+                                  ? 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E] hover:bg-[#D4EBE7]'
+                                  : 'bg-[#0F766E] text-white hover:bg-[#0D655E]'
+                              }`}
+                              title={
+                                activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
+                                  ? `Remove from ${activeSet.name}`
+                                  : `Add to PaperGraph Rack (${activeSet?.name || 'Active Set'})`
+                              }
+                            >
+                              {activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id) ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-[#0F766E]" />
+                                  <span>In Rack</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>+ Add to Rack</span>
+                                </>
+                              )}
+                            </button>
+
                             <a
                               href={paper.pdf_url}
                               target="_blank"
