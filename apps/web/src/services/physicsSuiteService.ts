@@ -293,13 +293,18 @@ export function getMuonRelativityData(): {
   const gamma = 29.3; // Relativistic Lorentz factor for 3 GeV atmospheric muon
   const dilatedTau = tau0 * gamma; // ~ 64.4 microseconds in Lab frame
 
-  for (let t = 0; t <= 50; t += 1.0) {
-    // Classical (non-relativistic) prediction: decays with tau0 = 2.197 us
+  // Ascending altitude from Sea Level (0 km) to Upper Atmosphere (15 km)
+  for (let alt = 0.0; alt <= 15.0; alt += 0.5) {
+    const altitude = Number(alt.toFixed(1));
+    // Time to reach altitude h from production layer at 15 km (distance = 15 - h)
+    // At v approx c = 0.3 km/us:
+    const t = Number(((15.0 - altitude) / 0.3).toFixed(2));
+
+    // Classical prediction
     const nRest = Math.round(10000 * Math.exp(-t / tau0));
-    // Relativistic prediction: decays with gamma * tau0 = 64.4 us
+    // Relativistic prediction
     const nLab = Math.round(10000 * Math.exp(-t / dilatedTau));
 
-    const altitude = Number((15.0 - (t / 50.0) * 15.0).toFixed(1));
     points.push({
       altitudeKm: altitude,
       timeMicroSec: t,

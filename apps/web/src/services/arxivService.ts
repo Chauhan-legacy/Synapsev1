@@ -404,7 +404,11 @@ export async function searchArxiv(
           ...p,
           semanticMatchScore: computeSemanticScore(p, trimmed),
         }));
-        mapped.sort((a: any, b: any) => (b.semanticMatchScore || 0) - (a.semanticMatchScore || 0));
+        mapped.sort((a: any, b: any) => {
+          const scoreDiff = (b.semanticMatchScore || 0) - (a.semanticMatchScore || 0);
+          if (Math.abs(scoreDiff) > 0.05) return scoreDiff;
+          return (b.citationCount || 0) - (a.citationCount || 0);
+        });
         return {
           source: data.source || 'SYNAPSE Universal Literature Gateway (arXiv & OpenAlex)',
           query,
@@ -496,20 +500,21 @@ function generateDynamicArxivEntries(query: string): ArXivPaper[] {
 
 function computeSemanticScore(paper: ArXivPaper, query: string): number {
   if (!query) return paper.semanticMatchScore || 95.0;
-  const qClean = query.toLowerCase().trim();
-  const titleLower = paper.title.toLowerCase().trim();
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+  const qClean = normalize(query);
+  const titleNorm = normalize(paper.title);
 
-  // Exact match priority
-  if (titleLower === qClean) return 100.0;
-  if (titleLower.includes(qClean)) return 99.8;
-  if (qClean.includes(titleLower)) return 99.5;
+  // Exact match priority (guaranteed top rank)
+  if (titleNorm === qClean) return 100.0;
+  if (titleNorm.startsWith(qClean) || titleNorm.includes(qClean)) return 99.8;
+  if (qClean.includes(titleNorm)) return 99.6;
 
   let score = 70.0;
-  const qTerms = qClean.split(/\s+/).filter(Boolean);
+  const qTerms = qClean.split(' ').filter(Boolean);
   let titleHits = 0;
 
   for (const term of qTerms) {
-    if (titleLower.includes(term)) {
+    if (titleNorm.includes(term)) {
       score += 15;
       titleHits++;
     }
@@ -519,11 +524,11 @@ function computeSemanticScore(paper: ArXivPaper, query: string): number {
   }
 
   if (qTerms.length > 0 && titleHits === qTerms.length) {
-    score += 20; // All search terms appear in the title
+    score += 25; // All query terms appear in the title
   }
 
-  if (paper.citationCount && paper.citationCount > 500) {
-    score += Math.min(10, Math.log10(paper.citationCount) * 2);
+  if (paper.citationCount && paper.citationCount > 100) {
+    score += Math.min(15, Math.log10(paper.citationCount) * 3);
   }
 
   return Math.min(99.9, Math.max(65.0, Number(score.toFixed(1))));

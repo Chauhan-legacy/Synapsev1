@@ -38,6 +38,7 @@ import {
   generateBibTeX,
   generateApaCitation,
 } from '../services/arxivService';
+import { GraphifyNetwork } from '../components/network/GraphifyNetwork';
 import { MusicPlayer } from '../components/music/MusicPlayer';
 import { useSignal } from '../context/SignalContext';
 import { parseUniversalSignalCSV } from '../utils/csvParser';
@@ -1419,75 +1420,12 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 </div>
               </div>
 
-              {/* Interactive Citation Network Graph (Findings <--> Literature DAG) */}
-              <div className="bg-[#F8F6F1] border border-[#E6E1D6] rounded-xl p-4 space-y-3 font-mono">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <Share2 className="w-4 h-4 text-[#0F766E]" />
-                    <span className="font-bold text-[#10141C]">Finding-to-Literature Citation Graph</span>
-                  </div>
-                  <span className="text-[10px] text-[#78716C]">Interactive DAG • Click nodes to inspect</span>
-                </div>
-
-                <div className="h-44 w-full bg-[#FFFDF9] border border-[#E6E1D6] rounded-lg relative overflow-hidden flex items-center justify-between p-4">
-                  {/* Left Column: SYNAPSE Signal Findings */}
-                  <div className="space-y-2 z-10">
-                    <div className="text-[9px] uppercase font-bold text-[#78716C]">Empirical Findings</div>
-                    {[
-                      { id: 'f_5hz', label: '5 Hz Sinusoid (DPSS F=24.8)', matchId: 'arxiv_1802_03456' },
-                      { id: 'f_pelt', label: 'PELT Break (t=2.60s)', matchId: 'arxiv_2104_09876' },
-                      { id: 'f_chaos', label: 'Lyapunov λ₁ = +0.42 (Takens)', matchId: 'arxiv_2205_11223' },
-                      { id: 'f_iaaft', label: 'IAAFT Surrogates (q ≤ 0.05)', matchId: 'arxiv_2303_04567' },
-                    ].map((fNode) => (
-                      <button
-                        key={fNode.id}
-                        type="button"
-                        onClick={() => setSelectedPaperId(fNode.matchId)}
-                        className={`block text-left px-2.5 py-1 rounded text-[10px] border transition-all ${
-                          selectedPaperId === fNode.matchId
-                            ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-2xs font-bold'
-                            : 'bg-[#FFFFFF] border-[#E6E1D6] text-[#10141C] hover:border-[#0F766E]'
-                        }`}
-                      >
-                        {fNode.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* SVG Directed Bezier Curves */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M 230 45 C 340 45, 340 45, 450 45" stroke="#0F766E" strokeWidth="1.5" strokeDasharray="3 3" fill="none" opacity="0.6" />
-                    <path d="M 210 75 C 330 75, 330 75, 450 75" stroke="#0F766E" strokeWidth="1.5" strokeDasharray="3 3" fill="none" opacity="0.6" />
-                    <path d="M 240 105 C 345 105, 345 105, 450 105" stroke="#0F766E" strokeWidth="1.5" strokeDasharray="3 3" fill="none" opacity="0.6" />
-                    <path d="M 235 135 C 340 135, 340 135, 450 135" stroke="#0F766E" strokeWidth="1.5" strokeDasharray="3 3" fill="none" opacity="0.6" />
-                  </svg>
-
-                  {/* Right Column: Peer-Reviewed Literature Nodes */}
-                  <div className="space-y-2 z-10 text-right">
-                    <div className="text-[9px] uppercase font-bold text-[#78716C]">Foundational Preprints</div>
-                    {[
-                      { id: 'arxiv_1802_03456', label: 'Thomson et al. (DPSS F-Test)', cite: '142 cites' },
-                      { id: 'arxiv_2104_09876', label: 'Killick et al. (PELT Break)', cite: '188 cites' },
-                      { id: 'arxiv_2205_11223', label: 'Rosenstein et al. (Takens Chaos)', cite: '96 cites' },
-                      { id: 'arxiv_2303_04567', label: 'Benjamini et al. (IAAFT FDR)', cite: '75 cites' },
-                    ].map((pNode) => (
-                      <button
-                        key={pNode.id}
-                        type="button"
-                        onClick={() => setSelectedPaperId(pNode.id)}
-                        className={`block ml-auto text-right px-2.5 py-1 rounded text-[10px] border transition-all ${
-                          selectedPaperId === pNode.id
-                            ? 'bg-[#10141C] text-white border-[#10141C] shadow-2xs font-bold'
-                            : 'bg-[#FFFFFF] border-[#E6E1D6] text-[#57534E] hover:border-[#10141C]'
-                        }`}
-                      >
-                        <span>{pNode.label}</span>
-                        <span className="text-[9px] opacity-75 ml-1.5">[{pNode.cite}]</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              {/* Graphify Discovery & Literature Neural Network */}
+              <GraphifyNetwork
+                selectedPaperId={selectedPaperId}
+                onSelectPaper={(id) => setSelectedPaperId(id)}
+                height={340}
+              />
 
               {/* Filtered Peer-Reviewed Literature Catalog Cards */}
               <div className="space-y-4">
