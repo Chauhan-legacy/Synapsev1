@@ -424,3 +424,4 @@ export function computeQuantumSpectroscopy(values: number[] | Float64Array): Qua
     pulsarDispersionMeasure: 56.77, // Crab Pulsar DM (pc cm^-3)
   };
 }
+

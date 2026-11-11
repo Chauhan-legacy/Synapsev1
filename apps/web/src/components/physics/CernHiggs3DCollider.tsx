@@ -2,14 +2,25 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { project3DTo2D, Point3D } from '../../utils/advancedMathEngines';
 import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, Compass, Sparkles } from 'lucide-react';
 
-export const CernHiggs3DCollider: React.FC = () => {
+export interface CernHiggs3DProps {
+  beamEnergyTev?: number;
+  massGev?: number;
+}
+
+export const CernHiggs3DCollider: React.FC<CernHiggs3DProps> = ({ beamEnergyTev: extBeamEnergy, massGev: _extMassGev }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [azimuth, setAzimuth] = useState<number>(45);
   const [elevation, setElevation] = useState<number>(25);
   const [zoom, setZoom] = useState<number>(1.2);
   const [isAutoOrbit, setIsAutoOrbit] = useState<boolean>(true);
-  const [beamEnergyTev, setBeamEnergyTev] = useState<number>(13.0);
+  const [beamEnergyTev, setBeamEnergyTev] = useState<number>(extBeamEnergy ?? 13.0);
+
+  useEffect(() => {
+    if (extBeamEnergy !== undefined) {
+      setBeamEnergyTev(extBeamEnergy);
+    }
+  }, [extBeamEnergy]);
 
   const isDraggingRef = useRef<boolean>(false);
   const lastMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });

@@ -2,15 +2,27 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { project3DTo2D } from '../../utils/advancedMathEngines';
 import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, Compass, Thermometer } from 'lucide-react';
 
-export const Ising3DSpinLattice: React.FC = () => {
+export interface Ising3DProps {
+  temperatureRatio?: number;
+  externalField?: number;
+  couplingJ?: number;
+}
+
+export const Ising3DSpinLattice: React.FC<Ising3DProps> = ({ temperatureRatio, externalField, couplingJ }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [azimuth, setAzimuth] = useState<number>(45);
   const [elevation, setElevation] = useState<number>(35);
   const [zoom, setZoom] = useState<number>(1.2);
   const [isAutoOrbit, setIsAutoOrbit] = useState<boolean>(false);
-  const [temperature, setTemperature] = useState<number>(2.27); // near Tc = 2.269
+  const [temperature, setTemperature] = useState<number>(temperatureRatio !== undefined ? Number((temperatureRatio * 2.269).toFixed(3)) : 2.27); // near Tc = 2.269
   const [isRunning, setIsRunning] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (temperatureRatio !== undefined) {
+      setTemperature(Number((temperatureRatio * 2.269).toFixed(3)));
+    }
+  }, [temperatureRatio]);
 
   // 24x24 Spin Lattice State: +1 (Deep Teal) or -1 (Indigo)
   const [spins, setSpins] = useState<number[][]>(() => {
@@ -43,7 +55,8 @@ export const Ising3DSpinLattice: React.FC = () => {
       setSpins((prev) => {
         const L = prev.length;
         const next = prev.map((row) => [...row]);
-        const J = 1.0;
+        const J = couplingJ ?? 1.0;
+        const B = externalField ?? 0.0;
         const beta = 1.0 / Math.max(0.1, temperature);
 
         // Perform 400 random spin flip trials per tick
@@ -59,7 +72,7 @@ export const Ising3DSpinLattice: React.FC = () => {
             next[r][(c + 1) % L] +
             next[r][(c - 1 + L) % L];
 
-          const deltaE = 2 * J * s * neighbors;
+          const deltaE = 2 * J * s * neighbors + 2 * B * s;
 
           if (deltaE <= 0 || Math.random() < Math.exp(-deltaE * beta)) {
             next[r][c] = -s; // Accept flip

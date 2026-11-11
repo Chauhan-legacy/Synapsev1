@@ -39,6 +39,9 @@ import {
   CheckCircle2,
   Grid,
   Sliders,
+  Play,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 import {
   LineChart,
@@ -50,6 +53,7 @@ import {
   ReferenceLine,
   AreaChart,
   Area,
+  ComposedChart,
 } from 'recharts';
 
 interface PhysicsLabViewProps {
@@ -84,6 +88,19 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
   const [simExtFieldB, setSimExtFieldB] = useState<number>(0.1); // B field
   const [simCouplingJ, setSimCouplingJ] = useState<number>(1.0); // J
 
+  // Live Continuous Oscilloscope & Telemetry Acquisition Engine
+  const [isLiveActive, setIsLiveActive] = useState<boolean>(true);
+  const [liveSpeed, setLiveSpeed] = useState<number>(1);
+  const [liveTick, setLiveTick] = useState<number>(0);
+
+  React.useEffect(() => {
+    if (!isLiveActive) return;
+    const interval = setInterval(() => {
+      setLiveTick((t) => (t + 1) % 100000);
+    }, Math.max(25, Math.floor(45 / liveSpeed)));
+    return () => clearInterval(interval);
+  }, [isLiveActive, liveSpeed]);
+
   // Calibrated Telemetry Datasets
   const cernData = useMemo(() => getCernHiggsData(), []);
   const hpgeData = useMemo(() => getHpgeNuclearData(), []);
@@ -93,49 +110,185 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
   const seismicData = useMemo(() => getSeismicPremData(), []);
   const reactorData = useMemo(() => getReactorKineticsData(), []);
 
-  // Custom Simulator Mathematical Synthesis
+  // Continuous Live Telemetry Streams for Base Physical Instruments
+  const liveCernData = useMemo(() => {
+    if (!isLiveActive) return cernData;
+    return {
+      ...cernData,
+      series: cernData.series.map((pt, idx) => {
+        const noise = Math.sin(liveTick * 0.2 + idx * 0.6) * Math.sqrt(pt.totalEvents ?? 100) * 0.35;
+        return {
+          ...pt,
+          totalEvents: Math.max(10, Math.round((pt.totalEvents ?? 0) + noise)),
+        };
+      }),
+    };
+  }, [cernData, isLiveActive, liveTick]);
+
+  const liveHpgeData = useMemo(() => {
+    if (!isLiveActive) return hpgeData;
+    return {
+      ...hpgeData,
+      series: hpgeData.series.map((pt, idx) => {
+        const noise = Math.sin(liveTick * 0.25 + idx * 0.4) * Math.sqrt(pt.counts) * 0.3;
+        return {
+          ...pt,
+          counts: Math.max(5, Math.round(pt.counts + noise)),
+        };
+      }),
+    };
+  }, [hpgeData, isLiveActive, liveTick]);
+
+  const liveMuonData = useMemo(() => {
+    if (!isLiveActive) return muonData;
+    return {
+      ...muonData,
+      series: muonData.series.map((pt, idx) => {
+        const rate = pt.relativisticRate ?? 1000;
+        const noise = Math.sin(liveTick * 0.3 - idx * 0.45) * Math.sqrt(rate) * 0.35;
+        return {
+          ...pt,
+          relativisticRate: Math.max(0, Math.round(rate + noise)),
+        };
+      }),
+    };
+  }, [muonData, isLiveActive, liveTick]);
+
+  const liveTokamakData = useMemo(() => {
+    if (!isLiveActive) return tokamakData;
+    // Continuous rolling oscilloscope sweep over 80 ms window
+    const offset = (liveTick * 0.8) % 60;
+    const series = [];
+    for (let k = 0; k < 80; k++) {
+      const t = k * 1.0;
+      const phase = (t + offset) * 0.45;
+      const tearingAmp = 0.85 * (1 + 0.3 * Math.sin(phase * 0.1));
+      const mirnov = Math.sin(phase * 6.28) * tearingAmp + (Math.sin(phase * 19.3) * 0.2) + (Math.sin(liveTick * 0.5 + k) * 0.05);
+      const ip = 15.0 - (t > 50 ? ((t - 50) / 30) * 12 : 0) + Math.sin(phase * 0.8) * 0.15;
+      series.push({
+        timeMs: t,
+        mirnovSignal: Number(mirnov.toFixed(3)),
+        mirnovVoltageV: Number((mirnov * 12.0).toFixed(2)),
+        plasmaCurrentMa: Number(ip.toFixed(2)),
+        electronTempKev: 4.5,
+        safetyFactorQ: 2.14,
+      });
+    }
+    return { ...tokamakData, series };
+  }, [tokamakData, isLiveActive, liveTick]);
+
+  const liveIsingData = useMemo(() => {
+    if (!isLiveActive) return isingData;
+    return {
+      ...isingData,
+      series: isingData.series.map((pt, idx) => {
+        const noise = Math.sin(liveTick * 0.2 + idx * 0.5) * 0.035;
+        return {
+          ...pt,
+          simulatedM: Number(Math.max(-1, Math.min(1, (pt.simulatedM ?? 0) + noise)).toFixed(3)),
+        };
+      }),
+    };
+  }, [isingData, isLiveActive, liveTick]);
+
+  const liveSeismicData = useMemo(() => {
+    if (!isLiveActive) return seismicData;
+    const series = [];
+    for (let k = 0; k < 80; k++) {
+      const t = k;
+      const waveTime = (t + liveTick * 0.6) % 100;
+      const pEnv = Math.exp(-Math.pow((waveTime - 40) / 6.0, 2));
+      const pWave = pEnv * Math.sin(waveTime * 3.5) * 1.8;
+      const microseism = 0.25 * Math.sin(t * 0.8 + liveTick * 0.15) + 0.12 * Math.sin(t * 1.9 + liveTick * 0.3);
+      series.push({
+        timeSec: t,
+        amplitude: Number((pWave + microseism).toFixed(3)),
+        depthKm: 2890,
+        pWaveVelocityKms: 13.7,
+        sWaveVelocityKms: 0,
+        densityGcm3: 9.9,
+        layerName: 'Outer Core Shadow',
+      });
+    }
+    return { ...seismicData, series };
+  }, [seismicData, isLiveActive, liveTick]);
+
+  const liveReactorData = useMemo(() => {
+    if (!isLiveActive) return reactorData;
+    return {
+      ...reactorData,
+      series: reactorData.series.map((pt, idx) => {
+        const noise = Math.sin(liveTick * 0.2 + idx * 0.3) * 22;
+        return {
+          ...pt,
+          powerMw: Math.round((pt.powerMw ?? 3000) + noise),
+        };
+      }),
+    };
+  }, [reactorData, isLiveActive, liveTick]);
+
+  // Custom Simulator Dynamic Mathematical Synthesis (Reactive to All Sliders & Continuous Live)
   const customSimTelemetry = useMemo(() => {
     if (simType === 'collider') {
       const nPts = 100;
-      const mMin = 105;
-      const mMax = 155;
-      const series = [];
       const m0 = simMassGev;
       const gamma = simWidthGev;
+      const sqrts = simEnergyTev;
+      const lumi = Math.pow(sqrts / 13.0, 1.8);
+
+      // Dynamic mass window framing around resonance peak M0 so peak is ALWAYS visible and glides smoothly
+      const span = Math.max(30, gamma * 5.5);
+      const mMin = Math.max(10, Math.floor(m0 - span));
+      const mMax = Math.ceil(m0 + span);
+
+      const series = [];
       for (let i = 0; i <= nPts; i++) {
         const m = mMin + (i / nPts) * (mMax - mMin);
-        const qcdBkg = 1800 * Math.exp(-0.028 * (m - 100));
-        const bwNumerator = 350 * gamma * gamma;
+        const qcdBkg = 1800 * lumi * Math.exp(-0.028 * (m - 80));
+        const bwNumerator = 350 * gamma * gamma * lumi;
         const bwDenominator = Math.pow(m * m - m0 * m0, 2) + Math.pow(m0 * gamma, 2);
         const bwPeak = (bwNumerator / Math.max(1, bwDenominator)) * 20000;
+
+        const liveNoise = isLiveActive ? Math.sin(liveTick * 0.2 + i * 0.5) * Math.sqrt(qcdBkg + bwPeak) * 0.35 : 0;
+        const total = Math.max(0, Math.round(qcdBkg + bwPeak + liveNoise));
+
         series.push({
           massGev: Number(m.toFixed(2)),
-          totalEvents: Math.round(qcdBkg + bwPeak),
+          totalEvents: total,
           qcdBackground: Math.round(qcdBkg),
           signalResonance: Math.round(bwPeak),
         });
       }
       return {
         series,
+        mMin,
+        mMax,
         fwhm: `${gamma.toFixed(2)} GeV`,
-        significance: `${(5.4 * (125.09 / Math.max(80, simMassGev)) * (3.5 / Math.max(0.5, gamma))).toFixed(1)} σ`,
+        significance: `${(5.4 * (125.09 / Math.max(80, m0)) * (3.5 / Math.max(0.5, gamma)) * Math.sqrt(lumi)).toFixed(1)} σ`,
+        luminosity: `${(lumi * 137.2).toFixed(1)} fb⁻¹`,
       };
     } else if (simType === 'reactor') {
       const nPts = 120;
       const series = [];
-      const rho = (simReactivityPcm * 1e-5) - (simRodPct / 100) * 0.004;
+      // Realistic rod worth: 0% = 0 pcm, 100% = -3500 pcm
+      const rodReactivity = -(simRodPct / 100) * 0.035;
+      const extReactivity = (simReactivityPcm * 1e-5);
+      const rho = extReactivity + rodReactivity;
       const beta = simDelayedBeta;
       const lambda = 0.08;
       const promptLambda = 1e-4;
+      const denom = beta - rho;
+
       for (let i = 0; i <= nPts; i++) {
         const t = (i / nPts) * 60; // 60 seconds
         let pNorm = 1.0;
-        if (beta - rho !== 0) {
-          const delayedTerm = (beta / (beta - rho)) * Math.exp(((lambda * rho) / (beta - rho)) * t);
-          const promptTerm = (rho / (beta - rho)) * Math.exp(-((beta - rho) / promptLambda) * Math.min(t, 0.05));
-          pNorm = Math.max(0.01, delayedTerm - promptTerm);
+        if (Math.abs(denom) > 1e-6) {
+          const delayedTerm = (beta / denom) * Math.exp(((lambda * rho) / denom) * t);
+          const promptTerm = (rho / denom) * Math.exp(-((denom) / promptLambda) * Math.min(t, 0.05));
+          pNorm = Math.max(0.001, delayedTerm - promptTerm);
         }
-        const powerMw = Math.round(3000 * pNorm);
+        const liveNoise = isLiveActive ? Math.sin(liveTick * 0.25 + i * 0.3) * 25 * Math.sqrt(pNorm) : 0;
+        const powerMw = Math.max(0, Math.round(3000 * pNorm + liveNoise));
         series.push({
           timeSec: Number(t.toFixed(1)),
           powerMw,
@@ -146,6 +299,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
         series,
         netReactivity: `${(rho * 1e5).toFixed(0)} pcm`,
         powerEnd: `${series[series.length - 1].powerMw} MWth`,
+        regime: rho > 0 ? (rho >= beta ? 'Prompt Supercritical (SCRAM Required!)' : 'Delayed Supercritical (Surging)') : (rho === 0 ? 'Critical (Steady-State)' : 'Subcritical (Shutdown)'),
       };
     } else {
       // Ising lattice
@@ -153,6 +307,8 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
       const series = [];
       const J = simCouplingJ;
       const B = simExtFieldB;
+      const Tc = 2.269185 * J;
+
       for (let i = 0; i <= nPts; i++) {
         const tRatio = 0.2 + (i / nPts) * 2.5; // T/Tc from 0.2 to 2.7
         let mSpontaneous = 0;
@@ -162,20 +318,35 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
           mSpontaneous = arg > 0 ? Math.pow(arg, 0.125) : 0;
         }
         const mField = Math.tanh(B / Math.max(0.1, tRatio));
-        const totalMag = Math.min(1.0, Math.max(-1.0, mSpontaneous + 0.3 * mField));
+        const totalMag = Math.min(1.0, Math.max(-1.0, mSpontaneous + 0.35 * mField));
         series.push({
           tempRatio: Number(tRatio.toFixed(2)),
           magnetization: Number(totalMag.toFixed(3)),
           susceptibility: Number((1 / (Math.abs(tRatio - 1.0) + 0.15)).toFixed(2)),
         });
       }
+
+      // Current operating point from slider simTempRatio:
+      let mOpSpont = 0;
+      if (simTempRatio < 1.0) {
+        const sinhTerm = Math.sinh((2 * J) / simTempRatio);
+        const arg = 1 - Math.pow(sinhTerm, -4);
+        mOpSpont = arg > 0 ? Math.pow(arg, 0.125) : 0;
+      }
+      const mOpField = Math.tanh(B / Math.max(0.1, simTempRatio));
+      const opMag = Math.min(1.0, Math.max(-1.0, mOpSpont + 0.35 * mOpField));
+      const liveFluctuation = isLiveActive ? (simTempRatio < 1.0 ? 0.04 * Math.sin(liveTick * 0.3) : (Math.abs(simTempRatio - 1.0) < 0.2 ? 0.18 * Math.sin(liveTick * 0.3) : 0.08 * Math.sin(liveTick * 0.4))) : 0;
+      const currentLiveM = Number((opMag + liveFluctuation).toFixed(3));
+
       return {
         series,
-        curieTemp: '2.269 J/k_B',
-        orderParam: simTempRatio < 1.0 ? 'Ferromagnetic Ordered' : 'Paramagnetic Disordered',
+        curieTemp: `${Tc.toFixed(3)} J/k_B`,
+        orderParam: simTempRatio < 1.0 ? 'Ferromagnetic (Ordered Domains)' : (Math.abs(simTempRatio - 1.0) < 0.15 ? 'Critical Fluctuation Regime' : 'Paramagnetic (Disordered Spontaneous)'),
+        operatingMag: currentLiveM,
+        operatingChi: Number((1 / (Math.abs(simTempRatio - 1.0) + 0.15)).toFixed(2)),
       };
     }
-  }, [simType, simMassGev, simWidthGev, simEnergyTev, simRodPct, simReactivityPcm, simDelayedBeta, simTempRatio, simExtFieldB, simCouplingJ]);
+  }, [simType, simMassGev, simWidthGev, simEnergyTev, simRodPct, simReactivityPcm, simDelayedBeta, simTempRatio, simExtFieldB, simCouplingJ, isLiveActive, liveTick]);
 
   const handleIngestSimulatedSignal = () => {
     let sigValues: number[] = [];
@@ -626,6 +797,66 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
         </div>
       </div>
 
+      {/* Live Continuous Telemetry Acquisition Controller Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 rounded-xl border border-[#DDD6C7] bg-[#FAF8F5] shadow-2xs font-mono text-xs">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${isLiveActive ? 'bg-[#0F766E] animate-pulse' : 'bg-[#9CA3AF]'}`} />
+            <span className="font-bold text-[#1F2430]">
+              {isLiveActive ? 'LIVE OSCILLOSCOPE ACQUISITION [CONTINUOUS]' : 'TELEMETRY ACQUISITION PAUSED'}
+            </span>
+          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/20 font-bold">
+            {isLiveActive ? 'CONTINUOUS 30 Hz' : 'STATIC BUFFER'}
+          </span>
+          <span className="text-[10px] text-[#6B6F7B] hidden md:inline">
+            Buffer: #{liveTick} • 60 FPS
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Play/Pause Toggle */}
+          <button
+            type="button"
+            onClick={() => setIsLiveActive((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-colors ${
+              isLiveActive
+                ? 'bg-[#EFEBE0] text-[#1F2430] hover:bg-[#E2DDD2] border border-[#DDD6C7]'
+                : 'bg-[#0F766E] text-white hover:bg-[#0D655E]'
+            }`}
+          >
+            {isLiveActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+            <span>{isLiveActive ? 'Pause Stream' : 'Resume Live'}</span>
+          </button>
+
+          {/* Speed Selector */}
+          <div className="flex items-center border border-[#DDD6C7] rounded-md bg-[#FFFFFF] p-0.5">
+            {[1, 2, 5].map((spd) => (
+              <button
+                key={spd}
+                type="button"
+                onClick={() => setLiveSpeed(spd)}
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
+                  liveSpeed === spd ? 'bg-[#0F766E] text-white' : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                }`}
+              >
+                {spd}x
+              </button>
+            ))}
+          </div>
+
+          {/* Reset Buffer */}
+          <button
+            type="button"
+            onClick={() => setLiveTick(0)}
+            title="Reset telemetry buffer"
+            className="p-1 rounded-md border border-[#DDD6C7] bg-[#FFFFFF] text-[#6B6F7B] hover:text-[#1F2430] hover:bg-[#F3EFE6] transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
       {/* 4. Active Instrument Main Body */}
       {/* SERIAL #1: CERN HIGGS */}
       {activeTab === 's1_cern' && (
@@ -649,20 +880,25 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Di-Photon Invariant Mass Distribution [100 to 150 GeV] with 5.4σ Peak</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Di-Photon Invariant Mass Distribution [100 to 150 GeV] with 5.4σ Peak</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  Lumi: {(2.06 + 0.05 * Math.sin(liveTick * 0.1)).toFixed(2)} × 10³⁴ cm⁻²s⁻¹ • Events: {(1248000 + liveTick * 14).toLocaleString()}
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={cernData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <ComposedChart data={liveCernData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="massGev" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={125.09} stroke="#0F766E" strokeWidth={2} strokeDasharray="3 3" label={{ value: 'm_H = 125.09 GeV', fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Area type="monotone" dataKey="totalEvents" stroke="#1F2430" fill="#E6F4F2" fillOpacity={0.6} strokeWidth={1.75} />
                     <Line type="monotone" dataKey="background" stroke="#B7791F" strokeWidth={1.5} strokeDasharray="4 4" dot={false} />
-                  </AreaChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -692,13 +928,18 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Cryogenic Co-60 Gamma-Ray Energy Spectrum [0 to 1600 keV]</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Cryogenic Co-60 Gamma-Ray Energy Spectrum [0 to 1600 keV]</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  Rate: {(4210 + 65 * Math.sin(liveTick * 0.2)).toFixed(0)} cps • Live Time: {(98.2 - 0.4 * Math.sin(liveTick * 0.1)).toFixed(1)}%
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={hpgeData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <AreaChart data={liveHpgeData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="energyKev" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
@@ -736,13 +977,18 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Atmospheric Altitude Survival Probability vs Relativistic Dilated Decay</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Atmospheric Altitude Survival Probability vs Relativistic Dilated Decay</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  Coincidence: {(184 + 12 * Math.sin(liveTick * 0.3)).toFixed(0)} cpm • Survival: 79.2%
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={muonData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <LineChart data={liveMuonData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="altitudeKm" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
@@ -779,13 +1025,18 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Mirnov Coil Signal &amp; Plasma Current (MA) During Tearing Mode Disruption</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Mirnov Coil Signal &amp; Plasma Current (MA) During Tearing Mode Disruption</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  Sweep 250 kHz • Fluctuation Amp: {(0.42 + 0.08 * Math.sin(liveTick * 0.25)).toFixed(2)} T/s
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={tokamakData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <LineChart data={liveTokamakData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="timeMs" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
@@ -822,13 +1073,18 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Spontaneous Magnetization |M| vs Temperature across Onsager Critical Point</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Spontaneous Magnetization |M| vs Temperature across Onsager Critical Point</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  Monte Carlo Live: T_c = 2.269 • &lt;M&gt; = {(0.82 + 0.05 * Math.sin(liveTick * 0.2)).toFixed(3)}
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={isingData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <LineChart data={liveIsingData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="temp" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
@@ -865,13 +1121,18 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Station Epicentral Seismogram [P-Wave Arrival &amp; S-Wave Extinction]</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Station Epicentral Seismogram [P-Wave Arrival &amp; S-Wave Extinction]</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  GSN Station KIP • Velocity: {(0.38 * Math.sin(liveTick * 0.18)).toFixed(3)} μm/s
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={seismicData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <LineChart data={liveSeismicData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="timeSec" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
@@ -907,13 +1168,18 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
 
           {(displayMode === 'timeseries' || displayMode === 'dual') && (
             <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0F766E]" />
-                <span>Reactor Thermal Power (MW) &amp; Delayed Neutron Precursor Transients</span>
+              <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[#0F766E]" />
+                  <span>Reactor Thermal Power (MW) &amp; Delayed Neutron Precursor Transients</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                  Thermal Power: {(3000 + 12 * Math.sin(liveTick * 0.22)).toFixed(0)} MWth • Reactivity: -120 pcm
+                </span>
               </div>
               <div className="h-[340px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={reactorData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                  <LineChart data={liveReactorData.series} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="timeSec" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
@@ -1136,13 +1402,13 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
             <div className="p-3 bg-[#EFEBE0] border border-[#DDD6C7] rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
               <div className="text-[#1F2430]">
                 {simType === 'collider' && (
-                  <span>Resonance Mass: <strong>M₀ = {simMassGev.toFixed(2)} GeV</strong> • FWHM: <strong>{customSimTelemetry.fwhm}</strong> • Significance: <strong>{customSimTelemetry.significance}</strong></span>
+                  <span>Resonance Mass: <strong>M₀ = {simMassGev.toFixed(2)} GeV</strong> • Width: <strong>{customSimTelemetry.fwhm}</strong> • Lumi: <strong>{customSimTelemetry.luminosity}</strong> • Significance: <strong>{customSimTelemetry.significance}</strong></span>
                 )}
                 {simType === 'reactor' && (
-                  <span>Net Reactivity: <strong>{customSimTelemetry.netReactivity}</strong> • Terminal Power: <strong>{customSimTelemetry.powerEnd}</strong> • Precursor Decay: <strong>λ ≈ 0.08 s⁻¹</strong></span>
+                  <span>Net Reactivity: <strong>{customSimTelemetry.netReactivity}</strong> • Status: <strong>{customSimTelemetry.regime}</strong> • Terminal Power: <strong>{customSimTelemetry.powerEnd}</strong></span>
                 )}
                 {simType === 'ising' && (
-                  <span>Curie Temp: <strong>T_c = 2.269 J/k_B</strong> • Phase: <strong>{customSimTelemetry.orderParam}</strong></span>
+                  <span>Curie Temp: <strong>T_c = {customSimTelemetry.curieTemp}</strong> • Phase: <strong>{customSimTelemetry.orderParam}</strong> • Live &lt;M&gt;: <strong>{customSimTelemetry.operatingMag}</strong> • χ: <strong>{customSimTelemetry.operatingChi}</strong></span>
                 )}
               </div>
 
@@ -1167,38 +1433,43 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                 {simType === 'ising' && '3D Ferromagnetic Spin Lattice Manifold'}
               </span>
             </div>
-            {simType === 'collider' && <CernHiggs3DCollider />}
-            {simType === 'reactor' && <NuclearReactor3DCore />}
-            {simType === 'ising' && <Ising3DSpinLattice />}
+            {simType === 'collider' && <CernHiggs3DCollider beamEnergyTev={simEnergyTev} massGev={simMassGev} />}
+            {simType === 'reactor' && <NuclearReactor3DCore controlRodPct={simRodPct} />}
+            {simType === 'ising' && <Ising3DSpinLattice temperatureRatio={simTempRatio} externalField={simExtFieldB} couplingJ={simCouplingJ} />}
           </div>
 
           {/* Real-time Simulated Telemetry Chart */}
           <div className="bg-[#FFFFFF] border border-[#DDD6C7] rounded-xl p-4 shadow-2xs space-y-2">
-            <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#0F766E]" />
-              <span>
-                {simType === 'collider' && `Synthesized Breit-Wigner Di-Photon Cross Section vs Invariant Mass [Peak = ${simMassGev.toFixed(2)} GeV]`}
-                {simType === 'reactor' && `Reactor Point-Kinetics Power Transient [Net Reactivity = ${customSimTelemetry.netReactivity}]`}
-                {simType === 'ising' && `Onsager Spontaneous Magnetization vs Reduced Temperature [T/T_c = ${simTempRatio.toFixed(2)}]`}
+            <div className="text-xs font-mono font-bold text-[#1F2430] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[#0F766E]" />
+                <span>
+                  {simType === 'collider' && `Synthesized Breit-Wigner Di-Photon Cross Section vs Invariant Mass [Peak = ${simMassGev.toFixed(2)} GeV]`}
+                  {simType === 'reactor' && `Reactor Point-Kinetics Power Transient [Net Reactivity = ${customSimTelemetry.netReactivity}]`}
+                  {simType === 'ising' && `Onsager Spontaneous Magnetization vs Reduced Temperature [Operating T = ${(simTempRatio * 2.269).toFixed(2)}]`}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono font-bold text-[#0F766E] bg-[#E6F4F2] px-2 py-0.5 rounded border border-[#0F766E]/20">
+                {isLiveActive ? '● REAL-TIME SYNTHESIS ACTIVE' : 'STATIC SNAPSHOT'}
               </span>
             </div>
             <div className="h-[340px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 {simType === 'collider' ? (
-                  <AreaChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                    <XAxis dataKey="massGev" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                  <ComposedChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="massGev" domain={[customSimTelemetry.mMin ?? 90, customSimTelemetry.mMax ?? 160] as [number, number]} tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                    <ReferenceLine x={simMassGev} stroke="#0F766E" strokeDasharray="3 3" label={{ value: `M₀=${simMassGev.toFixed(1)} GeV`, fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <ReferenceLine x={simMassGev} stroke="#0F766E" strokeWidth={2} strokeDasharray="3 3" label={{ value: `M₀=${simMassGev.toFixed(1)} GeV`, fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Area type="monotone" dataKey="totalEvents" stroke="#0F766E" fill="#E6F4F2" fillOpacity={0.65} strokeWidth={2} name="Total Events (Signal + QCD)" />
                     <Line type="monotone" dataKey="qcdBackground" stroke="#6B6F7B" strokeDasharray="2 2" strokeWidth={1.5} dot={false} name="QCD Background" />
-                  </AreaChart>
+                  </ComposedChart>
                 ) : simType === 'reactor' ? (
                   <LineChart data={customSimTelemetry.series as any[]} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                     <XAxis dataKey="timeSec" tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
-                    <ReferenceLine y={3000} stroke="#C0392B" strokeDasharray="3 3" label={{ value: '3000 MWth', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <ReferenceLine y={3000} stroke="#C0392B" strokeDasharray="3 3" label={{ value: '3000 MWth (Nominal)', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Line type="monotone" dataKey="powerMw" stroke="#0F766E" strokeWidth={2} dot={false} name="Core Power (MW)" />
                     <Line type="monotone" dataKey="delayedPrecursor" stroke="#4338CA" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Delayed Neutron Precursors" />
                   </LineChart>
@@ -1208,6 +1479,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                     <YAxis tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }} domain={[-1.0, 1.2]} />
                     <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }} />
                     <ReferenceLine x={1.0} stroke="#C0392B" strokeDasharray="3 3" label={{ value: 'Curie Point T_c', fill: '#C0392B', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                    <ReferenceLine x={simTempRatio} stroke="#0F766E" strokeWidth={2} label={{ value: `Current T: ${(simTempRatio * 2.269).toFixed(2)}`, fill: '#0F766E', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
                     <Line type="monotone" dataKey="magnetization" stroke="#0F766E" strokeWidth={2.5} dot={false} name="Spontaneous Magnetization <M>" />
                     <Line type="monotone" dataKey="susceptibility" stroke="#D97706" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="Magnetic Susceptibility χ" />
                   </LineChart>

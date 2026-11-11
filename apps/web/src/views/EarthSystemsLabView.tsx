@@ -58,11 +58,10 @@ export const EarthSystemsLabView: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('tides')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors ${
-              activeTab === 'tides'
+            className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors ${activeTab === 'tides'
                 ? 'bg-[#0284C7] text-white font-bold shadow-2xs'
                 : 'text-[#57534E] hover:text-[#1F2430]'
-            }`}
+              }`}
           >
             <Waves className="w-3.5 h-3.5" />
             <span>Ocean Tides</span>
@@ -70,11 +69,10 @@ export const EarthSystemsLabView: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('seismic')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors ${
-              activeTab === 'seismic'
+            className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors ${activeTab === 'seismic'
                 ? 'bg-[#0284C7] text-white font-bold shadow-2xs'
                 : 'text-[#57534E] hover:text-[#1F2430]'
-            }`}
+              }`}
           >
             <Activity className="w-3.5 h-3.5" />
             <span>Seismic STA/LTA</span>
@@ -82,11 +80,10 @@ export const EarthSystemsLabView: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('geomagnetic')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors ${
-              activeTab === 'geomagnetic'
+            className={`flex items-center gap-1.5 px-3 py-1 rounded transition-colors ${activeTab === 'geomagnetic'
                 ? 'bg-[#0284C7] text-white font-bold shadow-2xs'
                 : 'text-[#57534E] hover:text-[#1F2430]'
-            }`}
+              }`}
           >
             <Globe className="w-3.5 h-3.5" />
             <span>Geomagnetic Storms</span>

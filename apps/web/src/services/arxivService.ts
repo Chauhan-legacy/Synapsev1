@@ -22,6 +22,23 @@ export interface ArXivPaper {
 }
 
 export const CURATED_ARXIV_CATALOG: ArXivPaper[] = [
+  // 0. Transformer Foundational Architecture
+  {
+    id: 'arxiv_1706_03762',
+    arxiv_id: '1706.03762',
+    title: 'Attention Is All You Need',
+    authors: ['Ashish Vaswani', 'Noam Shazeer', 'Niki Parmar', 'Jakob Uszkoreit', 'Llion Jones', 'Aidan N. Gomez', 'Lukasz Kaiser', 'Illia Polosukhin'],
+    year: 2017,
+    category: 'cs.CL (Computation and Language)',
+    doi: '10.48550/arXiv.1706.03762',
+    pdf_url: 'https://arxiv.org/pdf/1706.03762.pdf',
+    citationCount: 136165,
+    semanticMatchScore: 100.0,
+    supportedFindingIds: ['finding_deep_transformer'],
+    relevanceExplanation: 'Introduces the Transformer architecture, replacing recurrent and convolutional networks entirely with multi-head self-attention mechanisms.',
+    methodology: 'Multi-Head Scaled Dot-Product Self-Attention, Positional Encoding, and Feed-Forward Networks.',
+    abstract: 'The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train.'
+  },
   // 1. Gravitational Waves / LIGO
   {
     id: 'arxiv_1602_03837',
@@ -383,14 +400,16 @@ export async function searchArxiv(
     if (res.ok) {
       const data = await res.json();
       if (data.papers && data.papers.length > 0) {
+        const mapped = data.papers.map((p: any) => ({
+          ...p,
+          semanticMatchScore: computeSemanticScore(p, trimmed),
+        }));
+        mapped.sort((a: any, b: any) => (b.semanticMatchScore || 0) - (a.semanticMatchScore || 0));
         return {
           source: data.source || 'SYNAPSE Universal Literature Gateway (arXiv & OpenAlex)',
           query,
-          total: data.total_results || data.papers.length,
-          papers: data.papers.map((p: any) => ({
-            ...p,
-            semanticMatchScore: computeSemanticScore(p, trimmed),
-          })),
+          total: data.total_results || mapped.length,
+          papers: mapped,
         };
       }
     }
@@ -477,14 +496,34 @@ function generateDynamicArxivEntries(query: string): ArXivPaper[] {
 
 function computeSemanticScore(paper: ArXivPaper, query: string): number {
   if (!query) return paper.semanticMatchScore || 95.0;
+  const qClean = query.toLowerCase().trim();
+  const titleLower = paper.title.toLowerCase().trim();
+
+  // Exact match priority
+  if (titleLower === qClean) return 100.0;
+  if (titleLower.includes(qClean)) return 99.8;
+  if (qClean.includes(titleLower)) return 99.5;
+
   let score = 70.0;
-  const qTerms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const qTerms = qClean.split(/\s+/).filter(Boolean);
+  let titleHits = 0;
 
   for (const term of qTerms) {
-    if (paper.title.toLowerCase().includes(term)) score += 12;
+    if (titleLower.includes(term)) {
+      score += 15;
+      titleHits++;
+    }
     if (paper.abstract.toLowerCase().includes(term)) score += 6;
     if (paper.category.toLowerCase().includes(term)) score += 5;
-    if (paper.methodology?.toLowerCase().includes(term)) score += 10;
+    if (paper.methodology?.toLowerCase().includes(term)) score += 8;
+  }
+
+  if (qTerms.length > 0 && titleHits === qTerms.length) {
+    score += 20; // All search terms appear in the title
+  }
+
+  if (paper.citationCount && paper.citationCount > 500) {
+    score += Math.min(10, Math.log10(paper.citationCount) * 2);
   }
 
   return Math.min(99.9, Math.max(65.0, Number(score.toFixed(1))));

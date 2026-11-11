@@ -17,6 +17,9 @@
 // Serial #1: CERN LHC Di-Photon Invariant Mass Spectrum
 export interface CernHiggsPoint {
   massGev: number;
+  totalEvents?: number;
+  background?: number;
+  signal?: number;
   observedEvents: number;
   backgroundFit: number;
   signalPlusBkg: number;
@@ -54,6 +57,9 @@ export function getCernHiggsData(): {
 
     points.push({
       massGev: m,
+      totalEvents: obs,
+      background: bkgFit,
+      signal: expected,
       observedEvents: obs,
       backgroundFit: bkgFit,
       signalPlusBkg: expected,
@@ -78,6 +84,7 @@ export function getCernHiggsData(): {
 // Serial #2: Planck CMB Angular Power Spectrum (Cl vs multipole l)
 export interface CmbSpectrumPoint {
   multipoleL: number;
+  powerDl?: number;
   clMicroK2: number;
   lcdmTheoretical: number;
   cosmicVariance: number;
@@ -117,6 +124,7 @@ export function getCmbSpectrumData(): {
 
     points.push({
       multipoleL: l,
+      powerDl: observed,
       clMicroK2: observed,
       lcdmTheoretical: theoretical,
       cosmicVariance: cosmicVar,
@@ -140,6 +148,8 @@ export function getCmbSpectrumData(): {
 // Serial #3: Fast Radio Burst Dispersion & Dedispersion (CHIME Data)
 export interface FrbDispersionPoint {
   freqMhz: number;
+  timeMs?: number;
+  dedispersedIntensity?: number;
   arrivalDelayMs: number;
   dedispersedDelayMs: number;
   fluxJansky: number;
@@ -170,6 +180,8 @@ export function getFrbData(): {
 
     points.push({
       freqMhz: f,
+      timeMs: Number((25.0 + ((f - 400) / 400) * 10).toFixed(1)),
+      dedispersedIntensity: Number(Math.max(0.1, flux).toFixed(2)),
       arrivalDelayMs: Number(delay.toFixed(2)),
       dedispersedDelayMs: 0.0, // After coherent de-dispersion kernel applied
       fluxJansky: Number(Math.max(0.1, flux).toFixed(2)),
@@ -257,6 +269,9 @@ export function getHpgeNuclearData(): {
 
 // Serial #5: Relativistic Cosmic-Ray Atmospheric Muon Decay
 export interface MuonDecayPoint {
+  altitudeKm?: number;
+  relativisticRate?: number;
+  classicalRate?: number;
   timeMicroSec: number;
   muonsLabFrame: number;
   muonsRestFrame: number;
@@ -284,8 +299,12 @@ export function getMuonRelativityData(): {
     // Relativistic prediction: decays with gamma * tau0 = 64.4 us
     const nLab = Math.round(10000 * Math.exp(-t / dilatedTau));
 
+    const altitude = Number((15.0 - (t / 50.0) * 15.0).toFixed(1));
     points.push({
+      altitudeKm: altitude,
       timeMicroSec: t,
+      relativisticRate: nLab,
+      classicalRate: nRest,
       muonsLabFrame: nLab,
       muonsRestFrame: nRest,
     });
@@ -307,6 +326,7 @@ export function getMuonRelativityData(): {
 // Serial #6: Tokamak Magnetohydrodynamic (MHD) Fusion Disruption & Mirnov Coils
 export interface TokamakDisruptionPoint {
   timeMs: number;
+  mirnovSignal?: number;
   plasmaCurrentMa: number;
   mirnovVoltageV: number;
   electronTempKev: number;
@@ -344,6 +364,7 @@ export function getTokamakMhdData(): {
 
     points.push({
       timeMs: t,
+      mirnovSignal: Number(mirnov.toFixed(3)),
       plasmaCurrentMa: Number(current.toFixed(3)),
       mirnovVoltageV: Number(mirnov.toFixed(3)),
       electronTempKev: Number(te.toFixed(3)),
@@ -364,6 +385,9 @@ export function getTokamakMhdData(): {
 
 // Serial #7: 2D Quantum Ising Model Phase Transition (Onsager Exact Solution)
 export interface IsingTransitionPoint {
+  temp?: number;
+  analyticalM?: number;
+  simulatedM?: number;
   temperatureT: number;
   magnetizationM: number;
   heatCapacityC: number;
@@ -399,7 +423,10 @@ export function getIsingModelData(): {
     const chi = Math.min(25.0, 0.4 * Math.pow(Math.max(0.02, deltaT), -1.75));
 
     points.push({
+      temp: Number(t.toFixed(2)),
       temperatureT: Number(t.toFixed(2)),
+      analyticalM: Number(m.toFixed(4)),
+      simulatedM: Number((m > 0 ? Math.max(0, m + Math.sin(t * 37) * 0.03) : Math.abs(Math.sin(t * 37)) * 0.02).toFixed(4)),
       magnetizationM: Number(m.toFixed(4)),
       heatCapacityC: Number(heatCap.toFixed(2)),
       susceptibilityChi: Number(chi.toFixed(2)),
@@ -421,6 +448,8 @@ export function getIsingModelData(): {
 // Serial #8: Global Planetary Seismology & Earth Core Raytracing (PREM Model)
 export interface SeismicPremPoint {
   depthKm: number;
+  timeSec?: number;
+  amplitude?: number;
   pWaveVelocityKms: number;
   sWaveVelocityKms: number;
   densityGcm3: number;
@@ -465,8 +494,18 @@ export function getSeismicPremData(): {
       layer = 'Solid Iron-Nickel Inner Core (Lehmann Discontinuity)';
     }
 
+    const timeSec = Number((d / 70.0).toFixed(1));
+    let amp = Math.sin(d * 0.05) * 0.04;
+    if (timeSec >= 38 && timeSec <= 48) {
+      amp = 2.4 * Math.sin((timeSec - 40) * 3.14) * Math.exp(-Math.abs(timeSec - 40) / 3.0);
+    } else if (timeSec > 48 && timeSec < 75) {
+      amp = (vs === 0 ? 0.08 : 1.2) * Math.sin(timeSec * 1.8) * Math.exp(-(timeSec - 48) / 15.0);
+    }
+
     points.push({
       depthKm: d,
+      timeSec: timeSec,
+      amplitude: Number(amp.toFixed(3)),
       pWaveVelocityKms: Number(vp.toFixed(2)),
       sWaveVelocityKms: Number(vs.toFixed(2)),
       densityGcm3: Number(rho.toFixed(2)),
@@ -488,6 +527,8 @@ export function getSeismicPremData(): {
 
 // Serial #9: Kerr Spacetime Gravitational Lensing & Black Hole Shadow Geodesics
 export interface KerrGeodesicPoint {
+  radiusM?: number;
+  apparentFlux?: number;
   impactParameterAlpha: number; // in units of M
   impactParameterBeta: number;
   intensity: number;
@@ -523,6 +564,8 @@ export function getKerrShadowData(): {
       }
 
       points.push({
+        radiusM: Number(rImpact.toFixed(2)),
+        apparentFlux: Math.min(5.0, intensity),
         impactParameterAlpha: alpha,
         impactParameterBeta: beta,
         intensity: Math.min(5.0, intensity),
@@ -546,6 +589,7 @@ export function getKerrShadowData(): {
 // Serial #10: Nuclear Reactor Core Point-Kinetics & Delayed Neutrons
 export interface ReactorKineticsPoint {
   timeSec: number;
+  powerMw?: number;
   neutronFluxRelative: number;
   precursorConcentration: number;
   reactivityDollars: number;
@@ -584,6 +628,7 @@ export function getReactorKineticsData(): {
 
     points.push({
       timeSec: t,
+      powerMw: Number((3000 * n).toFixed(1)),
       neutronFluxRelative: Number(n.toFixed(3)),
       precursorConcentration: Number(c.toFixed(3)),
       reactivityDollars: rhoDollars,

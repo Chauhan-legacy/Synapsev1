@@ -2,15 +2,32 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { project3DTo2D } from '../../utils/advancedMathEngines';
 import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, Compass, ShieldAlert, Sliders } from 'lucide-react';
 
-export const NuclearReactor3DCore: React.FC = () => {
+export interface NuclearReactor3DProps {
+  controlRodPct?: number;
+  isScrammed?: boolean;
+}
+
+export const NuclearReactor3DCore: React.FC<NuclearReactor3DProps> = ({ controlRodPct, isScrammed: extScram }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [azimuth, setAzimuth] = useState<number>(45);
   const [elevation, setElevation] = useState<number>(30);
   const [zoom, setZoom] = useState<number>(1.2);
   const [isAutoOrbit, setIsAutoOrbit] = useState<boolean>(true);
-  const [controlRodInsertion, setControlRodInsertion] = useState<number>(50); // 0% = withdrawn (prompt critical danger!), 100% = fully scrammed
-  const [isScrammed, setIsScrammed] = useState<boolean>(false);
+  const [controlRodInsertion, setControlRodInsertion] = useState<number>(controlRodPct ?? 50); // 0% = withdrawn (prompt critical danger!), 100% = fully scrammed
+  const [isScrammed, setIsScrammed] = useState<boolean>(extScram ?? false);
+
+  useEffect(() => {
+    if (controlRodPct !== undefined) {
+      setControlRodInsertion(controlRodPct);
+    }
+  }, [controlRodPct]);
+
+  useEffect(() => {
+    if (extScram !== undefined) {
+      setIsScrammed(extScram);
+    }
+  }, [extScram]);
 
   const isDraggingRef = useRef<boolean>(false);
   const lastMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });

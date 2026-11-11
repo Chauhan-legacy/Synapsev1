@@ -16,6 +16,7 @@ import ssl
 import hashlib
 import json
 import time
+import math
 from pathlib import Path
 
 router = APIRouter(prefix="/api/arxiv", tags=["ArXiv Literature"])
@@ -245,6 +246,48 @@ SEMINAL_CANON: List[Dict[str, Any]] = [
         "citationCount": 28000,
         "primary_class": "physics.gen-ph",
         "keywords": ["einstein", "special relativity", "lorentz", "time dilation", "speed of light"]
+    },
+    {
+        "id": "seminal_attention_2017",
+        "arxiv_id": "1706.03762",
+        "title": "Attention Is All You Need",
+        "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit", "Llion Jones", "Aidan N. Gomez", "Lukasz Kaiser", "Illia Polosukhin"],
+        "year": 2017,
+        "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train.",
+        "category": "cs.CL (Computation and Language)",
+        "doi": "10.48550/arXiv.1706.03762",
+        "pdf_url": "https://arxiv.org/pdf/1706.03762.pdf",
+        "citationCount": 136165,
+        "primary_class": "cs.CL",
+        "keywords": ["attention", "transformer", "attention is all you need", "vaswani", "self-attention", "nlp", "llm", "neural network"]
+    },
+    {
+        "id": "seminal_resnet_2015",
+        "arxiv_id": "1512.03385",
+        "title": "Deep Residual Learning for Image Recognition",
+        "authors": ["Kaiming He", "Xiangyu Zhang", "Shaoqing Ren", "Jian Sun"],
+        "year": 2015,
+        "abstract": "Deeper neural networks are more difficult to train. We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously. We explicitly reformulate the layers as learning residual functions with reference to the layer inputs, instead of learning unreferenced functions. Residual networks with depth up to 152 layers win 1st place in ILSVRC 2015.",
+        "category": "cs.CV (Computer Vision and Pattern Recognition)",
+        "doi": "10.48550/arXiv.1512.03385",
+        "pdf_url": "https://arxiv.org/pdf/1512.03385.pdf",
+        "citationCount": 210000,
+        "primary_class": "cs.CV",
+        "keywords": ["resnet", "deep residual learning", "kaiming he", "computer vision", "skip connection"]
+    },
+    {
+        "id": "seminal_adam_2014",
+        "arxiv_id": "1412.6980",
+        "title": "Adam: A Method for Stochastic Optimization",
+        "authors": ["Diederik P. Kingma", "Jimmy Ba"],
+        "year": 2014,
+        "abstract": "Introduces Adam, an algorithm for first-order gradient-based optimization of stochastic objective functions, based on adaptive estimates of lower-order moments. The method computes individual adaptive learning rates for different parameters from estimates of first and second moments of the gradients.",
+        "category": "cs.LG (Machine Learning)",
+        "doi": "10.48550/arXiv.1412.6980",
+        "pdf_url": "https://arxiv.org/pdf/1412.6980.pdf",
+        "citationCount": 175000,
+        "primary_class": "cs.LG",
+        "keywords": ["adam", "optimization", "stochastic gradient descent", "kingma", "adaptive learning rate"]
     }
 ]
 
@@ -252,15 +295,21 @@ SEMINAL_CANON: List[Dict[str, Any]] = [
 # LIVE NETWORK QUERY GATEWAYS
 # ============================================================================
 def _fetch_arxiv_atom(query: str, start: int = 0, max_results: int = 15) -> List[Dict[str, Any]]:
-    """Query the official arXiv Atom XML API."""
-    safe_query = urllib.parse.quote(f"all:{query}")
-    url = f"https://export.arxiv.org/api/query?search_query={safe_query}&start={start}&max_results={max_results}&sortBy=relevance&sortOrder=descending"
+    """Query the official arXiv Atom XML API with title and all-field phrase matching."""
+    clean_q = query.replace('"', '').replace("'", "").strip()
+    if not clean_q:
+        return []
+    # Query phrase in title or all fields
+    safe_ti = urllib.parse.quote(f'ti:"{clean_q}"')
+    safe_all = urllib.parse.quote(f'all:"{clean_q}"')
+    url = f"https://export.arxiv.org/api/query?search_query={safe_ti}+OR+{safe_all}&start={start}&max_results={max_results}&sortBy=relevance&sortOrder=descending"
 
     req = urllib.request.Request(
         url,
         headers={"User-Agent": "SYNAPSE-Scientific-Discovery/2.0 (Academic Pair; mailto:synapse@open-science.org)"}
     )
 
+    xml_data = ""
     try:
         try:
             import certifi
@@ -271,65 +320,109 @@ def _fetch_arxiv_atom(query: str, start: int = 0, max_results: int = 15) -> List
         with urllib.request.urlopen(req, timeout=6, context=ssl_ctx) as response:
             xml_data = response.read().decode("utf-8")
     except Exception:
-        return []
+        pass
 
-    root = ET.fromstring(xml_data)
     papers = []
+    if xml_data:
+        try:
+            root = ET.fromstring(xml_data)
+            for entry in root.findall(f"{ATOM_NS}entry"):
+                id_tag = entry.find(f"{ATOM_NS}id")
+                raw_id = id_tag.text.strip() if id_tag is not None and id_tag.text else ""
+                arxiv_id = raw_id.split("/abs/")[-1] if "/abs/" in raw_id else raw_id
+                if not arxiv_id:
+                    continue
 
-    for entry in root.findall(f"{ATOM_NS}entry"):
-        id_tag = entry.find(f"{ATOM_NS}id")
-        raw_id = id_tag.text.strip() if id_tag is not None and id_tag.text else ""
-        arxiv_id = raw_id.split("/abs/")[-1] if "/abs/" in raw_id else raw_id
-        if not arxiv_id:
-            continue
+                title_tag = entry.find(f"{ATOM_NS}title")
+                title = " ".join(title_tag.text.split()) if title_tag is not None and title_tag.text else "Untitled"
 
-        title_tag = entry.find(f"{ATOM_NS}title")
-        title = " ".join(title_tag.text.split()) if title_tag is not None and title_tag.text else "Untitled"
+                summary_tag = entry.find(f"{ATOM_NS}summary")
+                abstract = " ".join(summary_tag.text.split()) if summary_tag is not None and summary_tag.text else ""
 
-        summary_tag = entry.find(f"{ATOM_NS}summary")
-        abstract = " ".join(summary_tag.text.split()) if summary_tag is not None and summary_tag.text else ""
+                published_tag = entry.find(f"{ATOM_NS}published")
+                published_str = published_tag.text.strip() if published_tag is not None and published_tag.text else ""
+                year = int(published_str[:4]) if len(published_str) >= 4 and published_str[:4].isdigit() else 2024
 
-        published_tag = entry.find(f"{ATOM_NS}published")
-        published_str = published_tag.text.strip() if published_tag is not None and published_tag.text else ""
-        year = int(published_str[:4]) if len(published_str) >= 4 and published_str[:4].isdigit() else 2024
+                authors = []
+                for author_elem in entry.findall(f"{ATOM_NS}author"):
+                    name_tag = author_elem.find(f"{ATOM_NS}name")
+                    if name_tag is not None and name_tag.text:
+                        authors.append(name_tag.text.strip())
+                if not authors:
+                    authors = ["Collaboration"]
 
-        authors = []
-        for author_elem in entry.findall(f"{ATOM_NS}author"):
-            name_tag = author_elem.find(f"{ATOM_NS}name")
-            if name_tag is not None and name_tag.text:
-                authors.append(name_tag.text.strip())
-        if not authors:
-            authors = ["Collaboration"]
+                category = "physics.data-an"
+                cat_elem = entry.find(f"{ARXIV_NS}primary_category")
+                if cat_elem is not None and "term" in cat_elem.attrib:
+                    category = cat_elem.attrib["term"]
+                else:
+                    cat_elem = entry.find(f"{ATOM_NS}category")
+                    if cat_elem is not None and "term" in cat_elem.attrib:
+                        category = cat_elem.attrib["term"]
 
-        category = "physics.data-an"
-        cat_elem = entry.find(f"{ARXIV_NS}primary_category")
-        if cat_elem is not None and "term" in cat_elem.attrib:
-            category = cat_elem.attrib["term"]
-        else:
-            cat_elem = entry.find(f"{ATOM_NS}category")
-            if cat_elem is not None and "term" in cat_elem.attrib:
-                category = cat_elem.attrib["term"]
+                papers.append({
+                    "id": f"arxiv_{arxiv_id.replace('/', '_').replace('.', '_')}",
+                    "arxiv_id": arxiv_id,
+                    "title": title,
+                    "authors": authors,
+                    "year": year,
+                    "abstract": abstract,
+                    "category": category,
+                    "primary_class": category,
+                    "doi": f"10.48550/arXiv.{arxiv_id}",
+                    "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf",
+                    "citationCount": 75,
+                })
+        except Exception:
+            pass
 
-        papers.append({
-            "id": f"arxiv_{arxiv_id.replace('/', '_').replace('.', '_')}",
-            "arxiv_id": arxiv_id,
-            "title": title,
-            "authors": authors,
-            "year": year,
-            "abstract": abstract,
-            "category": category,
-            "primary_class": category,
-            "doi": f"10.48550/arXiv.{arxiv_id}",
-            "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf",
-            "citationCount": 65,
-        })
+    # Fallback: if phrase query returned no papers and query has multiple words, try individual terms
+    if not papers and " " in clean_q:
+        tokens = [t for t in clean_q.split() if len(t) > 2]
+        if tokens:
+            safe_tokens = "+AND+".join(f"all:{urllib.parse.quote(t)}" for t in tokens)
+            fallback_url = f"https://export.arxiv.org/api/query?search_query={safe_tokens}&start={start}&max_results={max_results}&sortBy=relevance&sortOrder=descending"
+            try:
+                req2 = urllib.request.Request(fallback_url, headers={"User-Agent": "SYNAPSE-Scientific-Discovery/2.0"})
+                with urllib.request.urlopen(req2, timeout=5, context=ssl_ctx) as resp2:
+                    xml2 = resp2.read().decode("utf-8")
+                root2 = ET.fromstring(xml2)
+                for entry in root2.findall(f"{ATOM_NS}entry"):
+                    id_tag = entry.find(f"{ATOM_NS}id")
+                    raw_id = id_tag.text.strip() if id_tag is not None and id_tag.text else ""
+                    arxiv_id = raw_id.split("/abs/")[-1] if "/abs/" in raw_id else raw_id
+                    if not arxiv_id:
+                        continue
+                    title_tag = entry.find(f"{ATOM_NS}title")
+                    title = " ".join(title_tag.text.split()) if title_tag is not None and title_tag.text else "Untitled"
+                    summary_tag = entry.find(f"{ATOM_NS}summary")
+                    abstract = " ".join(summary_tag.text.split()) if summary_tag is not None and summary_tag.text else ""
+                    published_tag = entry.find(f"{ATOM_NS}published")
+                    published_str = published_tag.text.strip() if published_tag is not None and published_tag.text else ""
+                    year = int(published_str[:4]) if len(published_str) >= 4 and published_str[:4].isdigit() else 2024
+                    authors = [a.find(f"{ATOM_NS}name").text.strip() for a in entry.findall(f"{ATOM_NS}author") if a.find(f"{ATOM_NS}name") is not None]
+                    papers.append({
+                        "id": f"arxiv_{arxiv_id.replace('/', '_').replace('.', '_')}",
+                        "arxiv_id": arxiv_id,
+                        "title": title,
+                        "authors": authors or ["Collaboration"],
+                        "year": year,
+                        "abstract": abstract,
+                        "category": "physics.data-an",
+                        "primary_class": "physics.data-an",
+                        "doi": f"10.48550/arXiv.{arxiv_id}",
+                        "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf",
+                        "citationCount": 50,
+                    })
+            except Exception:
+                pass
 
     return papers
 
-def _fetch_openalex(query: str, max_results: int = 10) -> List[Dict[str, Any]]:
-    """Query OpenAlex free REST API (250M+ global scholarly works)."""
-    clean_q = urllib.parse.quote(query)
-    url = f"https://api.openalex.org/works?search={clean_q}&per-page={max_results}"
+def _fetch_openalex(query: str, max_results: int = 15) -> List[Dict[str, Any]]:
+    """Query OpenAlex free REST API (250M+ global scholarly works), sorted by global citations."""
+    clean_q = urllib.parse.quote(query.strip())
+    url = f"https://api.openalex.org/works?search={clean_q}&sort=cited_by_count:desc&per-page={max_results}"
 
     req = urllib.request.Request(
         url,
@@ -442,7 +535,7 @@ def search_literature(
     query_tokens = [t for t in trimmed.replace(",", " ").replace("-", " ").split() if len(t) > 2]
     for canon in SEMINAL_CANON:
         canon_str = f"{canon['title']} {' '.join(canon['authors'])} {canon['year']} {' '.join(canon.get('keywords', []))}".lower()
-        if any(tok in canon_str for tok in query_tokens):
+        if trimmed in canon_str or any(tok in canon_str for tok in query_tokens):
             add_paper(canon)
 
     # 4. Step B: Query live arXiv API
@@ -451,16 +544,45 @@ def search_literature(
     for p in arxiv_hits:
         add_paper(p)
 
-    # 5. Step C: If results are few or no arXiv matches (e.g. historical pre-1991), query OpenAlex
-    if len(results) < 5:
-        openalex_hits = _fetch_openalex(query, max_results=per_page)
-        for p in openalex_hits:
-            add_paper(p)
+    # 5. Step C: Query OpenAlex global scholarly archive (sorted by citation impact)
+    openalex_hits = _fetch_openalex(query, max_results=10)
+    for p in openalex_hits:
+        add_paper(p)
 
     # 6. Fallback if network was offline
     if not results:
         for canon in SEMINAL_CANON[:per_page]:
             add_paper(canon)
+
+    # 7. Exact Match & Semantic Relevance Ranking
+    def paper_score(p: Dict[str, Any]) -> float:
+        score = 0.0
+        p_title = p.get("title", "").lower().strip()
+        
+        # Exact title match: undisputed #1 priority
+        if p_title == trimmed:
+            score += 5000.0
+        elif trimmed in p_title:
+            score += 2500.0
+        elif p_title in trimmed:
+            score += 1800.0
+        
+        # Token overlap in title
+        if query_tokens:
+            matched_tokens = sum(1 for tok in query_tokens if tok in p_title)
+            score += (matched_tokens / len(query_tokens)) * 1200.0
+        
+        # Author matching
+        authors_str = " ".join(p.get("authors", [])).lower()
+        if any(tok in authors_str for tok in query_tokens):
+            score += 400.0
+            
+        # Citation impact log-scaled bonus
+        cites = p.get("citationCount", 0) or 0
+        score += min(800.0, math.log10(max(1, cites) + 1) * 120.0)
+        return score
+
+    results.sort(key=paper_score, reverse=True)
 
     payload = {
         "source": "SYNAPSE Universal Literature Gateway (arXiv & OpenAlex)",
