@@ -1,0 +1,19 @@
+[package]
+name = "synapse_native"
+version = "0.1.0"
+edition = "2021"
+authors = ["SYNAPSE Scientific Computing Group"]
+description = "High-Performance Rust Mathematical Kernel for SYNAPSE Signal Intelligence"
+
+[lib]
+name = "synapse_native"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Zero heavy dependencies for maximum portability and fast compilation
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -14,6 +14,12 @@ import numpy as np
 from scipy import signal as sp_signal
 from scipy import stats as sp_stats
 
+from synapse_core.accelerated import (
+    get_acceleration_tier,
+    fast_compute_moments,
+    fast_find_cusum_changepoint,
+)
+
 
 @dataclass
 class FastSpectralPeak:
@@ -59,6 +65,7 @@ class FastAnalysisResult:
     is_stationary: bool
     is_gaussian: bool
     quality_status: str
+    acceleration_tier: str = "Numba LLVM JIT / Rust FFI Native"
 
 
 def fast_analyze_signal(
@@ -88,23 +95,11 @@ def fast_analyze_signal(
     n = len(x)
     duration = n / fs
 
-    # 1. High-Speed Vectorized Descriptive Statistics (< 3 ms for 120k)
-    mean_val = float(np.mean(x))
-    std_val = float(np.std(x, ddof=1))
+    # 1. High-Speed Multi-Tier Accelerated Statistics (Numba LLVM JIT / Rust FFI)
+    mean_val, std_val, var_val, skew_val, kurt_val, peak_to_peak = fast_compute_moments(x)
     rms_val = float(np.sqrt(np.mean(x ** 2)))
     median_val = float(np.median(x))
     mad_val = float(np.median(np.abs(x - median_val)))
-    peak_to_peak = float(np.ptp(x))
-
-    # Fast higher moments via vectorized centralized sums
-    dev = x - mean_val
-    var_val = std_val ** 2
-    if var_val > 1e-12:
-        skew_val = float(np.mean(dev ** 3) / (std_val ** 3))
-        kurt_val = float(np.mean(dev ** 4) / (var_val ** 2) - 3.0)  # Excess kurtosis
-    else:
-        skew_val = 0.0
-        kurt_val = 0.0
 
     # 2. Fast Welch PSD via C++ PocketFFT (< 8 ms for 120k)
     # Choose optimal power-of-two segment size (2048 for 120k gives ~117 segments)
@@ -240,4 +235,6 @@ def fast_analyze_signal(
         is_stationary=is_stationary,
         is_gaussian=is_gaussian,
         quality_status="VALIDATED_FAST_BATCH",
+        acceleration_tier=get_acceleration_tier(),
     )
+

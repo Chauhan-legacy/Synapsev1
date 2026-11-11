@@ -27,3 +27,4 @@
   - OpenBLAS / LAPACK optimized matrix operations.
   - Vectorized Cost-Matrix Pruned Exact Linear Time (PELT) changepoint locator.
   - Multi-window Welch power spectral density estimator ($N_{seg} = 2048$, 50% overlap).
+

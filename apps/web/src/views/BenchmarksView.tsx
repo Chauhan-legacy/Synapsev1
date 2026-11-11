@@ -160,6 +160,16 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
 
         {megaBenchmarkResult ? (
           <div className="space-y-3 pt-1">
+            {/* Acceleration Tier Badge */}
+            <div className="px-3 py-1.5 rounded-lg bg-[#0F766E]/10 border border-[#0F766E]/30 text-[11px] text-[#0F766E] flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-mono">
+              <span className="font-bold">
+                ⚡ Acceleration Core: {megaBenchmarkResult.acceleration_tier || 'Numba LLVM JIT / Rust FFI'}
+              </span>
+              <span className="text-[10px] text-muted">
+                Zero compiler installation hassle for open-source learners
+              </span>
+            </div>
+
             {/* Speed Telemetry Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
               <div className="surface-base border p-2.5 rounded-lg">

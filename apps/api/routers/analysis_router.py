@@ -19,6 +19,7 @@ from synapse_core.null_models import calibrate_against_null, NullModelType
 from synapse_core.consensus import ConsensusEngine
 from synapse_core.teaching import get_teaching_explanation
 from synapse_core.registry import SelfValidationRegistry
+from synapse_core.accelerated import get_acceleration_tier
 
 from synapse_spectra.multitaper import compute_multitaper_psd
 from synapse_spectra.high_res_peaks import fit_high_res_sinusoid
@@ -695,6 +696,7 @@ def run_ultra_fast_batch(req: FastBatchRequest):
 
     return {
         "status": "success",
+        "acceleration_tier": get_acceleration_tier(),
         "total_channels": len(req.channels),
         "total_samples": total_samples,
         "total_execution_time_ms": total_elapsed_ms,
@@ -752,6 +754,7 @@ def run_benchmark_120k():
 
     return {
         "dataset_name": "synapse_mega_120k_benchmark.csv",
+        "acceleration_tier": get_acceleration_tier(),
         "total_rows": len(df),
         "total_data_points": len(df) * len(channels),
         "sampling_rate_hz": 500.0,
