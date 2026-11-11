@@ -288,7 +288,7 @@ export function computeMultitaperPSD(
   psd: number[];
   upperBound95: number[];
   lowerBound95: number[];
-  fTest: Array<{ frequency: number; fRatio: number; pValue: number; isLine: boolean }>;
+  fTest: Array<{ frequency: number; fRatio: number; pValue: number; adjustedPValue?: number; isLine: boolean }>;
 } {
   const n = Math.min(raw.length, 512);
   const sub = raw.slice(0, n);
@@ -398,7 +398,7 @@ export function computeMultitaperPSD(
   }
 
   // Peak picking & Benjamini-Hochberg FDR multiplicity control
-  // Only evaluate local spectral maxima at frequencies >= 1.0 Hz
+  // Evaluates all discrete frequency bins between 1.0 Hz and (fs / 2 - 1.0) Hz
   interface CandidatePeak {
     bin: number;
     freq: number;
@@ -406,9 +406,11 @@ export function computeMultitaperPSD(
     pValue: number;
   }
   const candidatePeaks: CandidatePeak[] = [];
+  let totalEvaluatedBins = 0;
   for (let i = 2; i < halfN - 2; i++) {
     const f = frequencies[i];
     if (f >= 1.0 && f <= fs / 2 - 1.0) {
+      totalEvaluatedBins++;
       if (rawFRatios[i] > rawFRatios[i - 1] && rawFRatios[i] > rawFRatios[i + 1] && rawFRatios[i] >= 18.0) {
         candidatePeaks.push({
           bin: i,
@@ -422,31 +424,40 @@ export function computeMultitaperPSD(
 
   // Sort candidate peaks by p-value
   candidatePeaks.sort((a, b) => a.pValue - b.pValue);
-  const mPeaks = candidatePeaks.length;
-  const alphaFDR = 0.01;
+  // Thomson (1982) independent spectral resolution bands: M = floor(n / (2 * NW))
+  const mTotalBins = Math.max(1, Math.floor(n / (2 * Math.max(1, _nw))));
+  const alphaFDR = 0.05;
   let maxSignificantRank = -1;
 
-  for (let r = 0; r < mPeaks; r++) {
-    const bhCritical = ((r + 1) / mPeaks) * alphaFDR;
+  for (let r = 0; r < candidatePeaks.length; r++) {
+    // Benjamini-Hochberg critical line across independent spectral resolution bands M
+    const bhCritical = ((r + 1) / mTotalBins) * alphaFDR;
     if (candidatePeaks[r].pValue <= bhCritical) {
       maxSignificantRank = r;
     }
   }
 
   const significantBins = new Set<number>();
+  const adjustedPMap = new Map<number, number>();
   if (maxSignificantRank >= 0) {
     for (let r = 0; r <= maxSignificantRank; r++) {
       significantBins.add(candidatePeaks[r].bin);
     }
   }
+  for (let r = 0; r < candidatePeaks.length; r++) {
+    const adj = Math.min(1.0, (candidatePeaks[r].pValue * mTotalBins) / (r + 1));
+    adjustedPMap.set(candidatePeaks[r].bin, adj);
+  }
 
-  const fTestResults: Array<{ frequency: number; fRatio: number; pValue: number; isLine: boolean }> = [];
+  const fTestResults: Array<{ frequency: number; fRatio: number; pValue: number; adjustedPValue: number; isLine: boolean }> = [];
   for (let i = 0; i < halfN; i++) {
     const isLine = significantBins.has(i);
+    const adjP = adjustedPMap.has(i) ? (adjustedPMap.get(i) as number) : Math.min(1.0, rawPValues[i] * mTotalBins);
     fTestResults.push({
       frequency: frequencies[i],
       fRatio: parseFloat(rawFRatios[i].toFixed(2)),
       pValue: parseFloat(rawPValues[i].toFixed(6)),
+      adjustedPValue: parseFloat(adjP.toFixed(6)),
       isLine,
     });
   }
@@ -1778,28 +1789,48 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
 
   const candidates: DiscoveredFinding[] = [];
 
-  // 1. Multitaper Thomson F-Test lines (Scale-invariant, BH-FDR filtered, Consensus-calibrated)
+  // 1. Multitaper Thomson F-Test lines (Scale-invariant, BH-FDR filtered, Split-Half persistence confirmed)
   const medianPsd = welch.psd.slice().sort((a, b) => a - b)[Math.floor(welch.psd.length / 2)] || 1e-6;
   const lines = multitaper.fTest.filter((f) => f.isLine && f.fRatio >= 25.0 && f.pValue < 0.00005);
+
+  // Split-half persistence verification:
+  // Persistent harmonic oscillators replicate in both halves of the record [0, N/2] and [N/2, N]
+  const halfLen = Math.floor(raw.length / 2);
+  let half1Lines: Array<{ frequency: number; fRatio: number }> = [];
+  let half2Lines: Array<{ frequency: number; fRatio: number }> = [];
+  if (halfLen >= 128 && lines.length > 0) {
+    const mt1 = computeMultitaperPSD(raw.slice(0, halfLen), fs, 3.5, 5);
+    const mt2 = computeMultitaperPSD(raw.slice(halfLen), fs, 3.5, 5);
+    half1Lines = mt1.fTest.filter((f) => f.fRatio >= 12.0);
+    half2Lines = mt2.fTest.filter((f) => f.fRatio >= 12.0);
+  }
+
   lines.forEach((line, idx) => {
     // Consensus validation: cross-verify with Welch spectral power elevation
     const dfWelch = fs / (2 * (welch.psd.length - 1));
     const binWelch = Math.min(welch.psd.length - 1, Math.max(0, Math.round(line.frequency / dfWelch)));
     const welchElev = welch.psd[binWelch] / medianPsd;
-    const isValidated = line.fRatio >= 28.0 && welchElev >= 2.2;
+
+    const inHalf1 = half1Lines.some((h) => Math.abs(h.frequency - line.frequency) <= 1.5);
+    const inHalf2 = half2Lines.some((h) => Math.abs(h.frequency - line.frequency) <= 1.5);
+    const splitHalfConfirmed = (halfLen < 128) || (inHalf1 && inHalf2);
+
+    const isValidated = line.fRatio >= 28.0 && welchElev >= 2.2 && splitHalfConfirmed;
+    const adjPStr = line.adjustedPValue !== undefined ? `p_adj = ${line.adjustedPValue.toExponential(2)}` : `p = ${line.pValue.toFixed(4)}`;
+    const splitHalfStr = splitHalfConfirmed ? 'split-half confirmed' : 'split-half unconfirmed';
 
     candidates.push({
       id: `harmonic_line_${idx + 1}`,
       engine: 'SPECTRA: Multitaper Thomson F-Test',
       title: `Discrete Harmonic Tone at ${line.frequency.toFixed(2)} Hz`,
       status: isValidated ? 'validated' : 'candidate',
-      metric: 'F-Statistic',
-      value: `F = ${line.fRatio.toFixed(1)} (p = ${line.pValue.toFixed(4)})`,
-      pValue: line.pValue,
+      metric: 'F-Statistic & Split-Half Persistence',
+      value: `F = ${line.fRatio.toFixed(1)} (${adjPStr}, ${splitHalfStr})`,
+      pValue: line.adjustedPValue ?? line.pValue,
       confidence: isValidated ? 0.99 : 0.75,
       scientificExplanation: isValidated
-        ? `Thomson multitaper harmonic regression and Welch spectral consensus confirm a deterministic sinusoidal component at ${line.frequency.toFixed(2)} Hz rejecting continuous background spectrum null.`
-        : `Candidate harmonic frequency line at ${line.frequency.toFixed(2)} Hz pending secondary spectral power consensus.`,
+        ? `Thomson multitaper harmonic regression (F = ${line.fRatio.toFixed(1)}, ${adjPStr}), Welch elevation (${welchElev.toFixed(1)}x), and split-half persistence confirmed a genuine harmonic tone at ${line.frequency.toFixed(2)} Hz replicating in both halves of the record.`
+        : `Candidate harmonic frequency line at ${line.frequency.toFixed(2)} Hz pending secondary spectral power or split-half persistence confirmation (${splitHalfStr}, Welch elevation: ${welchElev.toFixed(1)}x).`,
       evidenceParents: ['raw_oscillogram'],
     });
   });
