@@ -117,8 +117,8 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
         </div>
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Automated Test Suite</div>
-          <div className="text-lg font-bold text-status-success mt-1">78 / 78</div>
-          <div className="text-[10px] text-muted mt-0.5">68 Pytest + 10 Math Benchmarks</div>
+          <div className="text-lg font-bold text-status-success mt-1">83 / 83</div>
+          <div className="text-[10px] text-muted mt-0.5">73 Pytest + 10 Math Benchmarks</div>
         </div>
       </div>
 

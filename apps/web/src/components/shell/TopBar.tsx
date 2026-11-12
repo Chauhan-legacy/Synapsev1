@@ -227,14 +227,15 @@ export const TopBar: React.FC<TopBarProps> = ({
           type="button"
           onClick={onRunAnalysis}
           disabled={isAnalyzing}
-          className={`flex items-center gap-1.5 px-3.5 py-1 text-xs font-mono font-semibold rounded-md shadow-xs transition-colors ${
+          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 text-xs font-mono font-semibold rounded-md shadow-xs transition-colors ${
             isAnalyzing
               ? 'bg-[#0F766E]/70 text-white cursor-wait'
               : 'bg-[#0F766E] hover:bg-[#0B5E58] text-white'
           }`}
         >
           <Play className={`w-3.5 h-3.5 fill-current ${isAnalyzing ? 'animate-spin' : ''}`} />
-          <span>{isAnalyzing ? 'Computing...' : 'Run analysis'}</span>
+          <span className="hidden sm:inline">{isAnalyzing ? 'Computing...' : 'Run analysis'}</span>
+          <span className="sm:hidden">{isAnalyzing ? '...' : 'Run'}</span>
         </button>
 
         {/* API Status Chip */}

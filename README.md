@@ -5,7 +5,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.162-teal.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18.3-4338CA.svg)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6.svg)](https://www.typescriptlang.org)
-[![Tests: 78 Passed](https://img.shields.io/badge/Tests-78%20Passed-0F766E.svg)](tests/)
+[![Tests: 83 Passed](https://img.shields.io/badge/Tests-83%20Passed-0F766E.svg)](tests/)
 [![False Discoveries: 0.00%](https://img.shields.io/badge/False%20Discoveries-0.00%25%20(300%20runs)-0F766E.svg)](BENCHMARKS.md)
 [![Math Accuracy: 100%](https://img.shields.io/badge/Math%20Accuracy-100%25-0F766E.svg)](BENCHMARKS.md)
 [![120k Benchmark: Sub-Second](https://img.shields.io/badge/120k%20Benchmark-16.9%20ms%2Fch-0F766E.svg)](BENCHMARKS.md)
@@ -41,7 +41,7 @@ SYNAPSE/
 │   └── web/                  # React 18 + TypeScript + Tailwind Scientific Discovery Workbench (15 Labs)
 ├── benchmarks/               # Standardized benchmark library Datasets A through J with synthetic ground truth
 ├── docs/                     # Architectural audits, validation studies, and vector SVG power curves
-└── tests/                    # Analytical, unit, and numerical regression test suite (68 passing pytest tests)
+└── tests/                    # Analytical, unit, and numerical regression test suite (73 passing pytest tests)
 ```
 
 ---
@@ -245,7 +245,7 @@ conda activate synapse
 # 2. Install dependencies and local packages in editable mode
 pip install -e .
 
-# 3. Run full pytest regression suite (68 tests passing)
+# 3. Run full pytest regression suite (73 tests passing)
 pytest -v
 
 # 4. Verify ground-truth answer key against live pipeline

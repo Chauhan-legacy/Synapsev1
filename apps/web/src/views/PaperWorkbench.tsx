@@ -81,7 +81,7 @@ interface CustomDataset {
 export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   onBackToHero,
   onOpenAdvancedLab,
-  realTestCount = 78,
+  realTestCount = 83,
   initialTab = 'charts',
 }) => {
   const { activeSignal, loadCustomSignal } = useSignal();
@@ -845,20 +845,22 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center space-x-1.5 bg-[#FFFDF9] hover:bg-[#F2EFE9] text-[#10141C] border border-[#E6E1D6] px-3.5 py-1.5 rounded-md text-xs font-mono font-medium shadow-2xs transition-all active:scale-95"
+            className="flex items-center space-x-1.5 bg-[#FFFDF9] hover:bg-[#F2EFE9] text-[#10141C] border border-[#E6E1D6] px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-mono font-medium shadow-2xs transition-all active:scale-95"
           >
             <Upload className="w-3.5 h-3.5 text-[#B45F1B]" />
-            <span>Upload CSV</span>
+            <span className="hidden sm:inline">Upload CSV</span>
+            <span className="sm:hidden">Upload</span>
           </button>
 
           <button
             type="button"
             onClick={handleRunPipeline}
             disabled={isAnalyzing}
-            className="flex items-center space-x-2 bg-[#10141C] hover:bg-[#25653F] text-white px-4 py-1.5 rounded-md text-xs font-mono font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center space-x-1.5 sm:space-x-2 bg-[#10141C] hover:bg-[#25653F] text-white px-3 sm:px-4 py-1.5 rounded-md text-xs font-mono font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50"
           >
             <Play className={`w-3.5 h-3.5 fill-current ${isAnalyzing ? 'animate-spin' : ''}`} />
-            <span>{isAnalyzing ? 'Running Analysis...' : 'Run Pipeline'}</span>
+            <span className="hidden sm:inline">{isAnalyzing ? 'Running Analysis...' : 'Run Pipeline'}</span>
+            <span className="sm:hidden">{isAnalyzing ? '...' : 'Run'}</span>
           </button>
         </div>
       </header>

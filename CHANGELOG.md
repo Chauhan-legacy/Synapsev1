@@ -26,7 +26,7 @@
   - Integrated `ErrorToast` notification component in the web frontend.
 - **CI Test Suite Expansion (`fix(ci)`):**
   - Integrated `npm run test:math` into root `package.json`, `apps/web/package.json`, and `.github/workflows/ci.yml`.
-  - Expanded test suite to **78 automated tests** (68 pytest + 10 in-browser math benchmarks).
+  - Expanded test suite to **83 automated tests** (73 pytest + 10 in-browser math benchmarks).
 - **Workbench Spectrum for High-Throughput Records (`fix(spectrum)`):**
   - Replaced $O(N^2)$ discrete loop with dynamically scaled Welch PSD ($N \ge 16384 \implies nperseg = 2048$).
   - Implemented peak-preserving decimation: 120k dataset renders in under 1 second and recovers true 4.88 Hz peak (matching API within one resolution bin).

@@ -337,7 +337,7 @@ const AppInner: React.FC = () => {
             setCurrentView('methods');
             window.location.hash = '#/methods';
           }}
-          realTestCount={78}
+          realTestCount={83}
         />
       </Suspense>
     );
@@ -357,7 +357,7 @@ const AppInner: React.FC = () => {
             setCurrentView(labView as any);
             window.location.hash = `#/${labView}`;
           }}
-          realTestCount={78}
+          realTestCount={83}
         />
       </Suspense>
     );
@@ -377,7 +377,7 @@ const AppInner: React.FC = () => {
               setCurrentView(labView as any);
               window.location.hash = `#/${labView}`;
             }}
-            realTestCount={78}
+            realTestCount={83}
           />
         );
       case 'papergraph':
@@ -505,9 +505,9 @@ const AppInner: React.FC = () => {
             <div className="w-6 h-6 rounded-md bg-[#0F766E] flex items-center justify-center text-white shadow-2xs shrink-0">
               <Sliders className="w-3.5 h-3.5" />
             </div>
-            <div className="flex items-center gap-2.5">
-              <span className="font-bold text-[#1F2430] text-sm tracking-tight">SYNAPSE Multi-Tool Instrument Rack</span>
-              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold border border-[#0F766E]/20">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="font-bold text-[#1F2430] text-xs sm:text-sm tracking-tight truncate max-w-[150px] sm:max-w-none">SYNAPSE Multi-Tool Instrument Rack</span>
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold border border-[#0F766E]/20 shrink-0">
                 28 Scientific Instruments Loaded
               </span>
             </div>
@@ -525,10 +525,11 @@ const AppInner: React.FC = () => {
               setPageMode('workbench');
               window.location.hash = '#/workbench';
             }}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#DDD6C7] hover:border-[#0F766E]/50 hover:bg-[#FAF8F5] text-[#1F2430] font-semibold text-xs transition-all shadow-2xs group"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#DDD6C7] hover:border-[#0F766E]/50 hover:bg-[#FAF8F5] text-[#1F2430] font-semibold text-xs transition-all shadow-2xs group shrink-0"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[#0F766E] transition-transform group-hover:-translate-x-0.5" />
-            <span>Switch to Paper Workbench</span>
+            <span className="hidden sm:inline">Switch to Paper Workbench</span>
+            <span className="sm:hidden">Workbench</span>
           </button>
         </div>
 
@@ -549,7 +550,7 @@ const AppInner: React.FC = () => {
         />
 
         {/* View Content Port */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F6F3EC]">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 bg-[#F6F3EC]">
           <ErrorBoundary>
             <Suspense fallback={<SkeletonLoader />}>
               {renderCurrentView()}

@@ -15,11 +15,11 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 
 | Component | Audit Baseline (Before) | Trustworthy Release (After) | Status | Key Improvements |
 |---|---|---|---|---|
-| **Python Scientific Engines** | 46 / 53 passed (86.8%) | **68 / 68 passed (100%)** | **ALL PASS** | Scale-invariant Thomson multitaper, restricted-model BIC Granger causality, BOCPD prior predictive distribution, continuous RQA determinism. |
+| **Python Scientific Engines** | 46 / 53 passed (86.8%) | **73 / 73 passed (100%)** | **ALL PASS** | Scale-invariant Thomson multitaper, restricted-model BIC Granger causality, BOCPD prior predictive distribution, continuous RQA determinism. |
 | **In-Browser TypeScript Math** | 18 / 28 passed (64.3%) | **10 / 10 benchmarks (100%)** | **ALL PASS** | Zero-padded Slepian multitaper ($N_{\text{fft}} = 2048$), Welch dynamic scaling ($N=120k \implies 2048$), true OLS Granger causality with Gaussian elimination, exact Jacobi PCA decomposition. |
 | **Pure Noise False Discoveries** | 259.0 discoveries / run | **0.00 discoveries / run** | **VERIFIED** | Benjamini-Hochberg FDR ($q=0.05$) across independent spectral bands + split-half persistence; 300 seeded runs produce strictly 0 validated claims (95% CI: [0.00%, 0.64%]). |
 | **Planted Outliers & Shifts** | Masking & false alarms | **100% recall, 0 false alarms** | **VERIFIED** | Generalized Rosner ESD per regime isolates samples 500 and 1800; PELT isolates sample 1200; Granger VAR validates X→Y ($p < 10^{-10}$) and rejects reverse link Y→X under FDR. |
-| **Automated Test Suite** | 22 tests | **78 tests (100% pass)** | **VERIFIED** | 68 pytest regression tests + 10 in-browser math benchmarks (`npm run test:math`). |
+| **Automated Test Suite** | 22 tests | **83 tests (100% pass)** | **VERIFIED** | 73 pytest regression tests + 10 in-browser math benchmarks (`npm run test:math`). |
 | **120,000 High-Throughput** | Uncalibrated / O(N²) | **16.9 ms / channel (480k in 68 ms)** | **VERIFIED** | Fast vectorized Welch PSD + zero-config structural I/O with continuous time linearization. |
 
 ---

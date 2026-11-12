@@ -1054,18 +1054,18 @@ export const InstrumentRackView: React.FC = () => {
   }[layoutPreset];
 
   return (
-    <div className="space-y-5 w-full max-w-[1680px] mx-auto font-sans pb-16 px-1 sm:px-2">
+    <div className="space-y-4 w-full font-sans pb-16 px-1 sm:px-2 overflow-x-hidden">
       {/* 1. RACK COMMAND HEADER */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-5 rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs w-full">
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-[#0F766E] flex items-center justify-center text-white shadow-2xs">
+            <div className="w-8 h-8 rounded-lg bg-[#0F766E] flex items-center justify-center text-white shadow-2xs shrink-0">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-[#1F2430] font-mono flex items-center gap-2">
+              <h1 className="text-sm sm:text-base font-bold text-[#1F2430] font-mono flex flex-wrap items-center gap-2">
                 <span>SYNAPSE Multi-Tool Instrument Rack</span>
-                <span className="text-[10px] bg-[#EFEBE0] text-[#0F766E] px-2 py-0.5 rounded-full border border-[#DDD6C7]">
+                <span className="text-[10px] bg-[#EFEBE0] text-[#0F766E] px-2 py-0.5 rounded-full border border-[#DDD6C7] shrink-0">
                   {activePanels.length} Active Instruments
                 </span>
               </h1>
@@ -1077,7 +1077,7 @@ export const InstrumentRackView: React.FC = () => {
         </div>
 
         {/* Rack Presets & Controls */}
-        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+        <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 font-mono text-xs">
           {/* Add Instrument Dropdown */}
           <div className="relative" ref={addMenuRef}>
             <button

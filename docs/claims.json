@@ -1,11 +1,11 @@
 {
   "version": "2.0.0-trustworthy",
-  "generated_at": "2026-11-12T05:40:20Z",
-  "git_commit": "90abb18a9bbf9796ea15e7219aebc45055c51767",
+  "generated_at": "2026-11-12T05:49:10Z",
+  "git_commit": "e3744a0551a2d8fbc1b921538ea8ef06c5b27f82",
   "test_counts": {
-    "python_pytest_tests": 68,
+    "python_pytest_tests": 73,
     "in_browser_math_benchmark_tests": 10,
-    "total_automated_tests": 78,
+    "total_automated_tests": 83,
     "test_pass_rate_percent": 100.0
   },
   "false_alarm_rate": {
@@ -50,8 +50,8 @@
     "samples_per_channel": 120000,
     "channels": 4,
     "total_samples": 480000,
-    "average_time_per_channel_ms": 6.89,
-    "total_execution_time_ms": 2292.7,
+    "average_time_per_channel_ms": 6.59,
+    "total_execution_time_ms": 2275.5,
     "dominant_frequency_seismic_hz": 4.8828,
     "sub_second_pass": true
   },

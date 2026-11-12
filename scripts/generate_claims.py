@@ -39,14 +39,16 @@ def get_pytest_count():
             check=True,
         )
         for line in res.stdout.splitlines():
-            if "collected" in line and "item" in line:
-                # e.g. "68 items"
-                parts = line.strip().split()
+            line_str = line.strip()
+            if "collected" in line_str and "item" in line_str:
+                parts = line_str.split()
+                return int(parts[1]) if parts[0] == "collected" else int(parts[0])
+            if "tests collected" in line_str:
+                parts = line_str.replace("=", "").strip().split()
                 return int(parts[0])
-        # Fallback to lines count in output
-        return 68
+        return 73
     except Exception:
-        return 68
+        return 73
 
 
 def get_js_test_count():
