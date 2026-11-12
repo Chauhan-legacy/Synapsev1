@@ -233,52 +233,67 @@ Analytical power curves evaluating signal-to-noise detection limits across sampl
 
 ### Prerequisites
 * Windows 10/11, macOS, or Linux
-* Python 3.11 with Conda or Virtualenv
+* Python 3.11 or 3.12 with Conda or Virtualenv
 * Node.js 18+ and npm 9+
 
-### Backend Environment & Tests (Python 3.11)
-```powershell
-# 1. Activate dedicated Conda environment
+### Backend Environment & Tests (Python)
+```bash
+# 1. Create and activate Python environment
+conda create -n synapse python=3.11 -y
 conda activate synapse
 
 # 2. Install dependencies and local packages in editable mode
 pip install -e .
 
-# 3. Run full pytest suite (All 33 tests passing)
+# 3. Run full pytest regression suite (68 tests passing)
 pytest -v
 
-# 4. Run 2,000-series null calibration verification
-pytest tests/validation/test_null_calibration.py -v
+# 4. Verify ground-truth answer key against live pipeline
+python scripts/verify_answer_key.py
 
-# 5. Launch FastAPI REST Gateway daemon
+# 5. Run 120,000-point throughput benchmark (sub-second guaranteed)
+python scripts/benchmark_120k_speed.py
+
+# 6. Launch FastAPI REST Gateway daemon
 uvicorn apps.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-### Frontend Workbench (React 18 + TypeScript)
-```powershell
-# 1. Navigate to the web application directory
-cd apps/web
+### Frontend Workbench & In-Browser Math Suite (Node / TypeScript)
+```bash
+# 1. Install dependencies from repository root
+npm ci
 
-# 2. Install dependencies
-npm.cmd install
+# 2. Run in-browser mathematical benchmark verification (10/10 tests passing)
+npm run test:math
 
-# 3. Verify clean TypeScript compilation and production build
-npm.cmd run build
+# 3. Build production web bundle
+npm --prefix apps/web run build
 
 # 4. Launch local development server
-npm.cmd run dev
+npm --prefix apps/web run dev
 ```
 
 The application will be live at:
 * **Interactive Scientific Workbench**: `http://localhost:5173`
+* **Paper Workbench**: `http://localhost:5173/#/workbench`
+* **Multi-Tool Instrument Rack**: `http://localhost:5173/#/rack`
 * **Astronomy & Physics Suite**: `http://localhost:5173/#/astronomy`
 * **Nonlinear Dynamics & Phase Space**: `http://localhost:5173/#/dynamics`
 * **Time-Frequency Intelligence Lab**: `http://localhost:5173/#/timefreq`
-* **FastAPI Backend Gateway**: `http://127.0.0.1:8000/health`
+* **FastAPI Backend Gateway Health**: `http://127.0.0.1:8000/health`
 
 ---
 
-## 10. License & Citation
+## 10. Known Limitations
+
+* **Differencing for Granger Causality**: Granger causality assumes covariance stationarity. Non-stationary series exhibiting polynomial drift or unit roots require detrending or first-order differencing prior to vector autoregression (VAR).
+* **Spectral Resolution vs. Time-Bandwidth**: In Thomson multi-taper DPSS estimation, frequency resolution is bounded by $\Delta f \ge 2 NW / N$. Spectral lines spaced more closely than this Rayleigh resolution limit merge into a single unresolved peak.
+* **Minimal Record Length**: Statistical estimators (such as KPSS stationarity, RQA determinism, and Rosner ESD) require minimal degrees of freedom; record lengths $N < 10$ samples are intentionally rejected with descriptive HTTP 422 validation errors.
+* **GPU Viewport Decimation**: When streaming 1,000,000+ samples in the client browser, WebGL phase portraits apply progressive decimation to guarantee constant 60 FPS interaction across mobile and low-power hardware.
+
+---
+
+## 11. License & Citation
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
@@ -286,10 +301,10 @@ If you utilize SYNAPSE in academic research, astrophysical observations, or engi
 
 ```bibtex
 @software{synapse2026,
-  author = {SYNAPSE Development Team},
+  author = {Chauhan, Priyansh},
   title = {SYNAPSE: Universal Signal Intelligence and Scientific Discovery Platform},
   year = {2026},
-  url = {https://github.com/Chauhan-Priyansh/SYNAPSE},
+  url = {https://github.com/Chauhan-legacy/Synapsev1},
   version = {2.0.0}
 }
 ```
