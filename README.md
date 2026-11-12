@@ -55,6 +55,15 @@ SYNAPSE adheres to the **Paper Teal** design system—a distraction-free, public
 * **Mathematical Typography**: JetBrains Mono for all numerical readouts, coordinate systems, and telemetry cards; KaTeX rendering for all governing partial differential equations and Hamiltonian operators.
 * **WCAG 2.2 Level AA Compliance**: Minimum 4.5:1 contrast ratios across all graphical elements and text labels. Screen-reader accessible summaries (`aria-label`, SVG titles) and full keyboard navigation via `Ctrl + K` Command Palette and `?` Shortcuts Modal.
 
+### Visual Gallery
+
+| Desktop (1440px) | Mobile (390px) |
+|---|---|
+| ![Paper Workbench](docs/screenshots/paper_workbench_1440.png) <br> *Paper Workbench with Welch Spectrum & Takens Phase Space* | ![Paper Workbench Mobile](docs/screenshots/paper_workbench_390.png) <br> *Mobile Viewport (390px)* |
+| ![Multi-Tool Instrument Rack](docs/screenshots/instrument_rack_1440.png) <br> *SYNAPSE Multi-Tool Instrument Rack* | ![Instrument Rack Mobile](docs/screenshots/instrument_rack_390.png) <br> *Mobile Instrument Rack* |
+| ![Benchmarks View](docs/screenshots/benchmarks_view_1440.png) <br> *Ground-Truth Benchmarks Scoreboard & 120k Engine* | ![Landing Hero Mobile](docs/screenshots/landing_page_390.png) <br> *Responsive Mobile Landing Hero* |
+| ![PaperGraph Literature](docs/screenshots/papergraph_1440.png) <br> *PaperGraph Literature & Semantic Citation Network* | |
+
 ---
 
 ## 3. Dedicated Astronomy & High-Energy Physics Suite (Serials #1 to #10)
