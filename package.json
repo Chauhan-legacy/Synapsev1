@@ -1,0 +1,8 @@
+{
+  "name": "synapse-root",
+  "private": true,
+  "scripts": {
+    "test": "npm --prefix apps/web run test",
+    "test:math": "npm --prefix apps/web run test:math"
+  }
+}

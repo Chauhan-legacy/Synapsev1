@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npm run test:math",
+    "test:math": "tsc src/utils/signalMath.ts --outDir ../../tmp_math --module commonjs --target es2022 --skipLibCheck && node ../../scripts/test_math_benchmarks.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.5",
