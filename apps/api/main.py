@@ -20,13 +20,14 @@ import uuid
 import datetime
 import json
 from typing import Dict, Any, List, Optional
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Query
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from synapse_core.models.signal import Signal
 from synapse_core.io.readers import read_signal
+from synapse_core.exceptions import ValidationError as SynapseValidationError, DataIntegrityError
 from synapse_spectra.engine import SpectraEngine
 from synapse_anomaly.engine import AnomalyEngine
 from synapse_structure.engine import StructureEngine
@@ -47,6 +48,37 @@ app = FastAPI(
     version="2.0.0",
     description="Universal signal intelligence and scientific discovery platform.",
 )
+
+@app.exception_handler(SynapseValidationError)
+async def synapse_validation_exception_handler(request: Request, exc: SynapseValidationError):
+    error_msg = str(exc)
+    what_to_try = "Verify that the input signal is non-empty, contains at least 8 samples, has positive sampling rate, and is formatted correctly."
+    if "sampling" in error_msg.lower() or "timestamp" in error_msg.lower():
+        what_to_try = "Ensure timestamps are strictly ascending and sampling_rate is strictly positive (> 0 Hz)."
+    elif "sample" in error_msg.lower():
+        what_to_try = "Provide at least 8 samples for spectral and anomaly analysis."
+    elif "column" in error_msg.lower():
+        what_to_try = "Specify a valid numeric time column using the 'time_column' query parameter."
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": error_msg,
+            "what_to_try": what_to_try,
+            "module": getattr(exc, "module", "synapse_core"),
+        },
+    )
+
+@app.exception_handler(DataIntegrityError)
+async def synapse_integrity_exception_handler(request: Request, exc: DataIntegrityError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": str(exc),
+            "what_to_try": "Ensure input data contains no NaN, Infinite, or corrupt floating point numbers.",
+            "module": getattr(exc, "module", "synapse_core"),
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,

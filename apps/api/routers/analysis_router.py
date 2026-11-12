@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from synapse_core.models.signal import Signal, ChannelInfo
 from synapse_core.diagnostics import run_preflight_diagnostics, PreflightDiagnostics
+from synapse_core.exceptions import ValidationError
 from synapse_core.analyser import EvidenceStatus
 from synapse_core.null_models import calibrate_against_null, NullModelType
 from synapse_core.consensus import ConsensusEngine
@@ -49,7 +50,7 @@ router = APIRouter(prefix="/v1", tags=["analysis"])
 
 class AnalyzeRequest(BaseModel):
     channels: Dict[str, List[float]]
-    sampling_rate: float = 200.0
+    sampling_rate: float = Field(200.0, gt=0)
     timestamps: Optional[List[float]] = None
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
@@ -106,6 +107,10 @@ def run_live_analysis(req: AnalyzeRequest):
     primary_name = ch_names[0]
     primary_vals = np.asarray(req.channels[primary_name], dtype=np.float64)
     n = len(primary_vals)
+    if n < 8:
+        raise ValidationError(f"Signal must contain at least 8 samples for full pipeline analysis (received {n}).")
+    is_constant = float(np.var(primary_vals)) < 1e-12
+
     fs = float(req.sampling_rate)
     dt = 1.0 / fs
     ts = np.asarray(req.timestamps, dtype=np.float64) if req.timestamps else np.arange(n) * dt
@@ -215,112 +220,178 @@ def run_live_analysis(req: AnalyzeRequest):
         })
 
     # Noise Color Fit
-    nc_res = estimate_noise_color(mt_res.frequencies, mt_res.psd)
-    results_by_module["spectra"].append({
-        "method": "Noise Color Power-Law Beta Fit",
-        "version": "2.0.0",
-        "parameters": {"model": "S(f) ~ 1/f^beta"},
-        "estimate": round(nc_res.beta_exponent, 3),
-        "uncertainty": {
-            "ci_low": round(nc_res.beta_ci_lower, 3),
-            "ci_high": round(nc_res.beta_ci_upper, 3),
-            "level": 0.95,
-            "method": "Linear regression CI",
-        },
-        "diagnostics": [
-            {"name": "Color Regime", "value": nc_res.classification, "passed": True},
-            {"name": "Regression R^2", "value": round(nc_res.r_squared, 3), "passed": nc_res.r_squared > 0.5},
-        ],
-        "assumptions": [{"text": "Power-law continuum", "checked": True, "passed": True}],
-        "status": "supported" if nc_res.r_squared > 0.6 else "inconclusive",
-        "plain_language_summary": f"Background spectral floor matches {nc_res.classification} noise (beta = {nc_res.beta_exponent:.2f}).",
-        "meaning": "Quantifies whether background fluctuations are memoryless white noise or fractal pink/brown noise.",
-        "references": ["Mandelbrot & Van Ness (1968), SIAM Review"],
-        "runtime_ms": 6.0,
-        "engine": "Python Engine (v2.0.0)",
-    })
+    if is_constant:
+        results_by_module["spectra"].append({
+            "method": "Noise Color Power-Law Beta Fit",
+            "version": "2.0.0",
+            "parameters": {"model": "S(f) ~ 1/f^beta"},
+            "estimate": 0.0,
+            "status": "skipped",
+            "plain_language_summary": f"Skipped: Constant signal has zero spectral variance (flat line at {primary_vals[0]:.4f}). Power-law noise exponent undefined.",
+            "meaning": "Quantifies whether background fluctuations are memoryless white noise or fractal pink/brown noise.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+    else:
+        try:
+            nc_res = estimate_noise_color(mt_res.frequencies, mt_res.psd)
+            results_by_module["spectra"].append({
+                "method": "Noise Color Power-Law Beta Fit",
+                "version": "2.0.0",
+                "parameters": {"model": "S(f) ~ 1/f^beta"},
+                "estimate": round(nc_res.beta_exponent, 3),
+                "uncertainty": {
+                    "ci_low": round(nc_res.beta_ci_lower, 3),
+                    "ci_high": round(nc_res.beta_ci_upper, 3),
+                    "level": 0.95,
+                    "method": "Linear regression CI",
+                },
+                "diagnostics": [
+                    {"name": "Color Regime", "value": nc_res.classification, "passed": True},
+                    {"name": "Regression R^2", "value": round(nc_res.r_squared, 3), "passed": nc_res.r_squared > 0.5},
+                ],
+                "assumptions": [{"text": "Power-law continuum", "checked": True, "passed": True}],
+                "status": "supported" if nc_res.r_squared > 0.6 else "inconclusive",
+                "plain_language_summary": f"Background spectral floor matches {nc_res.classification} noise (beta = {nc_res.beta_exponent:.2f}).",
+                "meaning": "Quantifies whether background fluctuations are memoryless white noise or fractal pink/brown noise.",
+                "references": ["Mandelbrot & Van Ness (1968), SIAM Review"],
+                "runtime_ms": 6.0,
+                "engine": "Python Engine (v2.0.0)",
+            })
+        except Exception as e:
+            results_by_module["spectra"].append({
+                "method": "Noise Color Power-Law Beta Fit",
+                "version": "2.0.0",
+                "parameters": {"model": "S(f) ~ 1/f^beta"},
+                "estimate": 0.0,
+                "status": "skipped",
+                "plain_language_summary": f"Skipped: {str(e)}",
+                "meaning": "Power law fitting skipped.",
+                "diagnostics": [{"name": "Error", "value": str(e), "passed": False}],
+                "runtime_ms": 0.1,
+                "engine": "Python Engine (v2.0.0)",
+            })
 
     # =========================================================================
     # 2. STATISTICS LAB
     # =========================================================================
     t_mod = time.perf_counter()
-    stat_res = evaluate_stationarity(primary_vals)
-    norm_res = evaluate_normality(primary_vals)
-    dfa_res = compute_dfa(primary_vals)
+    if is_constant:
+        results_by_module["statistics"].append({
+            "method": "Augmented Dickey-Fuller (ADF) Unit Root Test",
+            "version": "2.0.0",
+            "parameters": {"regression": "c", "autolag": "AIC"},
+            "estimate": 0.0,
+            "status": "skipped",
+            "plain_language_summary": f"Skipped: Constant signal has zero variance (value={primary_vals[0]:.4f}). Unit root test undefined.",
+            "meaning": "Tests whether the signal has a constant mean level or wanders indefinitely.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+        results_by_module["statistics"].append({
+            "method": "Jarque-Bera & Shapiro-Wilk Normality Test",
+            "version": "2.0.0",
+            "parameters": {"df": 2},
+            "estimate": 0.0,
+            "status": "skipped",
+            "plain_language_summary": f"Skipped: Constant signal is a point mass distribution without continuous variance.",
+            "meaning": "Verifies whether standard Gaussian parametric confidence intervals apply.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+        results_by_module["statistics"].append({
+            "method": "Detrended Fluctuation Analysis (Hurst Exponent)",
+            "version": "2.0.0",
+            "parameters": {"order": 1, "scales": "16..256"},
+            "estimate": 0.5,
+            "status": "skipped",
+            "plain_language_summary": "Skipped: Constant signal has no multiscale fluctuations.",
+            "meaning": "Measures long-range temporal persistence across time scales.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+    else:
+        stat_res = evaluate_stationarity(primary_vals)
+        norm_res = evaluate_normality(primary_vals)
+        dfa_res = compute_dfa(primary_vals)
 
-    results_by_module["statistics"].append({
-        "method": "Augmented Dickey-Fuller (ADF) Unit Root Test",
-        "version": "2.0.0",
-        "parameters": {"regression": "c", "autolag": "AIC"},
-        "estimate": round(stat_res.adf_statistic, 3),
-        "test": {
-            "statistic": round(stat_res.adf_statistic, 3),
-            "p_raw": float(stat_res.adf_p_value),
-            "null_model": "Unit root non-stationary random walk",
-        },
-        "diagnostics": [
-            {"name": "KPSS p-value", "value": round(stat_res.kpss_p_value, 4), "passed": stat_res.kpss_p_value >= 0.05},
-            {"name": "Combined Verdict", "value": stat_res.regime_conclusion, "passed": "Stationary" in stat_res.regime_conclusion},
-        ],
-        "assumptions": [{"text": "Linear autoregressive error structure", "checked": True, "passed": True}],
-        "status": "supported" if stat_res.adf_p_value < 0.05 else "rejected",
-        "plain_language_summary": f"{stat_res.regime_conclusion} (ADF stat = {stat_res.adf_statistic:.2f}, p = {stat_res.adf_p_value:.4f}).",
-        "meaning": "Tests whether the signal has a constant mean level or wanders indefinitely like a random walk.",
-        "references": ["Dickey & Fuller (1979), JASA", "Kwiatkowski et al. (1992), J. Econometrics"],
-        "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),
-        "engine": "Python Engine (v2.0.0)",
-    })
-    hypothesis_p_values.append(stat_res.adf_p_value)
-    hypothesis_references.append(("statistics", 0))
+        results_by_module["statistics"].append({
+            "method": "Augmented Dickey-Fuller (ADF) Unit Root Test",
+            "version": "2.0.0",
+            "parameters": {"regression": "c", "autolag": "AIC"},
+            "estimate": round(stat_res.adf_statistic, 3),
+            "test": {
+                "statistic": round(stat_res.adf_statistic, 3),
+                "p_raw": float(stat_res.adf_p_value),
+                "null_model": "Unit root non-stationary random walk",
+            },
+            "diagnostics": [
+                {"name": "KPSS p-value", "value": round(stat_res.kpss_p_value, 4), "passed": stat_res.kpss_p_value >= 0.05},
+                {"name": "Combined Verdict", "value": stat_res.regime_conclusion, "passed": "Stationary" in stat_res.regime_conclusion},
+            ],
+            "assumptions": [{"text": "Linear autoregressive error structure", "checked": True, "passed": True}],
+            "status": "supported" if stat_res.adf_p_value < 0.05 else "rejected",
+            "plain_language_summary": f"{stat_res.regime_conclusion} (ADF stat = {stat_res.adf_statistic:.2f}, p = {stat_res.adf_p_value:.4f}).",
+            "meaning": "Tests whether the signal has a constant mean level or wanders indefinitely like a random walk.",
+            "references": ["Dickey & Fuller (1979), JASA", "Kwiatkowski et al. (1992), J. Econometrics"],
+            "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),
+            "engine": "Python Engine (v2.0.0)",
+        })
+        hypothesis_p_values.append(stat_res.adf_p_value)
+        hypothesis_references.append(("statistics", 0))
 
-    results_by_module["statistics"].append({
-        "method": "Jarque-Bera & Shapiro-Wilk Normality Test",
-        "version": "2.0.0",
-        "parameters": {"df": 2},
-        "estimate": round(norm_res.jarque_bera_stat, 2),
-        "test": {
-            "statistic": round(norm_res.jarque_bera_stat, 2),
-            "p_raw": float(norm_res.jarque_bera_p_value),
-            "null_model": "Gaussian Normal Distribution",
-        },
-        "diagnostics": [
-            {"name": "Skewness", "value": round(norm_res.skewness, 3), "passed": abs(norm_res.skewness) < 0.5},
-            {"name": "Excess Kurtosis", "value": round(norm_res.kurtosis, 3), "passed": abs(norm_res.kurtosis) < 1.0},
-        ],
-        "assumptions": [{"text": "Independent observations", "checked": True, "passed": True}],
-        "status": "supported" if norm_res.is_normal else "rejected",
-        "plain_language_summary": "Data is consistent with a Gaussian bell curve." if norm_res.is_normal else f"Significant departure from Gaussianity (skew={norm_res.skewness:.2f}, kurt={norm_res.kurtosis:.2f}).",
-        "meaning": "Verifies whether standard Gaussian parametric confidence intervals apply.",
-        "references": ["Jarque & Bera (1987), Int. Stat. Rev."],
-        "runtime_ms": 5.0,
-        "engine": "Python Engine (v2.0.0)",
-    })
-    hypothesis_p_values.append(norm_res.jarque_bera_p_value)
-    hypothesis_references.append(("statistics", 1))
+        results_by_module["statistics"].append({
+            "method": "Jarque-Bera & Shapiro-Wilk Normality Test",
+            "version": "2.0.0",
+            "parameters": {"df": 2},
+            "estimate": round(norm_res.jarque_bera_stat, 2),
+            "test": {
+                "statistic": round(norm_res.jarque_bera_stat, 2),
+                "p_raw": float(norm_res.jarque_bera_p_value),
+                "null_model": "Gaussian Normal Distribution",
+            },
+            "diagnostics": [
+                {"name": "Skewness", "value": round(norm_res.skewness, 3), "passed": abs(norm_res.skewness) < 0.5},
+                {"name": "Excess Kurtosis", "value": round(norm_res.kurtosis, 3), "passed": abs(norm_res.kurtosis) < 1.0},
+            ],
+            "assumptions": [{"text": "Independent observations", "checked": True, "passed": True}],
+            "status": "supported" if norm_res.is_normal else "rejected",
+            "plain_language_summary": "Data is consistent with a Gaussian bell curve." if norm_res.is_normal else f"Significant departure from Gaussianity (skew={norm_res.skewness:.2f}, kurt={norm_res.kurtosis:.2f}).",
+            "meaning": "Verifies whether standard Gaussian parametric confidence intervals apply.",
+            "references": ["Jarque & Bera (1987), Int. Stat. Rev."],
+            "runtime_ms": 5.0,
+            "engine": "Python Engine (v2.0.0)",
+        })
+        hypothesis_p_values.append(norm_res.jarque_bera_p_value)
+        hypothesis_references.append(("statistics", 1))
 
-    results_by_module["statistics"].append({
-        "method": "Detrended Fluctuation Analysis (Hurst Exponent)",
-        "version": "2.0.0",
-        "parameters": {"order": 1, "scales": "16..256"},
-        "estimate": round(dfa_res.hurst_exponent, 3),
-        "uncertainty": {
-            "ci_low": round(max(0.0, dfa_res.hurst_exponent - dfa_res.hurst_std_err), 3),
-            "ci_high": round(dfa_res.hurst_exponent + dfa_res.hurst_std_err, 3),
-            "level": 0.95,
-            "method": "Linear log-log regression",
-        },
-        "diagnostics": [
-            {"name": "Scaling R^2", "value": round(dfa_res.r_squared, 3), "passed": dfa_res.r_squared > 0.90},
-            {"name": "Memory Regime", "value": dfa_res.interpretation, "passed": True},
-        ],
-        "assumptions": [{"text": "Monofractal power-law scaling", "checked": True, "passed": True}],
-        "status": "supported" if dfa_res.r_squared > 0.90 else "inconclusive",
-        "plain_language_summary": f"Hurst exponent H = {dfa_res.hurst_exponent:.2f} ({dfa_res.interpretation}).",
-        "meaning": "Measures long-range temporal persistence across time scales.",
-        "references": ["Peng et al. (1994), Phys. Rev. E"],
-        "runtime_ms": 15.0,
-        "engine": "Python Engine (v2.0.0)",
-    })
+        results_by_module["statistics"].append({
+            "method": "Detrended Fluctuation Analysis (Hurst Exponent)",
+            "version": "2.0.0",
+            "parameters": {"order": 1, "scales": "16..256"},
+            "estimate": round(dfa_res.hurst_exponent, 3),
+            "uncertainty": {
+                "ci_low": round(max(0.0, dfa_res.hurst_exponent - dfa_res.hurst_std_err), 3),
+                "ci_high": round(dfa_res.hurst_exponent + dfa_res.hurst_std_err, 3),
+                "level": 0.95,
+                "method": "Linear log-log regression",
+            },
+            "diagnostics": [
+                {"name": "Scaling R^2", "value": round(dfa_res.r_squared, 3), "passed": dfa_res.r_squared > 0.90},
+                {"name": "Memory Regime", "value": dfa_res.interpretation, "passed": True},
+            ],
+            "assumptions": [{"text": "Monofractal power-law scaling", "checked": True, "passed": True}],
+            "status": "supported" if dfa_res.r_squared > 0.90 else "inconclusive",
+            "plain_language_summary": f"Hurst exponent H = {dfa_res.hurst_exponent:.2f} ({dfa_res.interpretation}).",
+            "meaning": "Measures long-range temporal persistence across time scales.",
+            "references": ["Peng et al. (1994), Phys. Rev. E"],
+            "runtime_ms": 15.0,
+            "engine": "Python Engine (v2.0.0)",
+        })
 
     # =========================================================================
     # 3. ANOMALIES & EVENTS LAB (With Shared Robust Preprocessing & Regime ESD)
@@ -468,67 +539,105 @@ def run_live_analysis(req: AnalyzeRequest):
     # 4. DYNAMICS & STRUCTURE LAB
     # =========================================================================
     t_mod = time.perf_counter()
-    lags_ami, ami_vals, opt_tau = compute_average_mutual_information(primary_vals, max_lag=30)
-    dims_fnn, fnn_arr, opt_m = compute_false_nearest_neighbours(primary_vals, delay_tau=opt_tau, max_dim=8)
-    sub_n = min(n, 500)
-    rqa_res = compute_rqa(primary_vals[:sub_n], dimension=opt_m, delay=opt_tau)
-    lyap_res = compute_largest_lyapunov_exponent(primary_vals[:sub_n], dimension=opt_m, delay=opt_tau)
-    samp_en = compute_sample_entropy(primary_vals[:min(n, 400)])
+    if is_constant:
+        results_by_module["dynamics"].append({
+            "method": "Average Mutual Information (AMI) Delay",
+            "version": "2.0.0",
+            "parameters": {"max_lag": 30},
+            "estimate": 1,
+            "status": "skipped",
+            "plain_language_summary": "Skipped: Constant signal phase space collapses to a single point.",
+            "meaning": "Phase space reconstruction requires non-zero dynamic variation.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+        results_by_module["dynamics"].append({
+            "method": "Recurrence Quantification Analysis (RQA)",
+            "version": "2.0.0",
+            "parameters": {"epsilon": "0.0", "m": 1, "tau": 1},
+            "estimate": 100.0,
+            "status": "skipped",
+            "plain_language_summary": "Skipped: Phase space recurrence is trivial for constant values.",
+            "meaning": "Quantifies trajectory predictability in reconstructed phase space.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+        results_by_module["dynamics"].append({
+            "method": "Largest Lyapunov Exponent",
+            "version": "2.0.0",
+            "parameters": {"max_steps": 30},
+            "estimate": 0.0,
+            "status": "skipped",
+            "plain_language_summary": "Skipped: Trajectory divergence undefined on point attractor.",
+            "meaning": "Distinguishes deterministic chaos from regularity or noise.",
+            "diagnostics": [{"name": "Zero Variance", "value": "True", "passed": False}],
+            "runtime_ms": 0.1,
+            "engine": "Python Engine (v2.0.0)",
+        })
+    else:
+        lags_ami, ami_vals, opt_tau = compute_average_mutual_information(primary_vals, max_lag=30)
+        dims_fnn, fnn_arr, opt_m = compute_false_nearest_neighbours(primary_vals, delay_tau=opt_tau, max_dim=8)
+        sub_n = min(n, 500)
+        rqa_res = compute_rqa(primary_vals[:sub_n], dimension=opt_m, delay=opt_tau)
+        lyap_res = compute_largest_lyapunov_exponent(primary_vals[:sub_n], dimension=opt_m, delay=opt_tau)
+        samp_en = compute_sample_entropy(primary_vals[:min(n, 400)])
 
-    results_by_module["dynamics"].append({
-        "method": "Average Mutual Information (AMI) Delay",
-        "version": "2.0.0",
-        "parameters": {"max_lag": 30},
-        "estimate": opt_tau,
-        "diagnostics": [
-            {"name": "First local minimum", "value": f"tau* = {opt_tau} lags", "passed": True},
-            {"name": "FNN Embedding Dim", "value": f"m* = {opt_m} dims", "passed": True},
-        ],
-        "assumptions": [{"text": "Smooth dynamical manifold", "checked": True, "passed": True}],
-        "status": "supported",
-        "plain_language_summary": f"Optimal embedding coordinates: delay tau = {opt_tau} lags, dimension m = {opt_m}.",
-        "meaning": "Determines the minimal dimensions required to unfold system state space.",
-        "references": ["Takens (1981)", "Fraser & Swinney (1986), Phys. Rev. A"],
-        "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),
-        "engine": "Python Engine (v2.0.0)",
-    })
+        results_by_module["dynamics"].append({
+            "method": "Average Mutual Information (AMI) Delay",
+            "version": "2.0.0",
+            "parameters": {"max_lag": 30},
+            "estimate": opt_tau,
+            "diagnostics": [
+                {"name": "First local minimum", "value": f"tau* = {opt_tau} lags", "passed": True},
+                {"name": "FNN Embedding Dim", "value": f"m* = {opt_m} dims", "passed": True},
+            ],
+            "assumptions": [{"text": "Smooth dynamical manifold", "checked": True, "passed": True}],
+            "status": "supported",
+            "plain_language_summary": f"Optimal embedding coordinates: delay tau = {opt_tau} lags, dimension m = {opt_m}.",
+            "meaning": "Determines the minimal dimensions required to unfold system state space.",
+            "references": ["Takens (1981)", "Fraser & Swinney (1986), Phys. Rev. A"],
+            "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),
+            "engine": "Python Engine (v2.0.0)",
+        })
 
-    results_by_module["dynamics"].append({
-        "method": "Recurrence Quantification Analysis (RQA)",
-        "version": "2.0.0",
-        "parameters": {"epsilon": f"{rqa_res.epsilon_threshold:.3f}", "m": rqa_res.embedding_dimension, "tau": rqa_res.embedding_delay},
-        "estimate": round(rqa_res.determinism, 1),
-        "diagnostics": [
-            {"name": "Determinism (DET)", "value": f"{rqa_res.determinism:.1f}%", "passed": rqa_res.determinism > 50.0},
-            {"name": "Laminarity (LAM)", "value": f"{rqa_res.laminarity:.1f}%", "passed": True},
-            {"name": "Diagonal Entropy", "value": f"{rqa_res.diagonal_entropy:.2f} bits", "passed": True},
-        ],
-        "assumptions": [{"text": "Stationary recurrence matrix", "checked": True, "passed": True}],
-        "status": "supported" if rqa_res.determinism > 40.0 else "inconclusive",
-        "plain_language_summary": f"Phase-space determinism DET = {rqa_res.determinism:.1f}% (average line length = {rqa_res.average_diagonal_length:.1f}).",
-        "meaning": "Quantifies the predictability of trajectories in reconstructed phase space.",
-        "references": ["Marwan et al. (2007), Phys. Rep."],
-        "runtime_ms": 25.0,
-        "engine": "Python Engine (v2.0.0)",
-    })
+        results_by_module["dynamics"].append({
+            "method": "Recurrence Quantification Analysis (RQA)",
+            "version": "2.0.0",
+            "parameters": {"epsilon": f"{rqa_res.epsilon_threshold:.3f}", "m": rqa_res.embedding_dimension, "tau": rqa_res.embedding_delay},
+            "estimate": round(rqa_res.determinism, 1),
+            "diagnostics": [
+                {"name": "Determinism (DET)", "value": f"{rqa_res.determinism:.1f}%", "passed": rqa_res.determinism > 50.0},
+                {"name": "Laminarity (LAM)", "value": f"{rqa_res.laminarity:.1f}%", "passed": True},
+                {"name": "Diagonal Entropy", "value": f"{rqa_res.diagonal_entropy:.2f} bits", "passed": True},
+            ],
+            "assumptions": [{"text": "Stationary recurrence matrix", "checked": True, "passed": True}],
+            "status": "supported" if rqa_res.determinism > 40.0 else "inconclusive",
+            "plain_language_summary": f"Phase-space determinism DET = {rqa_res.determinism:.1f}% (average line length = {rqa_res.average_diagonal_length:.1f}).",
+            "meaning": "Quantifies the predictability of trajectories in reconstructed phase space.",
+            "references": ["Marwan et al. (2007), Phys. Rep."],
+            "runtime_ms": 25.0,
+            "engine": "Python Engine (v2.0.0)",
+        })
 
-    results_by_module["dynamics"].append({
-        "method": "Largest Lyapunov Exponent",
-        "version": "2.0.0",
-        "parameters": {"max_steps": 30},
-        "estimate": round(lyap_res.largest_lyapunov_exponent, 4),
-        "diagnostics": [
-            {"name": "R^2 Scaling Fit", "value": round(lyap_res.r_squared_fit, 3), "passed": lyap_res.r_squared_fit >= 0.85},
-            {"name": "Chaotic Verdict", "value": "Chaotic" if lyap_res.is_chaotic else "Non-Chaotic / Regular", "passed": True},
-        ],
-        "assumptions": [{"text": "Exponential divergence regime", "checked": True, "passed": True}],
-        "status": "supported" if lyap_res.is_chaotic else "rejected",
-        "plain_language_summary": f"Trajectory divergence lambda_1 = {lyap_res.largest_lyapunov_exponent:+.4f} ({lyap_res.fit_status}).",
-        "meaning": "Distinguishes deterministic chaos from deterministic regularity or stochastic noise.",
-        "references": ["Rosenstein et al. (1993), Physica D"],
-        "runtime_ms": 20.0,
-        "engine": "Python Engine (v2.0.0)",
-    })
+        results_by_module["dynamics"].append({
+            "method": "Largest Lyapunov Exponent",
+            "version": "2.0.0",
+            "parameters": {"max_steps": 30},
+            "estimate": round(lyap_res.largest_lyapunov_exponent, 4),
+            "diagnostics": [
+                {"name": "R^2 Scaling Fit", "value": round(lyap_res.r_squared_fit, 3), "passed": lyap_res.r_squared_fit >= 0.85},
+                {"name": "Chaotic Verdict", "value": "Chaotic" if lyap_res.is_chaotic else "Non-Chaotic / Regular", "passed": True},
+            ],
+            "assumptions": [{"text": "Exponential divergence regime", "checked": True, "passed": True}],
+            "status": "supported" if lyap_res.is_chaotic else "rejected",
+            "plain_language_summary": f"Trajectory divergence lambda_1 = {lyap_res.largest_lyapunov_exponent:+.4f} ({lyap_res.fit_status}).",
+            "meaning": "Distinguishes deterministic chaos from deterministic regularity or stochastic noise.",
+            "references": ["Rosenstein et al. (1993), Physica D"],
+            "runtime_ms": 20.0,
+            "engine": "Python Engine (v2.0.0)",
+        })
 
     # =========================================================================
     # 5. RELATIONS LAB (If >= 2 channels)
@@ -741,7 +850,7 @@ def run_live_analysis(req: AnalyzeRequest):
 
 class FastBatchRequest(BaseModel):
     channels: Dict[str, List[float]]
-    sampling_rate: float = 500.0
+    sampling_rate: float = Field(500.0, gt=0)
     max_peaks: int = 5
 
 
