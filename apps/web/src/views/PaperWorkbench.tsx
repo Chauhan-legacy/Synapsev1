@@ -46,6 +46,7 @@ import { useSignal } from '../context/SignalContext';
 import { parseUniversalSignalCSV } from '../utils/csvParser';
 import { parseCsvWithStreamingWorker } from '../utils/streamingCsvParser';
 import { parsePaperCsv, generateSamplePapersCsv } from '../utils/paperCsvParser';
+import { computeWelchPSD } from '../utils/signalMath';
 import {
   PaperGraphSet,
   loadStoredPaperGraphSets,
@@ -93,6 +94,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     }
   }, [initialTab]);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [spectrumScale, setSpectrumScale] = useState<'linear' | 'db'>('linear');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // PaperGraph Literature Search & Citation State
@@ -404,35 +406,41 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     }
 
     // 3. Discrete Fourier Power Spectrum (Welch Hann Window)
-    const nDft = Math.min(n, 256);
-    const dftData: Array<{ freq: number; power: number }> = [];
+    const welch = computeWelchPSD(values, fs);
+    const dftData: Array<{ freq: number; power: number; powerDb: number }> = [];
     let peakPower = 0;
-    let domFreq = 0;
-    const powers: number[] = [];
+    const domFreq = welch.dominantFrequency;
 
-    for (let k = 1; k < nDft / 2; k++) {
-      const f = (k * fs) / nDft;
-      let r = 0, im = 0;
-      for (let i = 0; i < nDft; i++) {
-        const win = 0.5 * (1.0 - Math.cos((2 * Math.PI * i) / (nDft - 1))); // Hann window
-        const th = (2 * Math.PI * k * i) / nDft;
-        r += (values[i] - mean) * win * Math.cos(th);
-        im -= (values[i] - mean) * win * Math.sin(th);
+    // Peak-preserving decimation for high-density spectra (e.g. 120k samples)
+    const totalFreqs = welch.frequencies.length;
+    const maxChartPoints = 400;
+    const bucketSize = Math.max(1, Math.floor(totalFreqs / maxChartPoints));
+
+    for (let b = 0; b < totalFreqs; b += bucketSize) {
+      let maxIdx = b;
+      let maxVal = welch.psd[b] || 0;
+      const end = Math.min(totalFreqs, b + bucketSize);
+      for (let j = b + 1; j < end; j++) {
+        if ((welch.psd[j] || 0) > maxVal) {
+          maxVal = welch.psd[j];
+          maxIdx = j;
+        }
       }
-      const p = (r * r + im * im) / (nDft * fs * 0.375);
-      powers.push(p);
+      const p = welch.psd[maxIdx] || 0;
+      const f = welch.frequencies[maxIdx] || 0;
+      const powerDb = 10 * Math.log10(Math.max(1e-12, p));
       dftData.push({
-        freq: Number(f.toFixed(1)),
+        freq: Number(f.toFixed(2)),
         power: Number(p.toFixed(4)),
+        powerDb: Number(powerDb.toFixed(2)),
       });
-
       if (p > peakPower) {
         peakPower = p;
-        domFreq = f;
       }
     }
 
     // 4. Spectral Entropy (Information disorder)
+    const powers = welch.psd;
     const sumP = powers.reduce((a, b) => a + b, 0) || 1e-12;
     let entropy = 0;
     for (const p of powers) {
@@ -646,7 +654,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           statusStyle: 'bg-[#E8EFE9] text-[#25653F] border-[#CDE0D0]',
           engine: 'SPECTRA • Welch PSD Ingestion Engine',
           statistic: `Peak Power = ${peakPower.toFixed(4)}`,
-          uncertainty: `± ${(fs / nDft).toFixed(3)} Hz (Bin resolution)`,
+          uncertainty: `± ${welch.frequencyResolution.toFixed(3)} Hz (Bin resolution)`,
           crlb: 'Empirical Peak Identification',
           meaning: 'Strongest sinusoidal Fourier frequency component detected in uploaded experimental dataset.',
         },
@@ -696,6 +704,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
         peak: Number(peak.toFixed(3)),
         rms: Number(rms.toFixed(3)),
         dominantPeak: domFreq,
+        frequencyResolution: welch.frequencyResolution,
         maxZ,
         maxZTime: Number(maxZTime.toFixed(3)),
         spectralEntropy: Number(normEntropy.toFixed(1)),
@@ -1160,16 +1169,42 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
               {/* Chart 2: Discrete Fourier Power Spectrum */}
               <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-5 rounded-xl shadow-xs space-y-3">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#E6E1D6]/70 pb-2">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#10141C]" />
                     <h2 className="font-serif italic text-base sm:text-lg text-[#10141C] font-semibold tracking-tight">
-                      Discrete Fourier Power Spectrum
+                      Discrete Fourier Power Spectrum (Welch PSD)
                     </h2>
+                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#EFEBE0] text-[#0F766E] font-bold border border-[#DDD6C7]">
+                      {stats.dominantPeak.toFixed(2)} Hz Peak (Δf = {stats.frequencyResolution.toFixed(3)} Hz)
+                    </span>
                   </div>
-                  <div className="flex items-center space-x-4 font-mono text-[11px] text-[#78716C]">
-                    <span>Hann Window</span>
+                  <div className="flex items-center space-x-3 font-mono text-[11px] text-[#78716C]">
+                    <div className="flex items-center border border-[#DDD6C7] rounded bg-[#EFEBE0] p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setSpectrumScale('linear')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                          spectrumScale === 'linear'
+                            ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
+                            : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                        }`}
+                      >
+                        Linear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSpectrumScale('db')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                          spectrumScale === 'db'
+                            ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
+                            : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                        }`}
+                      >
+                        Log (dB)
+                      </button>
+                    </div>
                     <span>&bull;</span>
-                    <span>Single-Sided Nyquist Range [0, {(stats.samplingRate / 2).toFixed(0)} Hz]</span>
+                    <span>Nyquist [0, {(stats.samplingRate / 2).toFixed(0)} Hz]</span>
                   </div>
                 </div>
 
@@ -1182,11 +1217,13 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                         tickLine={{ stroke: '#E6E1D6' }}
                         axisLine={{ stroke: '#E6E1D6' }}
+                        unit=" Hz"
                       />
                       <YAxis
                         tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                         tickLine={{ stroke: '#E6E1D6' }}
                         axisLine={{ stroke: '#E6E1D6' }}
+                        unit={spectrumScale === 'db' ? ' dB' : ''}
                       />
                       <Tooltip
                         contentStyle={{
@@ -1196,6 +1233,11 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                           fontFamily: 'JetBrains Mono',
                           fontSize: '11px',
                         }}
+                        formatter={(val: any) => [
+                          `${Number(val).toFixed(4)} ${spectrumScale === 'db' ? 'dB' : 'V²/Hz'}`,
+                          spectrumScale === 'db' ? 'PSD (dB)' : 'PSD Power',
+                        ]}
+                        labelFormatter={(label: any) => `Frequency: ${Number(label).toFixed(2)} Hz`}
                       />
                       {!customData && (
                         <>
@@ -1204,10 +1246,24 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                           <ReferenceLine x={35.0} stroke="#78716C" strokeDasharray="3 3" label={{ value: '35 Hz Peak', fill: '#10141C', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
                         </>
                       )}
+                      {customData && stats.dominantPeak > 0 && (
+                        <ReferenceLine
+                          x={stats.dominantPeak}
+                          stroke="#0F766E"
+                          strokeDasharray="3 3"
+                          label={{
+                            value: `Peak ${stats.dominantPeak.toFixed(2)} Hz`,
+                            fill: '#0F766E',
+                            fontSize: 10,
+                            position: 'top',
+                            fontFamily: 'JetBrains Mono',
+                          }}
+                        />
+                      )}
                       {/* Plotted Line in Pure Black Ink */}
                       <Line
                         type="monotone"
-                        dataKey="power"
+                        dataKey={spectrumScale === 'db' ? 'powerDb' : 'power'}
                         stroke="#10141C"
                         strokeWidth={1.8}
                         dot={false}

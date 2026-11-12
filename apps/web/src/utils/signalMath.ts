@@ -191,35 +191,45 @@ export interface SpectralPeak {
 export function computeWelchPSD(
   raw: number[],
   fs: number = 200,
-  nperseg: number = 256,
-  noverlap: number = 128
+  nperseg?: number,
+  noverlap?: number
 ): {
   frequencies: number[];
   psd: number[];
   peaks: SpectralPeak[];
   dominantFrequency: number;
   totalPower: number;
+  frequencyResolution: number;
 } {
   const n = raw.length;
-  if (n < nperseg) {
-    nperseg = Math.min(n, 128);
-    noverlap = Math.floor(nperseg / 2);
+  let seg = nperseg;
+  if (!seg) {
+    if (n >= 16384) seg = 2048;
+    else if (n >= 4096) seg = 1024;
+    else if (n >= 1024) seg = 512;
+    else if (n >= 256) seg = 256;
+    else seg = Math.min(n, 128);
   }
+  if (n < seg) {
+    seg = Math.min(n, 128);
+  }
+  let lap = noverlap !== undefined ? noverlap : Math.floor(seg / 2);
+  if (lap >= seg) lap = Math.floor(seg / 2);
 
-  const window = hannWindow(nperseg);
+  const window = hannWindow(seg);
   let s2 = 0;
-  for (let i = 0; i < nperseg; i++) s2 += window[i] * window[i];
+  for (let i = 0; i < seg; i++) s2 += window[i] * window[i];
   if (s2 === 0) s2 = 1;
 
-  const step = nperseg - noverlap;
-  const numSegments = Math.max(1, Math.floor((n - noverlap) / step));
-  const halfN = Math.floor(nperseg / 2) + 1;
+  const step = Math.max(1, seg - lap);
+  const numSegments = Math.max(1, Math.floor((n - lap) / step));
+  const halfN = Math.floor(seg / 2) + 1;
   const accumulatedPsd = new Float64Array(halfN);
 
   for (let s = 0; s < numSegments; s++) {
     const start = s * step;
-    const segment = new Float64Array(nperseg);
-    for (let i = 0; i < nperseg; i++) {
+    const segment = new Float64Array(seg);
+    for (let i = 0; i < seg; i++) {
       segment[i] = (raw[start + i] || 0) * window[i];
     }
 
@@ -233,7 +243,7 @@ export function computeWelchPSD(
 
   const frequencies: number[] = [];
   const psd: number[] = [];
-  const df = fs / nperseg;
+  const df = fs / seg;
   let maxP = 0;
   let domFreq = 0;
   let totalPower = 0;
@@ -274,6 +284,7 @@ export function computeWelchPSD(
     peaks: peaks.slice(0, 5),
     dominantFrequency: parseFloat(domFreq.toFixed(2)),
     totalPower: parseFloat(totalPower.toFixed(4)),
+    frequencyResolution: parseFloat(df.toFixed(4)),
   };
 }
 
