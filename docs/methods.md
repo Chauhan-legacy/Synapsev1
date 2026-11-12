@@ -93,3 +93,4 @@ This document provides complete mathematical derivations, partial differential e
 * **Physical Phenomenon**: Neutron population kinetics governed by prompt neutrons and 6 delayed neutron precursor groups ($^{87}\text{Br}, ^{137}\text{I}$).
 * **Mathematical Formalism**:
   $$\frac{dn(t)}{dt} = \frac{\rho(t) - \beta_{\text{eff}}}{\Lambda} n(t) + \sum_{i=1}^{6} \lambda_i C_i(t) + S(t), \quad \frac{dC_i(t)}{dt} = \frac{\beta_i}{\Lambda} n(t) - \lambda_i C_i(t)$$
+

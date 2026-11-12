@@ -16,6 +16,7 @@ import { Gnss3DIonosphere } from '../components/geo/Gnss3DIonosphere';
 import { SpacecraftAttitude3D } from '../components/geo/SpacecraftAttitude3D';
 import { OceanSoliton3D } from '../components/geo/OceanSoliton3D';
 import { GraceTwinOrbit3D } from '../components/geo/GraceTwinOrbit3D';
+import { LiveSatelliteTracker } from '../components/geo/LiveSatelliteTracker';
 import {
   Satellite,
   Radio,
@@ -42,7 +43,7 @@ import {
   Bar,
 } from 'recharts';
 
-export type SatelliteTab = 'gnss_tec' | 'spacecraft_rwa' | 'insar' | 'ocean_kdv' | 'grace_gravity';
+export type SatelliteTab = 'live_tracking' | 'gnss_tec' | 'spacecraft_rwa' | 'insar' | 'ocean_kdv' | 'grace_gravity';
 
 interface SatelliteLabViewProps {
   onOpenMethodCard?: (name: string) => void;
@@ -50,7 +51,7 @@ interface SatelliteLabViewProps {
 
 export const SatelliteLabView: React.FC<SatelliteLabViewProps> = ({ onOpenMethodCard }) => {
   const { loadCustomSignal } = useSignal();
-  const [activeTab, setActiveTab] = useState<SatelliteTab>('gnss_tec');
+  const [activeTab, setActiveTab] = useState<SatelliteTab>('live_tracking');
   const [displayMode, setDisplayMode] = useState<'3d' | 'timeseries' | 'dual'>('dual');
   const [ingestSuccess, setIngestSuccess] = useState<string | null>(null);
 
@@ -175,6 +176,18 @@ export const SatelliteLabView: React.FC<SatelliteLabViewProps> = ({ onOpenMethod
         <div className="flex items-center gap-1.5">
           <button
             type="button"
+            onClick={() => setActiveTab('live_tracking')}
+            className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
+              activeTab === 'live_tracking'
+                ? 'bg-[#0F766E] text-white shadow-2xs'
+                : 'bg-[#FFFFFF] border border-[#DDD6C7] text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+            }`}
+          >
+            <Satellite className="w-3.5 h-3.5" />
+            #0 Live Orbit &amp; Ground Tracks
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('gnss_tec')}
             className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
               activeTab === 'gnss_tec'
@@ -275,6 +288,10 @@ export const SatelliteLabView: React.FC<SatelliteLabViewProps> = ({ onOpenMethod
       )}
 
       {/* Main Observatory Display */}
+      {activeTab === 'live_tracking' && (
+        <LiveSatelliteTracker onIngestSignal={handleIngest} />
+      )}
+
       {activeTab === 'gnss_tec' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">

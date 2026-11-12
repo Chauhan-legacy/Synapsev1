@@ -216,3 +216,4 @@ run().catch((err) => {
   console.error('Fatal error during responsive browser verification:', err);
   process.exit(1);
 });
+

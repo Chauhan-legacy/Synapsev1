@@ -41,3 +41,4 @@ The user interface adheres to the **Paper Teal** design system:
 * Accents: Deep Teal (`#0F766E`), Indigo (`#4338CA`), Amber (`#D97706`), and Crimson (`#DC2626`).
 * Typography: JetBrains Mono for telemetry and data grids; KaTeX for analytical formulas.
 * WCAG 2.2 Level AA compliance across all components with verified 4.5:1 minimum contrast.
+

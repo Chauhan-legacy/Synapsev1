@@ -42,6 +42,13 @@ from synapse_discovery.orchestrator import (
 from apps.api.routers.arxiv_router import router as arxiv_router
 from apps.api.routers.astronomy_router import router as astronomy_router
 from apps.api.routers.analysis_router import router as analysis_router
+from apps.api.routers.spaceweather_router import router as spaceweather_router
+from apps.api.routers.seismology_router import router as seismology_router
+from apps.api.routers.gwosc_router import router as gwosc_router
+from apps.api.routers.pulsar_router import router as pulsar_router
+from apps.api.routers.astrodynamics_router import router as astrodynamics_router
+from apps.api.routers.reactor_router import router as reactor_router
+from apps.api.routers.satellite_sis_router import router as satellite_sis_router
 
 app = FastAPI(
     title="SYNAPSE Scientific Signal Intelligence API",
@@ -91,6 +98,22 @@ app.add_middleware(
 app.include_router(arxiv_router)
 app.include_router(astronomy_router)
 app.include_router(analysis_router)
+app.include_router(spaceweather_router)
+app.include_router(seismology_router)
+app.include_router(gwosc_router)
+app.include_router(pulsar_router)
+app.include_router(astrodynamics_router)
+app.include_router(reactor_router)
+app.include_router(satellite_sis_router)
+
+@app.get("/api/satellite/tle", tags=["Astronomy & Astrophysics"])
+def get_satellite_tle_alias(
+    group: str = Query("stations", description="CelesTrak satellite group (e.g. stations, visual, weather, science, gnss)"),
+    catnr: Optional[str] = Query(None, description="Optional NORAD catalog number")
+):
+    from apps.api.routers.astronomy_router import get_celestrak_tle
+    return get_celestrak_tle(group=group, catnr=catnr)
+
 
 # In-memory storage for datasets, experiments, and async jobs
 DATASETS_STORE: Dict[str, Signal] = {}
