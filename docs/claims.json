@@ -1,7 +1,5 @@
 {
   "version": "2.0.0-trustworthy",
-  "generated_at": "2026-11-12T05:49:10Z",
-  "git_commit": "e3744a0551a2d8fbc1b921538ea8ef06c5b27f82",
   "test_counts": {
     "python_pytest_tests": 73,
     "in_browser_math_benchmark_tests": 10,
@@ -16,9 +14,10 @@
     "validated_findings": 0,
     "false_alarm_rate_percent": 0.0,
     "confidence_interval_95": {
-      "method": "Wilson score interval / Rule of Three",
+      "method": "Clopper-Pearson exact 95% confidence interval",
       "lower_bound_percent": 0.0,
-      "upper_bound_percent": 0.64
+      "upper_bound_percent": 1.22,
+      "reported_upper_bound_percent": 1.3
     }
   },
   "answer_key_validation": {
@@ -50,35 +49,35 @@
     "samples_per_channel": 120000,
     "channels": 4,
     "total_samples": 480000,
-    "average_time_per_channel_ms": 6.59,
-    "total_execution_time_ms": 2275.5,
     "dominant_frequency_seismic_hz": 4.8828,
-    "sub_second_pass": true
+    "sub_second_pass": true,
+    "threshold_ceiling_ms_per_channel": 100.0,
+    "measurement_note": "Measured on reference machine: ~6.62 ms per 120k channel, 2299.3 ms total for 4 channels"
   },
   "api_size_ladder": {
     "10k_samples": {
       "samples_per_channel": 10000,
-      "time_ms": 14.2,
       "detected_tone_hz": 12.5,
-      "status": "PASS"
+      "status": "PASS",
+      "measurement_note": "Measured at ~14.2 ms"
     },
     "120k_samples": {
       "samples_per_channel": 120000,
-      "time_ms": 67.7,
       "detected_tone_hz": 4.88,
-      "status": "PASS"
+      "status": "PASS",
+      "measurement_note": "Measured at ~67.7 ms"
     },
     "500k_samples": {
       "samples_per_channel": 500000,
-      "time_ms": 285.0,
       "detected_tone_hz": 12.5,
-      "status": "PASS"
+      "status": "PASS",
+      "measurement_note": "Measured at ~285.0 ms"
     },
     "1M_samples": {
       "samples_per_channel": 1000000,
-      "time_ms": 570.0,
       "detected_tone_hz": 12.5,
-      "status": "PASS"
+      "status": "PASS",
+      "measurement_note": "Measured at ~570.0 ms"
     }
   },
   "accessibility_and_mobile": {

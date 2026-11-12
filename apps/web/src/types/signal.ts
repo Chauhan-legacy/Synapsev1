@@ -8,6 +8,9 @@ export interface SignalQuality {
   infinite_count: number;
   clipping_count: number;
   content_hash_sha256: string;
+  original_sha256?: string;
+  timestamps_linearized?: boolean;
+  linearization_notice?: string;
   warnings: string[];
 }
 
@@ -20,5 +23,8 @@ export interface SignalData {
   channelNames: string[];
   duration: number;
   quality: SignalQuality;
+  timestampsLinearized?: boolean;
+  linearizationNotice?: string;
+  originalSha256?: string;
 }
 

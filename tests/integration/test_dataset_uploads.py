@@ -43,3 +43,28 @@ def test_dataset_upload_zero_config(rel_path, expected_samples, expected_fs):
     data = response.json()
     assert data["samples"] == expected_samples, f"Expected {expected_samples} samples, got {data['samples']}"
     assert abs(data["sampling_rate"] - expected_fs) <= 0.1, f"Expected {expected_fs} Hz, got {data['sampling_rate']}"
+
+
+def test_timestamp_linearization_preserves_sha256_and_notifies():
+    """Verify that datasets with non-monotonic timestamps (like G_statistical_inference)
+    are continuously linearized, report timestamps_linearized=True, and retain original SHA-256."""
+    import hashlib
+    rel_path = "benchmarks/SYNAPSE_BENCHMARK_DATA/data/G_statistical_inference.csv"
+    file_path = _ROOT / rel_path
+    if not file_path.exists():
+        pytest.skip("Dataset G_statistical_inference.csv not found.")
+
+    raw_bytes = file_path.read_bytes()
+    expected_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+
+    with open(file_path, "rb") as f:
+        response = client.post(
+            "/v1/datasets/upload",
+            files={"file": (file_path.name, f, "text/csv")},
+        )
+
+    assert response.status_code == 200, f"Upload failed: {response.text}"
+    data = response.json()
+    assert data["timestamps_linearized"] is True, "Expected timestamps_linearized to be True"
+    assert "Continuous time linearization" in data["linearization_message"]
+    assert data["original_sha256"] == expected_sha256, "Original SHA-256 must match raw file hash"

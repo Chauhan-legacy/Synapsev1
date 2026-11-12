@@ -15,11 +15,11 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 
 | Component | Audit Baseline (Before) | Trustworthy Release (After) | Status | Key Improvements |
 |---|---|---|---|---|
-| **Python Scientific Engines** | 46 / 53 passed (86.8%) | **73 / 73 passed (100%)** | **ALL PASS** | Scale-invariant Thomson multitaper, restricted-model BIC Granger causality, BOCPD prior predictive distribution, continuous RQA determinism. |
-| **In-Browser TypeScript Math** | 18 / 28 passed (64.3%) | **10 / 10 benchmarks (100%)** | **ALL PASS** | Zero-padded Slepian multitaper ($N_{\text{fft}} = 2048$), Welch dynamic scaling ($N=120k \implies 2048$), true OLS Granger causality with Gaussian elimination, exact Jacobi PCA decomposition. |
-| **Pure Noise False Discoveries** | 259.0 discoveries / run | **0.00 discoveries / run** | **VERIFIED** | Benjamini-Hochberg FDR ($q=0.05$) across independent spectral bands + split-half persistence; 300 seeded runs produce strictly 0 validated claims (95% CI: [0.00%, 0.64%]). |
-| **Planted Outliers & Shifts** | Masking & false alarms | **100% recall, 0 false alarms** | **VERIFIED** | Generalized Rosner ESD per regime isolates samples 500 and 1800; PELT isolates sample 1200; Granger VAR validates X→Y ($p < 10^{-10}$) and rejects reverse link Y→X under FDR. |
-| **Automated Test Suite** | 22 tests | **83 tests (100% pass)** | **VERIFIED** | 73 pytest regression tests + 10 in-browser math benchmarks (`npm run test:math`). |
+| **Python Scientific Engines** | 46 / 53 passed (86.8%) | **73 / 73 passed** | **ALL PASS** | Scale-invariant Thomson multitaper, restricted-model BIC Granger causality, BOCPD prior predictive distribution, continuous RQA determinism. |
+| **In-Browser TypeScript Math** | 18 / 28 passed (64.3%) | **10 / 10 benchmarks passed** | **ALL PASS** | Zero-padded Slepian multitaper ($N_{\text{fft}} = 2048$), Welch dynamic scaling ($N=120k \implies 2048$), true OLS Granger causality with Gaussian elimination, exact Jacobi PCA decomposition. |
+| **Pure Noise False Discoveries** | 259.0 discoveries / run | **0.00 discoveries / run** | **VERIFIED** | Benjamini-Hochberg FDR ($q=0.05$) across independent spectral bands + split-half persistence; 300 seeded runs produce strictly 0 validated claims (95% CI upper bound: 1.22% [~1.3%], n=300). |
+| **Planted Outliers & Shifts** | Masking & false alarms | **Matches ground truth within stated tolerances** | **VERIFIED** | Generalized Rosner ESD per regime isolates samples 500 and 1800; PELT isolates sample 1200; Granger VAR validates X→Y ($p < 10^{-10}$) and rejects reverse link Y→X under FDR. |
+| **Automated Test Suite** | 22 tests | **83 tests passed** | **VERIFIED** | 73 pytest regression tests + 10 in-browser math benchmarks (`npm run test:math`). |
 | **120,000 High-Throughput** | Uncalibrated / O(N²) | **16.9 ms / channel (480k in 68 ms)** | **VERIFIED** | Fast vectorized Welch PSD + zero-config structural I/O with continuous time linearization. |
 
 ---
@@ -29,7 +29,7 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 ### 2.1 Multitaper Spectral Analysis (Thomson 1982)
 - **Three-Tone Recovery (8.3 Hz, 21.7 Hz, 44.0 Hz):**
   - *Challenge:* 8.3 Hz and 21.7 Hz fell between discrete FFT bins at $N=1000, f_s=200\text{ Hz}$, leaking power into adjacent bins.
-  - *Solution:* Zero-padded DPSS windowed tapers to $N_{\text{fft}} = 2048$, resolving sub-bin frequencies with $F > 500$ and recovering all 3 tones in **15/15 trials (100%)**.
+  - *Solution:* Zero-padded DPSS windowed tapers to $N_{\text{fft}} = 2048$, resolving sub-bin frequencies with $F > 500$ and recovering all 3 tones in **15/15 trials**.
 - **Scale Invariance:**
   - Evaluated across 4 orders of magnitude ($0.1\times, 1.0\times, 10.0\times, 100.0\times$).
   - Maximal $F$-statistic discrepancy: $\Delta F < 10^{-12}$. Identical harmonic detection across all amplitudes.
@@ -40,7 +40,7 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 ### 2.2 Directional Granger Causality (VAR & BIC Lag Selection)
 - **Unidirectional Recovery ($X \to Y$):**
   - Process: $X_t = 0.5 X_{t-1} + \epsilon_t$; $Y_t = 0.4 Y_{t-1} + 0.6 X_{t-1} + \eta_t$.
-  - Result: $X \to Y$ detected with $p < 10^{-10}$ in **25/25 trials (100%)**; reverse link $Y \to X$ rejected in **25/25 trials (100%)**.
+  - Result: $X \to Y$ detected with $p < 10^{-10}$ in **25/25 trials**; reverse link $Y \to X$ rejected in **25/25 trials**.
 - **False-Alarm Rate on Independent Noise:**
   - 40 independent trials of bivariate Gaussian white noise ($N=400$).
   - False discovery rate: **2.5%** (nominal $\alpha = 5\%$).
@@ -49,7 +49,7 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 - **Shared 30 Hz Tone in Independent Noise:**
   - Tested on channels with SNR $\approx -3\text{ dB}$.
   - Peak coherence frequency: $29.69\text{ Hz} \pm 0.31\text{ Hz}$ across 15 trials.
-  - Significance: $\gamma^2(f) > 1 - 0.05^{1 / (K - 1)}$ threshold met in **15/15 trials (100%)**.
+  - Significance: $\gamma^2(f) > 1 - 0.05^{1 / (K - 1)}$ threshold met in **15/15 trials**.
 
 ### 2.4 Anomaly & Outlier Engines (Rosner ESD & BOCPD)
 - **Rosner Generalized ESD vs 3-Sigma:**
@@ -107,7 +107,7 @@ tests/ground_truth/test_gt_structure.py::test_gt_entropy_white_noise_vs_sine PAS
 [PASS] Coherence: shared 30 Hz tone in independent noise -> Identified 30 Hz peak in 15/15 trials (Mean peak: 29.69 Hz)
 [PASS] PCA explained variance for known covariance 7:2:1 -> Components: 70.1% / 20.1% / 9.8%
 [PASS] Matrix profile: locate planted odd segment -> Planted at 350, detected at 349 (error: 1 samples <= 30)
-[PASS] Auto-Analyst on PURE NOISE (300 seeded runs) validated count -> Total validated findings across 300 runs: 0 (Measured false-alarm rate: 0.00%, 95% CI: [0.00%, 0.64%])
+[PASS] Auto-Analyst on PURE NOISE (300 seeded runs + pink noise) -> Total validated findings: white noise=0/300, pink noise=0/6 (False-alarm rate: 0.00%, 95% CI upper bound: 1.22% [~1.3%], n=300)
 [PASS] Auto-Analyst on Hidden Signal discovery detection -> Detected features: Spike=true, Shift=true, Tones=true (Total validated: 4)
 [PASS] Rosner ESD: false alarms on noise and planted spike recovery -> Clean noise outliers: 0 (Target 0), Planted 2 spikes: 2 (Target 2)
 

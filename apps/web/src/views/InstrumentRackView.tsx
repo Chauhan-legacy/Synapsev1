@@ -1054,9 +1054,9 @@ export const InstrumentRackView: React.FC = () => {
   }[layoutPreset];
 
   return (
-    <div className="space-y-4 w-full font-sans pb-16 px-1 sm:px-2 overflow-x-hidden">
+    <div className="space-y-5 w-full max-w-[1680px] mx-auto font-sans pb-16 px-1 sm:px-2">
       {/* 1. RACK COMMAND HEADER */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs w-full">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-[#DDD6C7] bg-[#FFFFFF] shadow-xs w-full">
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 rounded-lg bg-[#0F766E] flex items-center justify-center text-white shadow-2xs shrink-0">
@@ -1077,7 +1077,7 @@ export const InstrumentRackView: React.FC = () => {
         </div>
 
         {/* Rack Presets & Controls */}
-        <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 font-mono text-xs">
+        <div className="flex flex-wrap items-center justify-start xl:justify-end gap-2 font-mono text-xs">
           {/* Add Instrument Dropdown */}
           <div className="relative" ref={addMenuRef}>
             <button

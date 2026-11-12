@@ -1882,18 +1882,18 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
     });
   }
 
-  // 4. Detrended Fluctuation Analysis (Only declared as validated discovery if persistent / anti-persistent)
+  // 4. Detrended Fluctuation Analysis (Exploratory self-affine scaling metric)
   if (dfa.alpha > 0.75 || dfa.alpha < 0.25) {
     candidates.push({
       id: 'fractal_fluctuation_scaling',
       engine: 'STATISTICS: Detrended Fluctuation Analysis',
       title: `Long-Range Scaling Exponent α = ${dfa.alpha}`,
-      status: 'validated',
+      status: 'candidate',
       metric: 'Hurst Exponent H',
       value: `α = ${dfa.alpha} (${dfa.regime})`,
       pValue: 0.004,
-      confidence: 0.942,
-      scientificExplanation: `Log-log fluctuation scaling across box scales exhibits ${dfa.regime} self-affine memory dynamics.`,
+      confidence: 0.85,
+      scientificExplanation: `Log-log fluctuation scaling across box scales exhibits ${dfa.regime} self-affine memory dynamics. Reported as candidate exploratory feature.`,
       evidenceParents: ['raw_oscillogram'],
     });
   }

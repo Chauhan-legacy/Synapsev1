@@ -234,6 +234,8 @@ async def upload_dataset(
 
     try:
         content = await file.read()
+        import hashlib
+        raw_sha256 = hashlib.sha256(content).hexdigest()
         with open(temp_path, "wb") as f:
             f.write(content)
 
@@ -247,6 +249,9 @@ async def upload_dataset(
             "sampling_rate": signal.sampling_rate,
             "is_uniform": signal.is_uniform,
             "hash": signal.quality.content_hash_sha256,
+            "original_sha256": signal.metadata.get("original_sha256", raw_sha256),
+            "timestamps_linearized": signal.metadata.get("timestamps_linearized", False),
+            "linearization_message": signal.metadata.get("linearization_message", None),
             "uploaded_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
 

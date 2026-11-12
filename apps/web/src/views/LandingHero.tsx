@@ -87,7 +87,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   }, [svgCoords, polylineStr]);
 
   return (
-    <div className="relative min-h-screen w-full bg-[#F6F3EC] text-[#1F2430] flex flex-col justify-between overflow-x-hidden overflow-y-auto font-sans selection:bg-[#EFEBE0]">
+    <div className="relative min-h-screen w-full bg-[#F6F3EC] text-[#1F2430] flex flex-col justify-between overflow-y-auto font-sans selection:bg-[#EFEBE0]">
       {/* Background Graticule Canvas */}
       <HalftoneWaveCanvas className="z-0 opacity-50" />
 

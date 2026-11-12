@@ -182,7 +182,7 @@ function assertTest(name, condition, details) {
   );
 }
 
-// 8. Auto-Analyst on PURE NOISE (300 seeded runs): must yield ZERO validated findings!
+// 8. Auto-Analyst on PURE NOISE (300 seeded runs + Pink noise across 3 lengths & 2 fs): must yield ZERO validated findings!
 {
   const rng = createMulberry32(GLOBAL_BENCHMARK_SEED + 8);
   const fs = 200, N = 1000;
@@ -198,10 +198,37 @@ function assertTest(name, condition, details) {
     totalValidated += validated.length;
   }
   const falseAlarmRate = totalValidated / nRuns;
+  const ciUpper = ((1 - Math.pow(0.025, 1 / nRuns)) * 100).toFixed(2); // Clopper-Pearson exact 95% CI upper bound
+
+  // Additional noise verification: pink noise (1/f) across 3 record lengths (400, 1000, 2500) and 2 sampling rates (100, 500 Hz)
+  let pinkValidated = 0;
+  const pinkLengths = [400, 1000, 2500];
+  const pinkRates = [100, 500];
+  for (const nLen of pinkLengths) {
+    for (const sRate of pinkRates) {
+      let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+      const pinkNoise = Array.from({ length: nLen }, () => {
+        const white = (rng() - 0.5) * 2;
+        b0 = 0.99886*b0 + white*0.0555179;
+        b1 = 0.99332*b1 + white*0.0750759;
+        b2 = 0.96900*b2 + white*0.1538520;
+        b3 = 0.86650*b3 + white*0.3104856;
+        b4 = 0.55000*b4 + white*0.5329522;
+        b5 = -0.7616*b5 - white*0.0168980;
+        const pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white*0.5362;
+        b6 = white*0.115926;
+        return pink * 0.11;
+      });
+      const pinkFindings = math.runAutoAnalystEngine(pinkNoise, sRate);
+      const val = pinkFindings.filter((f) => f.status === 'validated');
+      pinkValidated += val.length;
+    }
+  }
+
   assertTest(
-    'Auto-Analyst on PURE NOISE (300 seeded runs) validated count',
-    totalValidated === 0,
-    `Total validated findings across 300 runs: ${totalValidated} (Measured false-alarm rate: ${(falseAlarmRate * 100).toFixed(2)}%, 95% CI: [0.00%, 0.64%])`
+    'Auto-Analyst on PURE NOISE (300 seeded runs + pink noise)',
+    totalValidated === 0 && pinkValidated === 0,
+    `Total validated findings: white noise=${totalValidated}/300, pink noise=${pinkValidated}/6 (False-alarm rate: ${(falseAlarmRate * 100).toFixed(2)}%, 95% CI upper bound: ${ciUpper}% [~1.3%], n=${nRuns})`
   );
 }
 

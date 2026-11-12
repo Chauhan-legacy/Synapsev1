@@ -28,10 +28,20 @@ def read_signal(
     """
     format_type, format_meta = detect_file_format(filepath)
 
+    import hashlib
+    try:
+        with open(filepath, "rb") as f:
+            file_bytes = f.read()
+        file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+    except Exception:
+        file_sha256 = None
+
     meta = {
         "source_filepath": os.path.abspath(filepath),
         "detected_format": format_type.value,
         "format_details": format_meta,
+        "original_sha256": file_sha256,
+        "timestamps_linearized": False,
     }
     if metadata:
         meta.update(metadata)
@@ -142,6 +152,11 @@ def _read_delimited(
                         step = (timestamps[idx] - timestamps[idx + 1]) + med_dt
                         shifts[idx + 1:] += step
                     timestamps = timestamps + shifts
+                    metadata["timestamps_linearized"] = True
+                    metadata["linearization_message"] = (
+                        "Continuous time linearization applied across non-monotonic batch boundaries. "
+                        "Original file SHA-256 preserved."
+                    )
         non_time_cols = [c for c in cols if c != time_col_name]
     else:
         cand_list = [c for c in cols if any(k in c.lower() for k in ["time", "sec", "t", "date", "idx"])]

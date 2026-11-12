@@ -28,7 +28,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .[test]
-          pip install pytest pytest-asyncio anyio statsmodels scikit-learn PyWavelets fastapi pydantic uvicorn numba
+          pip install pytest pytest-asyncio anyio statsmodels scikit-learn PyWavelets fastapi pydantic uvicorn numba httpx
+
+      - name: Verify Documentation Links
+        run: |
+          python scripts/verify_doc_links.py
 
       - name: Run Ground-Truth & Engine Regression Tests
         run: |
@@ -46,7 +50,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: "apps/web/package-lock.json"
 

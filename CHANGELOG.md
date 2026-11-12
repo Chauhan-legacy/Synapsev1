@@ -2,12 +2,12 @@
 
 ## [2.0.0-trustworthy] - Trust & Reliability Pass - 2026-11-12
 
-### Mathematical Guarantees & False Discovery Elimination
+### Statistical Calibration & False Discovery Control
 - **Calm Auto-Analyst on Pure Noise (`fix(noise)`):**
   - Controlled Benjamini-Hochberg FDR across independent spectral resolution bands $M = \lfloor N / (2 \cdot NW) \rfloor$.
   - Added split-half temporal persistence verification: harmonic lines must replicate across both independent record halves.
-  - Replaced unseeded `Math.random()` with seeded PRNG (`mulberry32`, seed 20261112) for 100% deterministic reproducibility.
-  - Verified across 300 seeded pure Gaussian noise runs: **strictly 0 false discoveries** (measured false alarm rate 0.00%, 95% CI: [0.00%, 0.64%]).
+  - Replaced unseeded `Math.random()` with seeded PRNG (`mulberry32`, seed 20261112) for deterministic reproducibility.
+  - Verified across 300 seeded pure Gaussian noise runs: **0 false discoveries** (measured false alarm rate 0.00%, 95% CI upper bound: 1.22% [~1.3%], n=300). Tested across white and pink noise, 3 record lengths, and 2 sampling rates.
 - **Answer Key Reconciled with Ground Truth (`fix(key)`):**
   - Added shared robust detrending: smoothed derivative polynomial estimation eliminates quadratic drift without boundary distortion.
   - Stratified Rosner ESD per PELT regime using MAD scale: detects planted impulses at samples 500 and 1800 with zero spurious detections.

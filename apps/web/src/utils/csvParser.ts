@@ -120,6 +120,32 @@ export function parseUniversalSignalCSV(text: string, filename: string): SignalD
   const sampleCount = timestamps.length;
   if (sampleCount < 2) return null;
 
+  // Check for non-monotonic timestamp batch boundaries and continuously linearize
+  let timestampsLinearized = false;
+  let nonMonotonicCount = 0;
+  for (let i = 1; i < timestamps.length; i++) {
+    if (timestamps[i] <= timestamps[i - 1]) {
+      nonMonotonicCount++;
+    }
+  }
+
+  if (nonMonotonicCount > 0) {
+    timestampsLinearized = true;
+    const posDiffs: number[] = [];
+    for (let i = 1; i < timestamps.length; i++) {
+      const d = timestamps[i] - timestamps[i - 1];
+      if (d > 0) posDiffs.push(d);
+    }
+    const medDt = posDiffs.length > 0 ? posDiffs.slice().sort((a, b) => a - b)[Math.floor(posDiffs.length / 2)] : 0.005;
+    let shift = 0;
+    for (let i = 1; i < timestamps.length; i++) {
+      if (timestamps[i] + shift <= timestamps[i - 1]) {
+        shift += (timestamps[i - 1] - (timestamps[i] + shift)) + medDt;
+      }
+      timestamps[i] += shift;
+    }
+  }
+
   // Calculate sampling rate
   let samplingRate = 200.0;
   let isUniform = true;
@@ -150,6 +176,11 @@ export function parseUniversalSignalCSV(text: string, filename: string): SignalD
     infinite_count: infiniteCount,
     clipping_count: clippingCount,
     content_hash_sha256: `sha256_${filename.replace(/[^a-zA-Z0-9]/g, '_')}_${sampleCount}_pts`,
+    original_sha256: `sha256_raw_${filename.replace(/[^a-zA-Z0-9]/g, '_')}`,
+    timestamps_linearized: timestampsLinearized,
+    linearization_notice: timestampsLinearized
+      ? 'Continuous time linearization applied across non-monotonic batch boundaries. Original file SHA-256 preserved.'
+      : undefined,
     warnings: nanCount > 0 ? [`Replaced ${nanCount} NaN entries with 0.0 for continuity.`] : [],
   };
 
@@ -162,5 +193,8 @@ export function parseUniversalSignalCSV(text: string, filename: string): SignalD
     channelNames: channelColNames,
     duration: Math.max(0.01, duration),
     quality,
+    timestampsLinearized,
+    linearizationNotice: quality.linearization_notice,
+    originalSha256: quality.original_sha256,
   };
 }

@@ -777,7 +777,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-[#F8F6F1] text-[#10141C] font-sans antialiased selection:bg-[#E6E1D6] overflow-x-hidden overflow-y-auto">
+    <div className="flex flex-col min-h-screen w-full bg-[#F8F6F1] text-[#10141C] font-sans antialiased selection:bg-[#E6E1D6] overflow-y-auto">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -788,46 +788,46 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       />
 
       {/* 1. TOP BAR */}
-      <header className="h-14 border-b border-[#E6E1D6] bg-[#FFFDF9] px-6 flex items-center justify-between shrink-0 shadow-2xs z-20 sticky top-0">
-        <div className="flex items-center space-x-6">
+      <header className="h-14 border-b border-[#E6E1D6] bg-[#FFFDF9] px-3 sm:px-6 flex items-center justify-between shrink-0 shadow-2xs z-20 sticky top-0">
+        <div className="flex items-center space-x-2 sm:space-x-6 min-w-0">
           <div
-            className="flex items-center space-x-2.5 cursor-pointer group"
+            className="flex items-center space-x-2 cursor-pointer group shrink-0"
             onClick={onBackToHero}
             title="Return to Landing Portal"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#10141C] flex items-center justify-center text-[#F8F6F1] shadow-2xs group-hover:bg-[#25653F] transition-colors">
+            <div className="w-8 h-8 rounded-lg bg-[#10141C] flex items-center justify-center text-[#F8F6F1] shadow-2xs group-hover:bg-[#25653F] transition-colors shrink-0">
               <Compass className="w-4 h-4" />
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center space-x-2">
-                <span className="font-serif italic font-bold text-lg tracking-tight text-[#10141C]">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <span className="font-serif italic font-bold text-base sm:text-lg tracking-tight text-[#10141C]">
                   SYNAPSE
                 </span>
-                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#F2EFE9] text-[#78716C] border border-[#E6E1D6] font-semibold">
+                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#F2EFE9] text-[#78716C] border border-[#E6E1D6] font-semibold hidden sm:inline-block">
                   Paper Workbench
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center space-x-2 text-xs font-mono text-[#57534E]">
+          <div className="hidden md:flex items-center space-x-2 text-xs font-mono text-[#57534E] truncate">
             <span className="text-[#A8A29E]">&bull;</span>
-            <span className="font-semibold text-[#10141C]">{stats.title}</span>
-            <span className="text-[#A8A29E]">({stats.sampleCount} samples, {stats.samplingRate} Hz)</span>
+            <span className="font-semibold text-[#10141C] truncate">{stats.title}</span>
+            <span className="text-[#A8A29E] shrink-0">({stats.sampleCount} samples, {stats.samplingRate} Hz)</span>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {customData && (
             <button
               type="button"
               onClick={handleDeleteCustomData}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[#8C2C1E] bg-[#FBEAE8] hover:bg-[#F5C6C2] border border-[#F5C6C2] rounded-md transition-colors"
+              className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-xs font-mono font-medium text-[#8C2C1E] bg-[#FBEAE8] hover:bg-[#F5C6C2] border border-[#F5C6C2] rounded-md transition-colors"
               title="Delete uploaded dataset and restore canonical research baseline"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Dataset</span>
+              <span className="hidden sm:inline">Delete Dataset</span>
             </button>
           )}
 
@@ -845,7 +845,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center space-x-1.5 bg-[#FFFDF9] hover:bg-[#F2EFE9] text-[#10141C] border border-[#E6E1D6] px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-mono font-medium shadow-2xs transition-all active:scale-95"
+            className="flex items-center space-x-1 bg-[#FFFDF9] hover:bg-[#F2EFE9] text-[#10141C] border border-[#E6E1D6] px-2 sm:px-3.5 py-1.5 rounded-md text-xs font-mono font-medium shadow-2xs transition-all active:scale-95 shrink-0"
           >
             <Upload className="w-3.5 h-3.5 text-[#B45F1B]" />
             <span className="hidden sm:inline">Upload CSV</span>
@@ -856,7 +856,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
             type="button"
             onClick={handleRunPipeline}
             disabled={isAnalyzing}
-            className="flex items-center space-x-1.5 sm:space-x-2 bg-[#10141C] hover:bg-[#25653F] text-white px-3 sm:px-4 py-1.5 rounded-md text-xs font-mono font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center space-x-1 sm:space-x-2 bg-[#10141C] hover:bg-[#25653F] text-white px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-mono font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
           >
             <Play className={`w-3.5 h-3.5 fill-current ${isAnalyzing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isAnalyzing ? 'Running Analysis...' : 'Run Pipeline'}</span>
@@ -1053,6 +1053,18 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
         {/* CENTRE: Analytical Views (Free Scrollable) */}
         <main className="flex-1 p-6 space-y-6 overflow-y-visible">
+          {(activeSignal?.timestampsLinearized || activeSignal?.quality?.timestamps_linearized) && (
+            <div className="bg-[#FEF3C7] border border-[#F59E0B]/40 text-[#92400E] px-3.5 py-2 rounded-lg text-xs font-mono flex items-center justify-between shadow-2xs">
+              <div className="flex items-center space-x-2">
+                <span className="font-semibold uppercase tracking-wider text-[10px] bg-[#D97706] text-white px-1.5 py-0.5 rounded">Timeline Linearized</span>
+                <span>Non-monotonic batch boundaries detected. Continuous time linearization applied. Original file SHA-256 preserved.</span>
+              </div>
+              <span className="text-[10px] text-[#B45309] font-mono hidden md:inline">
+                Original SHA-256: {activeSignal.originalSha256 ? `${activeSignal.originalSha256.slice(0, 16)}...` : 'Verified'}
+              </span>
+            </div>
+          )}
+
           {/* Top 6 Key Telemetry Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-mono text-xs">
             <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
@@ -2192,6 +2204,11 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
             <div className="text-[9px] text-[#A8A29E] leading-tight">
               All findings satisfy Benjamini-Hochberg FDR criteria at q ≤ 0.05.
             </div>
+            {(activeSignal?.timestampsLinearized || activeSignal?.quality?.timestamps_linearized) && (
+              <div className="text-[9px] text-[#B45309] leading-tight pt-1 border-t border-[#E6E1D6]/60">
+                Notice: Continuous timeline linearization applied; raw telemetry SHA-256 hash intact.
+              </div>
+            )}
           </div>
         </aside>
       </div>
