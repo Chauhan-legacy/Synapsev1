@@ -337,7 +337,7 @@ const AppInner: React.FC = () => {
             setCurrentView('methods');
             window.location.hash = '#/methods';
           }}
-          realTestCount={33}
+          realTestCount={78}
         />
       </Suspense>
     );
@@ -357,7 +357,7 @@ const AppInner: React.FC = () => {
             setCurrentView(labView as any);
             window.location.hash = `#/${labView}`;
           }}
-          realTestCount={33}
+          realTestCount={78}
         />
       </Suspense>
     );
@@ -377,7 +377,7 @@ const AppInner: React.FC = () => {
               setCurrentView(labView as any);
               window.location.hash = `#/${labView}`;
             }}
-            realTestCount={33}
+            realTestCount={78}
           />
         );
       case 'papergraph':

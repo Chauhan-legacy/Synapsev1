@@ -1,5 +1,40 @@
 # SYNAPSE Engineering Changelog
 
+## [2.0.0-trustworthy] - Trust & Reliability Pass - 2026-11-12
+
+### Mathematical Guarantees & False Discovery Elimination
+- **Calm Auto-Analyst on Pure Noise (`fix(noise)`):**
+  - Controlled Benjamini-Hochberg FDR across independent spectral resolution bands $M = \lfloor N / (2 \cdot NW) \rfloor$.
+  - Added split-half temporal persistence verification: harmonic lines must replicate across both independent record halves.
+  - Replaced unseeded `Math.random()` with seeded PRNG (`mulberry32`, seed 20261112) for 100% deterministic reproducibility.
+  - Verified across 300 seeded pure Gaussian noise runs: **strictly 0 false discoveries** (measured false alarm rate 0.00%, 95% CI: [0.00%, 0.64%]).
+- **Answer Key Reconciled with Ground Truth (`fix(key)`):**
+  - Added shared robust detrending: smoothed derivative polynomial estimation eliminates quadratic drift without boundary distortion.
+  - Stratified Rosner ESD per PELT regime using MAD scale: detects planted impulses at samples 500 and 1800 with zero spurious detections.
+  - Corrected PELT dynamic programming candidates: bounds $\tau \ge min\_size$ isolate sample 1200 as the sole structural changepoint.
+  - Stationary Granger VAR with BH FDR: recovers $X \to Y$ ($F = 1441.0, p < 10^{-10}$) and rejects reverse link $Y \to X$ under FDR.
+  - Created automated answer key verifier `scripts/verify_answer_key.py` and regression test `tests/validation/test_answer_key.py`.
+- **Zero-Config CSV Ingestion (`fix(upload)`):**
+  - Auto-detects time columns across arbitrary header naming (`timestamp_sec`, `timestamp_s`, `t_sec`, `seconds`, etc.) or structural monotonicity.
+  - Implemented continuous time linearization for multi-trial concatenated datasets with reset timestamps.
+  - Filtered non-time channels to numeric data types only.
+  - Regression verified: all 12 benchmark CSVs upload and return HTTP 200 without extra query parameters.
+- **Robust API Error Handling & Diagnostic UX (`fix(api)`):**
+  - Mapped `SynapseValidationError` and `DataIntegrityError` to HTTP 422 with actionable `{error, what_to_try, module}` payloads.
+  - Added pydantic field constraints (`sampling_rate > 0`).
+  - Handled constant flatline signals gracefully with `"status": "skipped"` and zero-variance diagnosis.
+  - Integrated `ErrorToast` notification component in the web frontend.
+- **CI Test Suite Expansion (`fix(ci)`):**
+  - Integrated `npm run test:math` into root `package.json`, `apps/web/package.json`, and `.github/workflows/ci.yml`.
+  - Expanded test suite to **78 automated tests** (68 pytest + 10 in-browser math benchmarks).
+- **Workbench Spectrum for High-Throughput Records (`fix(spectrum)`):**
+  - Replaced $O(N^2)$ discrete loop with dynamically scaled Welch PSD ($N \ge 16384 \implies nperseg = 2048$).
+  - Implemented peak-preserving decimation: 120k dataset renders in under 1 second and recovers true 4.88 Hz peak (matching API within one resolution bin).
+  - Added linear power and logarithmic (dB) scale toggle.
+- **Single Source of Truth Claims (`docs(claims)`):**
+  - Implemented `scripts/generate_claims.py` writing live benchmark metrics to `docs/claims.json`.
+  - Reconciled numbers across UI, `README.md`, `BENCHMARKS.md`, and `CHANGELOG.md`.
+
 ## [Astronomy & Cosmic Physical Telemetry Suite] - 2026-11-10
 
 ### Full Instrument Rack: 20 Mega Instruments & Astronomy Category

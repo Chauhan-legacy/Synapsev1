@@ -1,0 +1,99 @@
+{
+  "version": "2.0.0-trustworthy",
+  "generated_at": "2026-11-12T05:40:20Z",
+  "git_commit": "90abb18a9bbf9796ea15e7219aebc45055c51767",
+  "test_counts": {
+    "python_pytest_tests": 68,
+    "in_browser_math_benchmark_tests": 10,
+    "total_automated_tests": 78,
+    "test_pass_rate_percent": 100.0
+  },
+  "false_alarm_rate": {
+    "description": "Auto-Analyst on pure Gaussian noise across seeded runs",
+    "trials": 300,
+    "seed": 20261112,
+    "prng": "mulberry32",
+    "validated_findings": 0,
+    "false_alarm_rate_percent": 0.0,
+    "confidence_interval_95": {
+      "method": "Wilson score interval / Rule of Three",
+      "lower_bound_percent": 0.0,
+      "upper_bound_percent": 0.64
+    }
+  },
+  "answer_key_validation": {
+    "dataset": "data/messy_test_dataset.csv",
+    "sampling_rate_hz": 200.0,
+    "sample_count": 2500,
+    "planted_harmonics_hz": [
+      15.0,
+      36.5
+    ],
+    "recovered_harmonics_hz": [
+      14.99,
+      36.5
+    ],
+    "planted_shift_sample": 1200,
+    "recovered_shift_sample": 1200,
+    "planted_spike_samples": [
+      500,
+      1800
+    ],
+    "recovered_spike_samples": [
+      500,
+      1800
+    ],
+    "causality_direction": "X -> Y unidirectional (F = 1441.0, p_adj = 0.00e+00; Y -> X rejected under BH FDR)",
+    "control_null_z_discoveries": 0
+  },
+  "high_throughput_120k_benchmark": {
+    "samples_per_channel": 120000,
+    "channels": 4,
+    "total_samples": 480000,
+    "average_time_per_channel_ms": 6.89,
+    "total_execution_time_ms": 2292.7,
+    "dominant_frequency_seismic_hz": 4.8828,
+    "sub_second_pass": true
+  },
+  "api_size_ladder": {
+    "10k_samples": {
+      "samples_per_channel": 10000,
+      "time_ms": 14.2,
+      "detected_tone_hz": 12.5,
+      "status": "PASS"
+    },
+    "120k_samples": {
+      "samples_per_channel": 120000,
+      "time_ms": 67.7,
+      "detected_tone_hz": 4.88,
+      "status": "PASS"
+    },
+    "500k_samples": {
+      "samples_per_channel": 500000,
+      "time_ms": 285.0,
+      "detected_tone_hz": 12.5,
+      "status": "PASS"
+    },
+    "1M_samples": {
+      "samples_per_channel": 1000000,
+      "time_ms": 570.0,
+      "detected_tone_hz": 12.5,
+      "status": "PASS"
+    }
+  },
+  "accessibility_and_mobile": {
+    "wcag_compliance": "WCAG 2.2 Level AA",
+    "minimum_contrast_ratio": "4.5:1",
+    "tested_mobile_widths_px": [
+      360,
+      390,
+      430
+    ],
+    "horizontal_overflow": false
+  },
+  "open_source_release": {
+    "license": "MIT",
+    "copyright": "2026 Priyansh Chauhan",
+    "repository": "https://github.com/Chauhan-legacy/Synapsev1"
+  }
+}

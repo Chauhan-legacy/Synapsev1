@@ -81,7 +81,7 @@ interface CustomDataset {
 export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   onBackToHero,
   onOpenAdvancedLab,
-  realTestCount = 33,
+  realTestCount = 78,
   initialTab = 'charts',
 }) => {
   const { activeSignal, loadCustomSignal } = useSignal();
