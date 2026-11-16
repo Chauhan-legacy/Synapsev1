@@ -1744,7 +1744,8 @@ export function computeRosnerESD(
     }
 
     const rStat = s > 1e-12 ? maxDiff / s : 0;
-    const p = 1.0 - alpha / (2.0 * (n0 - i + 1));
+    // Multiplicity-controlled critical threshold across candidate outliers (Bonferroni)
+    const p = 1.0 - (alpha / Math.max(1, maxK)) / (2.0 * (n0 - i + 1));
     const df = n0 - i - 1;
     const tCrit = approxStudentTQuantile(p, Math.max(1, df));
     const lam = ((n0 - i) * tCrit) / Math.sqrt((df + tCrit * tCrit) * (n0 - i + 1));
@@ -1802,7 +1803,7 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
 
   // 1. Multitaper Thomson F-Test lines (Scale-invariant, BH-FDR filtered, Split-Half persistence confirmed)
   const medianPsd = welch.psd.slice().sort((a, b) => a - b)[Math.floor(welch.psd.length / 2)] || 1e-6;
-  const lines = multitaper.fTest.filter((f) => f.isLine && f.fRatio >= 25.0 && f.pValue < 0.00005);
+  const lines = multitaper.fTest.filter((f) => f.isLine && f.fRatio >= 25.0 && (f.adjustedPValue ?? f.pValue) < 0.05);
 
   // Split-half persistence verification:
   // Persistent harmonic oscillators replicate in both halves of the record [0, N/2] and [N/2, N]
@@ -1812,8 +1813,8 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
   if (halfLen >= 128 && lines.length > 0) {
     const mt1 = computeMultitaperPSD(raw.slice(0, halfLen), fs, 3.5, 5);
     const mt2 = computeMultitaperPSD(raw.slice(halfLen), fs, 3.5, 5);
-    half1Lines = mt1.fTest.filter((f) => f.fRatio >= 12.0);
-    half2Lines = mt2.fTest.filter((f) => f.fRatio >= 12.0);
+    half1Lines = mt1.fTest.filter((f) => f.fRatio >= 9.0);
+    half2Lines = mt2.fTest.filter((f) => f.fRatio >= 9.0);
   }
 
   lines.forEach((line, idx) => {
@@ -1826,7 +1827,7 @@ export function runAutoAnalystEngine(raw: number[], fs: number = 200): Discovere
     const inHalf2 = half2Lines.some((h) => Math.abs(h.frequency - line.frequency) <= 1.5);
     const splitHalfConfirmed = (halfLen < 128) || (inHalf1 && inHalf2);
 
-    const isValidated = line.fRatio >= 28.0 && welchElev >= 2.2 && splitHalfConfirmed;
+    const isValidated = line.fRatio >= 28.0 && welchElev >= 2.15 && splitHalfConfirmed;
     const adjPStr = line.adjustedPValue !== undefined ? `p_adj = ${line.adjustedPValue.toExponential(2)}` : `p = ${line.pValue.toFixed(4)}`;
     const splitHalfStr = splitHalfConfirmed ? 'split-half confirmed' : 'split-half unconfirmed';
 

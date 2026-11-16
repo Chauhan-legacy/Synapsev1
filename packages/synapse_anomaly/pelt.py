@@ -1,7 +1,8 @@
 """
 Pruned Exact Linear Time (PELT) Change-Point Detection for SYNAPSE ANOMALY.
 Computes exact penalized likelihood changepoints with linear runtime complexity
-using the Killick, Fearnhead, Eckley (2012) pruning theorem.
+using the Killick, Fearnhead, Eckley (2012) pruning theorem, with vectorized evaluations,
+bounded variance protection, and adaptive pre-whitening.
 """
 
 from __future__ import annotations
@@ -25,44 +26,43 @@ def detect_pelt_changepoints(
     values: np.ndarray,
     timestamps: Optional[np.ndarray] = None,
     penalty: Optional[float] = None,
-    min_size: int = 4,
+    min_size: int = 20,
+    prewhiten: bool = False,
 ) -> PELTResult:
     """
     Execute PELT exact change-point detection with Gaussian likelihood cost.
     """
-    x = np.asarray(values, dtype=np.float64)
-    n = len(x)
-    if n < 2 * min_size:
+    x_raw = np.asarray(values, dtype=np.float64)
+    n_orig = len(x_raw)
+    if n_orig < 2 * min_size:
         raise ValidationError(f"Need at least {2 * min_size} samples for PELT changepoint detection.")
 
-    t = np.asarray(timestamps, dtype=np.float64) if timestamps is not None else np.arange(n, dtype=np.float64)
+    t = np.asarray(timestamps, dtype=np.float64) if timestamps is not None else np.arange(n_orig, dtype=np.float64)
 
-    # Default BIC-like penalty: beta = 2 * ln(N) * sigma^2
+    if prewhiten and n_orig > 30:
+        r1 = float(np.corrcoef(x_raw[:-1], x_raw[1:])[0, 1])
+        if r1 > 0.85:
+            x = np.diff(x_raw)
+        elif abs(r1) > 0.25:
+            x = x_raw[1:] - r1 * x_raw[:-1]
+        else:
+            x = x_raw.copy()
+    else:
+        x = x_raw.copy()
+
+    n = len(x)
     var_est = float(np.var(x)) or 1.0
-    beta = float(penalty) if penalty is not None else float(3.0 * np.log(n) * var_est)
+    beta = float(penalty) if penalty is not None else float(4.5 * np.log(n) * var_est)
 
     # Prefix sums for O(1) segment cost evaluation
-    # sum(x) and sum(x^2)
     cumsum_x = np.concatenate([[0.0], np.cumsum(x)])
     cumsum_x2 = np.concatenate([[0.0], np.cumsum(x ** 2)])
-
-    def segment_cost(s: int, e: int) -> float:
-        length = e - s
-        if length <= 1:
-            return 0.0
-        sum_val = cumsum_x[e] - cumsum_x[s]
-        sum_sq = cumsum_x2[e] - cumsum_x2[s]
-        mean_seg = sum_val / length
-        var_seg = (sum_sq / length) - (mean_seg ** 2)
-        var_seg = max(1e-10, var_seg)
-        # Normal log-likelihood negative cost
-        return float(length * np.log(var_seg) + length)
 
     # F[t]: optimal cost for prefix 0:t
     F = np.zeros(n + 1, dtype=np.float64)
     F[0] = -beta
-    for i in range(1, min_size):
-        F[i] = float("inf")
+    F[1:min_size] = float("inf")
+
     # cp_record[t]: optimal previous change-point
     cp_record = np.zeros(n + 1, dtype=int)
 
@@ -70,34 +70,35 @@ def detect_pelt_changepoints(
     R: List[int] = [0]
 
     for t_step in range(min_size, n + 1):
-        best_val = float("inf")
-        best_tau = 0
-
-        # Evaluate candidate taus in R
         valid_candidates = [tau for tau in R if (t_step - tau) >= min_size]
         if not valid_candidates:
             valid_candidates = [0]
 
-        cand_costs = []
-        for tau in valid_candidates:
-            cost = F[tau] + segment_cost(tau, t_step) + beta
-            cand_costs.append((cost, tau))
-            if cost < best_val:
-                best_val = cost
-                best_tau = tau
+        taus = np.array(valid_candidates, dtype=int)
+        lengths = t_step - taus
+        sum_vals = cumsum_x[t_step] - cumsum_x[taus]
+        sum_sqs = cumsum_x2[t_step] - cumsum_x2[taus]
+
+        mean_segs = sum_vals / lengths
+        # Protect against degenerate zero-variance clusters (require var >= 0.10 * var_est)
+        var_segs = np.maximum(0.10 * var_est, (sum_sqs / lengths) - (mean_segs ** 2))
+        seg_costs = lengths * np.log(var_segs) + lengths
+
+        costs = F[taus] + seg_costs + beta
+        best_idx = int(np.argmin(costs))
+        best_val = float(costs[best_idx])
+        best_tau = int(taus[best_idx])
 
         F[t_step] = best_val
         cp_record[t_step] = best_tau
 
-        # Pruning condition: Keep tau only if F[tau] + Cost(tau, t) <= F[t]
-        new_R = [0]
-        for cost, tau in cand_costs:
-            if cost - beta <= best_val:
-                new_R.append(tau)
+        # Killick et al. (2012) pruning condition: Keep tau only if F[tau] + Cost(tau, t) <= F[t]
+        keep_mask = (costs - beta) <= best_val
         cand_to_add = t_step - min_size + 1
+        new_cands = list(taus[keep_mask])
         if cand_to_add >= min_size:
-            new_R.append(cand_to_add)
-        R = sorted(list(set(new_R)))
+            new_cands.append(cand_to_add)
+        R = sorted(list(set(new_cands)))
 
     # Backtrack changepoints from n
     changepoints: List[int] = []
@@ -119,4 +120,3 @@ def detect_pelt_changepoints(
         cost_value=float(F[n]),
         n_changepoints=len(cp_tuple),
     )
-
