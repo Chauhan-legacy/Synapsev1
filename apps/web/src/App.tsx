@@ -6,7 +6,7 @@ import { TopBar } from './components/shell/TopBar';
 import { CommandPalette } from './components/shell/CommandPalette';
 import { AccessibilityModal } from './components/shell/AccessibilityModal';
 import { ShortcutsModal } from './components/shell/ShortcutsModal';
-import { Compass, Loader2, Sliders, ArrowLeft } from 'lucide-react';
+import { Compass, Loader2 } from 'lucide-react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { parseUniversalSignalCSV } from './utils/csvParser';
 import { parseCsvWithStreamingWorker } from './utils/streamingCsvParser';
@@ -101,6 +101,9 @@ const PaperGraphView = React.lazy(() =>
 const PaperGraphRackWorkspaceView = React.lazy(() =>
   import('./views/PaperGraphRackWorkspaceView').then((m) => ({ default: m.default || m.PaperGraphRackWorkspaceView }))
 );
+const AporiaView = React.lazy(() =>
+  import('./views/AporiaView').then((m) => ({ default: m.default || m.AporiaView }))
+);
 
 // Minimal Skeleton Loader
 const SkeletonLoader: React.FC = () => (
@@ -135,6 +138,9 @@ const AppInner: React.FC = () => {
     if (hash.includes('workbench') || path.includes('workbench')) return 'workbench';
     if (
       hash.includes('app') ||
+      hash.includes('aporia') ||
+      hash.includes('synthesized-thoughts') ||
+      hash.includes('diary') ||
       hash.includes('overview') ||
       hash.includes('rack') ||
       hash.includes('datasets') ||
@@ -175,6 +181,9 @@ const AppInner: React.FC = () => {
         setPageMode('workbench');
       } else if (
         hash.includes('app') ||
+        hash.includes('aporia') ||
+        hash.includes('synthesized-thoughts') ||
+        hash.includes('diary') ||
         hash.includes('overview') ||
         hash.includes('rack') ||
         hash.includes('datasets') ||
@@ -380,6 +389,8 @@ const AppInner: React.FC = () => {
             realTestCount={83}
           />
         );
+      case 'aporia':
+        return <AporiaView />;
       case 'papergraph':
         return (
           <PaperGraphView
@@ -498,59 +509,31 @@ const AppInner: React.FC = () => {
       />
 
       {/* Main Workbench Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F6F3EC]">
-        {/* Switcher Banner back to Paper Workbench */}
-        <div className="h-12 bg-[#F1ECE1] border-b border-[#DDD6C7] px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs font-mono shrink-0 shadow-2xs">
-          <div className="flex items-center gap-3 text-[#4A5060]">
-            <div className="w-6 h-6 rounded-md bg-[#0F766E] flex items-center justify-center text-white shadow-2xs shrink-0">
-              <Sliders className="w-3.5 h-3.5" />
-            </div>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="font-bold text-[#1F2430] text-xs sm:text-sm tracking-tight truncate max-w-[150px] sm:max-w-none">SYNAPSE Multi-Tool Instrument Rack</span>
-              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold border border-[#0F766E]/20 shrink-0">
-                28 Scientific Instruments Loaded
-              </span>
-            </div>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-2 text-[11px] text-[#78716C] font-mono">
-            <span>Synchronized Temporal Cursors</span>
-            <span>&bull;</span>
-            <span>Bitwise Analytical Engine</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
+      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${currentView === 'aporia' ? 'bg-[#EAE5DC]' : 'bg-[#F6F3EC]'}`}>
+        {/* Top Bar (hidden in Aporia) */}
+        {currentView !== 'aporia' && (
+          <TopBar
+            onToggleSidebarMobile={() => setIsMobileOpen(true)}
+            currentView={currentView}
+            datasets={availableDatasets}
+            selectedDatasetId={activeSignal.id}
+            onSelectDataset={selectDataset}
+            onDeleteDataset={deleteDataset}
+            onRestoreDatasets={restoreDefaultDatasets}
+            isAnalyzing={isAnalyzing}
+            onRunAnalysis={runAnalysis}
+            onUploadClick={() => fileInputRef.current?.click()}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            apiConnected={apiConnected}
+            onSwitchToWorkbench={() => {
               setPageMode('workbench');
               window.location.hash = '#/workbench';
             }}
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#DDD6C7] hover:border-[#0F766E]/50 hover:bg-[#FAF8F5] text-[#1F2430] font-semibold text-xs transition-all shadow-2xs group shrink-0"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 text-[#0F766E] transition-transform group-hover:-translate-x-0.5" />
-            <span className="hidden sm:inline">Switch to Paper Workbench</span>
-            <span className="sm:hidden">Workbench</span>
-          </button>
-        </div>
-
-        {/* Top Bar */}
-        <TopBar
-          onToggleSidebarMobile={() => setIsMobileOpen(true)}
-          currentView={currentView}
-          datasets={availableDatasets}
-          selectedDatasetId={activeSignal.id}
-          onSelectDataset={selectDataset}
-          onDeleteDataset={deleteDataset}
-          onRestoreDatasets={restoreDefaultDatasets}
-          isAnalyzing={isAnalyzing}
-          onRunAnalysis={runAnalysis}
-          onUploadClick={() => fileInputRef.current?.click()}
-          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-          apiConnected={apiConnected}
-        />
+          />
+        )}
 
         {/* View Content Port */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 bg-[#F6F3EC]">
+        <main className={`flex-1 min-w-0 overflow-y-auto ${currentView === 'aporia' ? 'p-0 bg-[#EAE5DC] flex flex-col' : 'p-3 sm:p-6 bg-[#F6F3EC]'}`}>
           <ErrorBoundary>
             <Suspense fallback={<SkeletonLoader />}>
               {renderCurrentView()}

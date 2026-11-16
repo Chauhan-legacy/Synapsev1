@@ -29,11 +29,13 @@ import {
   Waves,
   Sparkles,
   GraduationCap,
+  Feather,
 } from 'lucide-react';
 import { MusicPlayer } from '../music/MusicPlayer';
 
 export type WorkbenchView =
   | 'workbench'
+  | 'aporia'
   | 'papergraph'
   | 'papergraph_rack'
   | 'overview'
@@ -111,6 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'Start',
       items: [
         { id: 'workbench', label: 'Paper Workbench', icon: BookOpen },
+        { id: 'aporia', label: 'Synthesized Thoughts', icon: Feather },
         { id: 'overview', label: 'Overview', icon: Compass },
         { id: 'rack', label: 'Instrument Rack', icon: Layers },
         { id: 'datasets', label: 'Datasets', icon: Database },
@@ -289,11 +292,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           onSelectView(item.id);
                           onCloseMobile();
                         }}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                          isActive
-                            ? 'bg-[#0F766E] text-white shadow-2xs font-semibold'
-                            : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
-                        } ${collapsed ? 'justify-center px-1' : ''}`}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${isActive
+                          ? 'bg-[#0F766E] text-white shadow-2xs font-semibold'
+                          : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+                          } ${collapsed ? 'justify-center px-1' : ''}`}
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? 'page' : undefined}
                       >
@@ -321,9 +323,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onOpenAccessibility}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${
-            collapsed ? 'justify-center px-1' : ''
-          }`}
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${collapsed ? 'justify-center px-1' : ''
+            }`}
           title="Accessibility & Themes"
         >
           <Sliders className="w-4 h-4 shrink-0 text-[#B45F1B]" />
@@ -333,9 +334,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={onOpenShortcuts}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${
-            collapsed ? 'justify-center px-1' : ''
-          }`}
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${collapsed ? 'justify-center px-1' : ''
+            }`}
           title="Keyboard shortcuts (?)"
         >
           <HelpCircle className="w-4 h-4 shrink-0" />
@@ -354,9 +354,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Desktop Persistent Sidebar */}
       <aside
-        className={`hidden lg:block shrink-0 transition-all duration-200 ease-in-out ${
-          collapsed ? 'w-16' : 'w-64'
-        }`}
+        className={`hidden lg:block shrink-0 transition-all duration-200 ease-in-out ${collapsed ? 'w-16' : 'w-64'
+          }`}
         aria-label="Workbench Navigation"
       >
         {content}

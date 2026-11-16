@@ -56,9 +56,9 @@ export function createSignalPreset(code: string): SignalData {
     values = timestamps.map((t, i) => {
       // Harmonic baseline + quadratic phase coupling (5 + 14 = 19 Hz)
       let s = 1.5 * Math.cos(2 * Math.PI * 5.0 * t) +
-              1.0 * Math.cos(2 * Math.PI * 14.0 * t + 0.4) +
-              0.6 * Math.cos(2 * Math.PI * 35.0 * t + 1.2) +
-              0.5 * Math.cos(2 * Math.PI * 19.0 * t + 0.4);
+        1.0 * Math.cos(2 * Math.PI * 14.0 * t + 0.4) +
+        0.6 * Math.cos(2 * Math.PI * 35.0 * t + 1.2) +
+        0.5 * Math.cos(2 * Math.PI * 19.0 * t + 0.4);
 
       // Non-stationary quadratic chirp sweep in window t in [3.0, 6.0]
       if (t >= 3.0 && t <= 6.0) {
@@ -106,8 +106,8 @@ export function createSignalPreset(code: string): SignalData {
     // 5 Hz (amp 1.5), 14 Hz (amp 1.0), 35 Hz (amp 0.6) + noise
     values = timestamps.map((t, i) => {
       const s = 1.5 * Math.cos(2 * Math.PI * 5.0 * t) +
-                1.0 * Math.cos(2 * Math.PI * 14.0 * t + 0.4) +
-                0.6 * Math.cos(2 * Math.PI * 35.0 * t + 1.2);
+        1.0 * Math.cos(2 * Math.PI * 14.0 * t + 0.4) +
+        0.6 * Math.cos(2 * Math.PI * 35.0 * t + 1.2);
       const noise = ((i % 17) - 8) / 25.0;
       return s + noise;
     });
@@ -297,7 +297,7 @@ export function createSignalPreset(code: string): SignalData {
     filename = 'J_master_discovery_challenge.csv';
     values = timestamps.map((t, i) => {
       let s = 1.2 * Math.sin(2 * Math.PI * 7.2 * t) +
-              0.6 * Math.sin(2 * Math.PI * 21.6 * t);
+        0.6 * Math.sin(2 * Math.PI * 21.6 * t);
       // Transit dip at t = 5.5s
       if (t >= 5.3 && t <= 5.7) {
         s -= 0.8 * (1.0 - Math.pow((t - 5.5) / 0.2, 2));
@@ -376,14 +376,58 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (firstAvailable) {
         return createSignalPreset(firstAvailable.id);
       }
-    } catch {}
+    } catch { }
     return createSignalPreset('benchmark_ALL');
   });
 
+  const getInitialViewFromHash = (): WorkbenchView => {
+    if (typeof window === 'undefined') return 'overview';
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes('aporia') || hash.includes('synthesized-thoughts') || hash.includes('diary')) return 'aporia';
+    if (hash.includes('dynamics')) return 'dynamics';
+    if (hash.includes('papergraph_rack') || hash.includes('papergraph-rack')) return 'papergraph_rack';
+    if (hash.includes('papergraph')) return 'papergraph';
+    if (hash.includes('workbench')) return 'workbench';
+    if (hash.includes('overview')) return 'overview';
+    if (hash.includes('rack')) return 'rack';
+    if (hash.includes('datasets')) return 'datasets';
+    if (hash.includes('explorer')) return 'explorer';
+    if (hash.includes('statistics')) return 'statistics';
+    if (hash.includes('spectra')) return 'spectra';
+    if (hash.includes('timefreq')) return 'timefreq';
+    if (hash.includes('anomalies')) return 'anomalies';
+    if (hash.includes('relations')) return 'relations';
+    if (hash.includes('astronomy')) return 'astronomy';
+    if (hash.includes('physics')) return 'physics';
+    if (hash.includes('biosignals')) return 'biosignals';
+    if (hash.includes('chaos')) return 'chaos';
+    if (hash.includes('earth_systems')) return 'earth_systems';
+    if (hash.includes('quantum')) return 'quantum';
+    if (hash.includes('feynman')) return 'feynman';
+    if (hash.includes('satellite')) return 'satellite';
+    if (hash.includes('geophysics')) return 'geophysics';
+    if (hash.includes('inference')) return 'inference';
+    if (hash.includes('findings')) return 'findings';
+    if (hash.includes('evidence')) return 'evidence';
+    if (hash.includes('reproducibility')) return 'reproducibility';
+    if (hash.includes('benchmarks')) return 'benchmarks';
+    if (hash.includes('methods')) return 'methods';
+    return 'overview';
+  };
+
   const [customDatasets, setCustomDatasets] = useState<SignalData[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [currentView, setCurrentView] = useState<WorkbenchView>('overview');
+  const [currentView, setCurrentView] = useState<WorkbenchView>(getInitialViewFromHash);
   const [apiConnected, setApiConnected] = useState<boolean>(false);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const targetView = getInitialViewFromHash();
+      setCurrentView(targetView);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Status per module
   const [moduleStatuses, setModuleStatuses] = useState<Record<string, ModuleStatus>>({
@@ -417,7 +461,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           'biosignals', 'chaos', 'earth_systems', 'quantum', 'feynman',
           'satellite', 'geophysics',
           'inference', 'findings', 'evidence', 'reproducibility', 'benchmarks', 'methods',
-          'workbench', 'papergraph', 'papergraph_rack'
+          'workbench', 'aporia', 'papergraph', 'papergraph_rack'
         ];
         const normalizedHash = hash.replace(/-/g, '_');
         if (validViews.includes(normalizedHash as WorkbenchView)) {
@@ -500,7 +544,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setDeletedDatasetIds(nextDeleted);
     try {
       localStorage.setItem('synapse_deleted_datasets_v1', JSON.stringify(nextDeleted));
-    } catch {}
+    } catch { }
 
     // 3. Update activeSignal if deleting the currently selected one
     setActiveSignal((curr) => {
@@ -519,7 +563,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setDeletedDatasetIds([]);
         try {
           localStorage.removeItem('synapse_deleted_datasets_v1');
-        } catch {}
+        } catch { }
         return createSignalPreset('benchmark_ALL');
       }
       return curr;
@@ -541,7 +585,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setDeletedDatasetIds([]);
     try {
       localStorage.removeItem('synapse_deleted_datasets_v1');
-    } catch {}
+    } catch { }
     setActiveSignal(createSignalPreset('benchmark_ALL'));
   }, []);
 
@@ -592,7 +636,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
-        } catch {}
+        } catch { }
       }
 
       if (response && response.ok) {

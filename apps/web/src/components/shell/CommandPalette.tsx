@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Navigation, Play, Database, FileText, BookOpen, X } from 'lucide-react';
+import { Search, Navigation, Play, Database, FileText, BookOpen, Feather, X } from 'lucide-react';
 import { WorkbenchView } from './Sidebar';
 
 interface CommandItem {
@@ -64,6 +64,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const allCommands: CommandItem[] = [
     // Navigation
+    {
+      id: 'nav-aporia',
+      category: 'Navigation',
+      title: 'Go to Synthesized Thoughts',
+      subtitle: 'Private diary & intellectual writing space',
+      icon: Feather,
+      action: () => onNavigate('aporia'),
+    },
     {
       id: 'nav-overview',
       category: 'Navigation',
@@ -289,11 +297,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     onClose();
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center justify-between p-2 rounded-md cursor-pointer text-xs transition-colors ${
-                    isSelected
-                      ? 'bg-blue-600 text-white'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-primary'
-                  }`}
+                  className={`flex items-center justify-between p-2 rounded-md cursor-pointer text-xs transition-colors ${isSelected
+                    ? 'bg-blue-600 text-white'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-primary'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 overflow-hidden">
                     <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-blue-600'}`} />
@@ -307,9 +314,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </div>
                   </div>
                   <span
-                    className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-mono ${
-                      isSelected ? 'bg-blue-700 text-white' : 'surface-subtle text-muted'
-                    }`}
+                    className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-mono ${isSelected ? 'bg-blue-700 text-white' : 'surface-subtle text-muted'
+                      }`}
                   >
                     {cmd.category}
                   </span>

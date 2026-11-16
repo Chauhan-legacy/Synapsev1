@@ -370,8 +370,8 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       times = Array.from({ length: n }, (_, i) => i / fs);
       values = times.map((t, i) => {
         let s = 1.5 * Math.sin(2 * Math.PI * 5.0 * t) +
-                1.0 * Math.sin(2 * Math.PI * 14.0 * t + 0.4) +
-                0.6 * Math.sin(2 * Math.PI * 35.0 * t + 1.2);
+          1.0 * Math.sin(2 * Math.PI * 14.0 * t + 0.4) +
+          0.6 * Math.sin(2 * Math.PI * 35.0 * t + 1.2);
 
         // Transient impulse shock at t = 1.25s
         if (Math.abs(t - 1.25) < 0.02) s += 4.8;
@@ -604,9 +604,9 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     let cm = 0, cm1 = 0;
     for (let i = 0; i < subN - 2; i++) {
       for (let j = i + 1; j < subN - 2; j++) {
-        if (Math.max(Math.abs(subVals[i] - subVals[j]), Math.abs(subVals[i+1] - subVals[j+1])) < rThresh) {
+        if (Math.max(Math.abs(subVals[i] - subVals[j]), Math.abs(subVals[i + 1] - subVals[j + 1])) < rThresh) {
           cm++;
-          if (Math.abs(subVals[i+2] - subVals[j+2]) < rThresh) cm1++;
+          if (Math.abs(subVals[i + 2] - subVals[j + 2]) < rThresh) cm1++;
         }
       }
     }
@@ -622,7 +622,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       for (let j = 0; j < rqaN; j++) {
         if (i !== j && Math.abs(rqaSub[i] - rqaSub[j]) < epsRqa) {
           recCount++;
-          if (i + 1 < rqaN && j + 1 < rqaN && Math.abs(rqaSub[i+1] - rqaSub[j+1]) < epsRqa) {
+          if (i + 1 < rqaN && j + 1 < rqaN && Math.abs(rqaSub[i + 1] - rqaSub[j + 1]) < epsRqa) {
             diagCount++;
           }
         }
@@ -837,14 +837,25 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           )}
 
           {onOpenAdvancedLab && (
-            <button
-              type="button"
-              onClick={() => onOpenAdvancedLab('rack')}
-              className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[#1F2430] bg-[#FFFFFF] border border-[#DDD6C7] rounded-md hover:bg-[#EFEBE0] transition-colors shadow-2xs"
-            >
-              <Sliders className="w-3.5 h-3.5 text-[#0F766E]" />
-              <span>Full Instrument Rack</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => onOpenAdvancedLab('aporia')}
+                className="hidden xl:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-[#2E4336] bg-[#F4F7F5] border border-[#82a18f]/40 rounded-md hover:bg-[#EBF1EE] transition-colors shadow-2xs"
+                title="Open Synthesized Thoughts"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#82a18f]" />
+                <span style={{ fontFamily: "'Haboro Contrast', 'Playfair Display', 'Georgia', serif" }}>Synthesized Thoughts</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenAdvancedLab('rack')}
+                className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[#1F2430] bg-[#FFFFFF] border border-[#DDD6C7] rounded-md hover:bg-[#EFEBE0] transition-colors shadow-2xs"
+              >
+                <Sliders className="w-3.5 h-3.5 text-[#0F766E]" />
+                <span>Full Instrument Rack</span>
+              </button>
+            </>
           )}
 
           <button
@@ -945,11 +956,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('charts')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'charts'
-                      ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'charts'
+                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <LineChartIcon className="w-3.5 h-3.5 text-[#10141C]" />
                   <span>Synchronous Charts</span>
@@ -958,11 +968,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('phase_space')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'phase_space'
-                      ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'phase_space'
+                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <Orbit className="w-3.5 h-3.5 text-[#B45F1B]" />
                   <span>Phase Space &amp; Poincaré</span>
@@ -971,11 +980,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('bispectrum')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'bispectrum'
-                      ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'bispectrum'
+                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <Cpu className="w-3.5 h-3.5 text-[#25653F]" />
                   <span>Bispectrum &amp; Coupling</span>
@@ -984,11 +992,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('instantaneous')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'instantaneous'
-                      ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'instantaneous'
+                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <Waves className="w-3.5 h-3.5 text-[#4F8A8B]" />
                   <span>Hilbert Envelope</span>
@@ -997,11 +1004,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('diagnostics')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'diagnostics'
-                      ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'diagnostics'
+                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <Activity className="w-3.5 h-3.5 text-[#78716C]" />
                   <span>ACF &amp; Complexity</span>
@@ -1010,11 +1016,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('evidence')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'evidence'
-                      ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'evidence'
+                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <Share2 className="w-3.5 h-3.5 text-[#10141C]" />
                   <span>Evidence Lineage DAG</span>
@@ -1023,19 +1028,17 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('papergraph')}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-colors ${
-                    activeTab === 'papergraph'
-                      ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
-                      : 'text-[#57534E] hover:bg-[#F2EFE9]'
-                  }`}
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-colors ${activeTab === 'papergraph'
+                    ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
+                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                    }`}
                 >
                   <div className="flex items-center space-x-2">
                     <BookOpen className={`w-3.5 h-3.5 ${activeTab === 'papergraph' ? 'text-white' : 'text-[#0F766E]'}`} />
                     <span>PaperGraph Literature</span>
                   </div>
-                  <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-mono font-bold ${
-                    activeTab === 'papergraph' ? 'bg-white/20 text-white' : 'bg-[#E6F4F2] text-[#0F766E]'
-                  }`}>
+                  <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-mono font-bold ${activeTab === 'papergraph' ? 'bg-white/20 text-white' : 'bg-[#E6F4F2] text-[#0F766E]'
+                    }`}>
                     arXiv
                   </span>
                 </button>
@@ -1209,22 +1212,20 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <button
                         type="button"
                         onClick={() => setSpectrumScale('linear')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                          spectrumScale === 'linear'
-                            ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
-                            : 'text-[#6B6F7B] hover:text-[#1F2430]'
-                        }`}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${spectrumScale === 'linear'
+                          ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
+                          : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                          }`}
                       >
                         Linear
                       </button>
                       <button
                         type="button"
                         onClick={() => setSpectrumScale('db')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                          spectrumScale === 'db'
-                            ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
-                            : 'text-[#6B6F7B] hover:text-[#1F2430]'
-                        }`}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${spectrumScale === 'db'
+                          ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
+                          : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                          }`}
                       >
                         Log (dB)
                       </button>
@@ -1415,11 +1416,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                             {row.bic.toFixed(3)}
                           </td>
                           <td className="py-2 px-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              row.coupled
-                                ? 'bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0]'
-                                : 'bg-[#F2EFE9] text-[#78716C] border border-[#E6E1D6]'
-                            }`}>
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${row.coupled
+                              ? 'bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0]'
+                              : 'bg-[#F2EFE9] text-[#78716C] border border-[#E6E1D6]'
+                              }`}>
                               {row.coupled ? 'Quadratic Coupling' : 'Uncoupled'}
                             </span>
                           </td>
@@ -1633,11 +1633,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsRackOpen(!isRackOpen)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold transition-all shadow-2xs shrink-0 ${
-                      isRackOpen
-                        ? 'bg-[#1F2430] text-white ring-2 ring-[#0F766E]'
-                        : 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/40 hover:bg-[#D4EBE7]'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold transition-all shadow-2xs shrink-0 ${isRackOpen
+                      ? 'bg-[#1F2430] text-white ring-2 ring-[#0F766E]'
+                      : 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/40 hover:bg-[#D4EBE7]'
+                      }`}
                   >
                     <Layers className="w-4 h-4 text-[#0F766E]" />
                     <span>PaperGraph Rack</span>
@@ -1722,17 +1721,15 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         key={s.id}
                         type="button"
                         onClick={() => setActiveSetId(s.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-                          activeSetId === s.id
-                            ? 'bg-[#0F766E] text-white shadow-2xs'
-                            : 'bg-[#FAF8F5] border border-[#DDD6C7] text-[#57534E] hover:bg-[#EFEBE0]'
-                        }`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeSetId === s.id
+                          ? 'bg-[#0F766E] text-white shadow-2xs'
+                          : 'bg-[#FAF8F5] border border-[#DDD6C7] text-[#57534E] hover:bg-[#EFEBE0]'
+                          }`}
                       >
                         <span>{s.name}</span>
                         <span
-                          className={`px-1.5 py-0.2 rounded text-[10px] ${
-                            activeSetId === s.id ? 'bg-white/20 text-white' : 'bg-[#EAE6DC] text-[#78716C]'
-                          }`}
+                          className={`px-1.5 py-0.2 rounded text-[10px] ${activeSetId === s.id ? 'bg-white/20 text-white' : 'bg-[#EAE6DC] text-[#78716C]'
+                            }`}
                         >
                           {s.papers.length}
                         </span>
@@ -1919,11 +1916,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         key={cat.id}
                         type="button"
                         onClick={() => setArxivCategory(cat.id)}
-                        className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap text-xs ${
-                          arxivCategory === cat.id
-                            ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
-                            : 'bg-[#F8F6F1] border border-[#E6E1D6] text-[#57534E] hover:text-[#10141C] hover:bg-[#EFEBE0]'
-                        }`}
+                        className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap text-xs ${arxivCategory === cat.id
+                          ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
+                          : 'bg-[#F8F6F1] border border-[#E6E1D6] text-[#57534E] hover:text-[#10141C] hover:bg-[#EFEBE0]'
+                          }`}
                       >
                         {cat.label}
                       </button>
@@ -1952,11 +1948,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       key={pill.label}
                       type="button"
                       onClick={() => setArxivQuery(pill.q)}
-                      className={`px-2 py-0.5 rounded text-[10px] border transition-all ${
-                        arxivQuery === pill.q
-                          ? 'bg-[#0F766E] text-white border-[#0F766E] font-bold'
-                          : 'bg-[#FFFFFF] border-[#DDD6C7] text-[#4A5060] hover:bg-[#EFEBE0] hover:text-[#1F2430]'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[10px] border transition-all ${arxivQuery === pill.q
+                        ? 'bg-[#0F766E] text-white border-[#0F766E] font-bold'
+                        : 'bg-[#FFFFFF] border-[#DDD6C7] text-[#4A5060] hover:bg-[#EFEBE0] hover:text-[#1F2430]'
+                        }`}
                     >
                       {pill.label}
                     </button>
@@ -2023,11 +2018,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                     {displayedPapers.map((paper) => (
                       <div
                         key={paper.id}
-                        className={`p-5 rounded-xl border transition-all space-y-3 ${
-                          selectedPaperId === paper.id
-                            ? 'border-[#0F766E] bg-[#FFFFFF] shadow-sm ring-1 ring-[#0F766E]/40'
-                            : 'border-[#E6E1D6] bg-[#FFFFFF] hover:border-[#10141C]/30'
-                        }`}
+                        className={`p-5 rounded-xl border transition-all space-y-3 ${selectedPaperId === paper.id
+                          ? 'border-[#0F766E] bg-[#FFFFFF] shadow-sm ring-1 ring-[#0F766E]/40'
+                          : 'border-[#E6E1D6] bg-[#FFFFFF] hover:border-[#10141C]/30'
+                          }`}
                       >
                         {/* Top Badges & Title */}
                         <div className="space-y-1.5">
@@ -2084,11 +2078,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                             <button
                               type="button"
                               onClick={() => handleTogglePaperInRack(paper)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all shadow-xs shrink-0 ${
-                                activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
-                                  ? 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E] hover:bg-[#D4EBE7]'
-                                  : 'bg-[#0F766E] text-white hover:bg-[#0D655E]'
-                              }`}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all shadow-xs shrink-0 ${activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
+                                ? 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E] hover:bg-[#D4EBE7]'
+                                : 'bg-[#0F766E] text-white hover:bg-[#0D655E]'
+                                }`}
                               title={
                                 activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
                                   ? `Remove from ${activeSet.name}`

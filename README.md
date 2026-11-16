@@ -1,6 +1,6 @@
-# SYNAPSE
+# SYNAPSE — Synthesized Thoughts
 
-> **An open-source scientific workstation for discovering repeating patterns, abrupt regime changes, and hidden relationships in numerical time-series data.**
+> **An open-source scientific workstation and research environment for discovering repeating patterns, abrupt regime changes, and hidden relationships in numerical time-series data, with native hypothesis synthesis.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-0F766E.svg)](LICENSE)
 [![Python: 3.11](https://img.shields.io/badge/Python-3.11-0F766E.svg)](https://python.org)
@@ -25,8 +25,46 @@ Instead of writing 100 lines of boilerplate matplotlib code to clean timestamps,
 - Computes cross-channel lead/lag causality with False Discovery Rate (FDR) control.
 - Reconstructs 1D signals into interactive 3D phase-space attractors (Takens embedding).
 - Links findings directly to foundational peer-reviewed preprints via arXiv.
+- Synthesizes findings into qualitative research entries via **Synthesized Thoughts**.
 
 ![SYNAPSE Paper Workbench on macOS](docs/screenshots/paper_workbench_macbook.png)
+
+---
+
+## Synthesized Thoughts — The Research Diary
+
+**Synthesized Thoughts** is a dedicated research journal engineered to bridge quantitative signal analysis with qualitative scientific hypothesis formulation. 
+
+Designed with a warm editorial aesthetic inspired by physical laboratory notebooks, it provides a focused, distraction-free space for researchers to record observations, document transient anomalies, and articulate conclusions alongside numerical telemetry.
+
+![Synthesized Thoughts Diary on macOS](docs/screenshots/synthesized_thoughts_diary.png)
+
+### What It Does
+- **Distraction-Free Editorial Writing**: Provides an uncluttered writing surface formatted to standard A4 sheet proportions, rendered in a calming sage green (`#82a18f`) on a warm drafting surface (`#EAE5DC`) with Georgia typography.
+- **Instant Telemetry & Reading Metrics**: Computes real-time word counts, character counts, and estimated reading times as notes are drafted.
+- **Publication-Ready Canvas Export**: Includes a high-resolution 2x HTML5 Canvas rasterization engine that exports notes directly to publication-grade PNG and high-quality JPEG images without external dependencies.
+- **Local-First Privacy & Zero Telemetry**: Operates strictly client-side using localStorage persistence. Private research notes, unfinished drafts, and proprietary hypotheses never leave the local browser environment.
+- **Direct Workflow Integration**: Accessible from the sidebar navigation, command palette (`Ctrl+K`), and one-click handoff directly from the Paper Workbench.
+
+---
+
+## PaperGraph & Graphify™ Knowledge Synthesis
+
+SYNAPSE connects observational time series to foundational literature through an interactive knowledge graph engine. Researchers can stage arbitrary collections of peer-reviewed papers to automatically map cross-citations, shared mathematical formulations, and thematic affinities:
+
+![PaperGraph Knowledge Network Demonstration on macOS](docs/screenshots/knowledge_graph_demo.png)
+
+*Graphify™ knowledge synthesis demonstrating 5 distinct scientific clusters (Gravitational Wave Astrophysics, Deep Learning, Nonlinear Dynamics, Statistical Mechanics, and Computational Electrophysiology) interconnected with mathematical invariants (Takens Delay Embedding, Multi-Head Attention, Thomson DPSS, PELT, and Metropolis-Hastings Monte Carlo).*
+
+---
+
+## Nonlinear Dynamics & 3D Phase Space Reconstruction
+
+SYNAPSE reconstructs the hidden multidimensional topology of scalar observations via Takens' delay coordinate embedding theorem ($\mathbf{x}(t) = [s(t), s(t+\tau), \dots, s(t+(m-1)\tau)]$), allowing real-time interactive 3D phase space exploration, rotation, and topological invariant validation:
+
+![Nonlinear Dynamics Attractor on macOS](docs/screenshots/dynamics_attractor_mockup.png)
+
+*Interactive 3D phase space reconstruction of chaotic state space trajectories with real-time lag selection ($\tau$), Vietoris-Rips topological persistent homology, and correlation dimension bounds.*
 
 ---
 
@@ -35,9 +73,10 @@ Instead of writing 100 lines of boilerplate matplotlib code to clean timestamps,
 | What you need | How SYNAPSE handles it | Where to find it |
 |:---|:---|:---|
 | **Fast interactive exploration** | Runs in-browser via TypeScript & Web Workers. No server round-trip required for rapid inspection. | Paper Workbench |
-| **Heavy scientific computing** | Python FastAPI backend powered by NumPy, Numba, and statsmodels. Processes 120,000+ points/channel in milliseconds. | Analysis API |
+| **Heavy scientific computing** | Python FastAPI backend powered by NumPy, Numba, and statsmodels. Processes 350,000+ points/channel in milliseconds. | Analysis API |
 | **Statistical rigor** | Bounded by Benjamini-Hochberg FDR ($q \le 0.05$) and empirical null surrogates so noise doesn't trigger false discoveries. | Inference Lab |
 | **28 Synchronized instruments** | Oscilloscopes, scalograms, bispectrums, Poincaré sections, and Lyapunov diagnostics share a linked temporal scrubber. | Instrument Rack |
+| **Hypothesis formulation** | Distraction-free A4 journal with local autosave and 2x canvas image export. | Synthesized Thoughts |
 | **Messy real-world data** | Automatic delimiter detection, non-monotonic batch linearization, missing-value profiling, and original SHA-256 tracking. | Datasets View |
 
 ---

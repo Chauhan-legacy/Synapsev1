@@ -8,6 +8,7 @@ import {
   Trash2,
   ChevronDown,
   RotateCcw,
+  ArrowLeft,
 } from 'lucide-react';
 import { WorkbenchView } from './Sidebar';
 
@@ -24,10 +25,12 @@ interface TopBarProps {
   onUploadClick: () => void;
   onOpenCommandPalette: () => void;
   apiConnected: boolean;
+  onSwitchToWorkbench?: () => void;
 }
 
 const VIEW_TITLES: Record<WorkbenchView, string> = {
   workbench: 'Paper Workbench',
+  aporia: 'Synthesized Thoughts',
   papergraph: 'PaperGraph Citations',
   papergraph_rack: 'PaperGraph Rack & Graphify Workspace',
   overview: 'Overview',
@@ -70,6 +73,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onUploadClick,
   onOpenCommandPalette,
   apiConnected,
+  onSwitchToWorkbench,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -160,11 +164,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                       onSelectDataset(ds.id);
                       setIsDropdownOpen(false);
                     }}
-                    className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors group ${
-                      isSelected
-                        ? 'bg-[#EFEBE0] text-[#1F2430] font-semibold'
-                        : 'hover:bg-[#F6F3EC] text-[#4A5060]'
-                    }`}
+                    className={`flex items-center justify-between px-3 py-2 cursor-pointer transition-colors group ${isSelected
+                      ? 'bg-[#EFEBE0] text-[#1F2430] font-semibold'
+                      : 'hover:bg-[#F6F3EC] text-[#4A5060]'
+                      }`}
                   >
                     <div className="flex items-center gap-2 truncate mr-2">
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-[#0F766E]' : 'bg-[#DDD6C7]'}`} />
@@ -232,11 +235,10 @@ export const TopBar: React.FC<TopBarProps> = ({
           type="button"
           onClick={onRunAnalysis}
           disabled={isAnalyzing}
-          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 text-xs font-mono font-semibold rounded-md shadow-xs transition-colors ${
-            isAnalyzing
-              ? 'bg-[#0F766E]/70 text-white cursor-wait'
-              : 'bg-[#0F766E] hover:bg-[#0B5E58] text-white'
-          }`}
+          className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 text-xs font-mono font-semibold rounded-md shadow-xs transition-colors ${isAnalyzing
+            ? 'bg-[#0F766E]/70 text-white cursor-wait'
+            : 'bg-[#0F766E] hover:bg-[#0B5E58] text-white'
+            }`}
         >
           <Play className={`w-3.5 h-3.5 fill-current ${isAnalyzing ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">{isAnalyzing ? 'Computing...' : 'Run analysis'}</span>
@@ -245,16 +247,29 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* API Status Chip */}
         <div
-          className={`hidden sm:flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono border rounded-full ${
-            apiConnected
-              ? 'border-[#2E7D32]/30 text-[#2E7D32] bg-[#E8F5E9] font-bold'
-              : 'border-[#DDD6C7] text-[#6B6F7B] bg-[#EFEBE0]'
-          }`}
+          className={`hidden sm:flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono border rounded-full ${apiConnected
+            ? 'border-[#2E7D32]/30 text-[#2E7D32] bg-[#E8F5E9] font-bold'
+            : 'border-[#DDD6C7] text-[#6B6F7B] bg-[#EFEBE0]'
+            }`}
           title={apiConnected ? 'FastAPI Gateway: Connected (127.0.0.1:8000)' : 'Client Standalone Numerical Engine'}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${apiConnected ? 'bg-[#2E7D32]' : 'bg-[#6B6F7B]'}`} />
           <span>{apiConnected ? 'API OK' : 'LOCAL'}</span>
         </div>
+
+        {/* Switch to Paper Workbench Button */}
+        {onSwitchToWorkbench && (
+          <button
+            type="button"
+            onClick={onSwitchToWorkbench}
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 text-xs font-mono font-medium rounded-md border border-[#DDD6C7] bg-[#FAF8F5] hover:bg-[#EFEBE0] hover:border-[#0F766E]/50 text-[#1F2430] transition-colors shadow-2xs group shrink-0"
+            title="Switch to Paper Workbench"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-[#0F766E] transition-transform group-hover:-translate-x-0.5" />
+            <span className="hidden xl:inline">Switch to Paper Workbench</span>
+            <span className="xl:hidden hidden sm:inline">Workbench</span>
+          </button>
+        )}
       </div>
     </header>
   );
