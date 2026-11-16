@@ -48,16 +48,79 @@ export const ChaosLabView: React.FC = () => {
   const [trajectory, setTrajectory] = useState<Array<{ t: number; x: number; y: number; z: number }>>([]);
   const stateRef = useRef<{ x: number; y: number; z: number; t: number }>({ x: 0.1, y: 0.0, z: 0.0, t: 0.0 });
 
-  // Reset state when system changes
+  // Reset state and pre-warm trajectory when system changes
   useEffect(() => {
+    let initX = 0.1;
+    let initY = 0.0;
+    let initZ = 0.0;
+    let initT = 0.0;
     if (systemType === 'lorenz') {
-      stateRef.current = { x: 0.1, y: 0.0, z: 0.0, t: 0.0 };
+      initX = 0.1;
+      initY = 0.0;
+      initZ = 0.0;
     } else if (systemType === 'rossler') {
-      stateRef.current = { x: 0.1, y: 0.0, z: 0.0, t: 0.0 };
+      initX = 0.1;
+      initY = 0.0;
+      initZ = 0.0;
     } else {
-      stateRef.current = { x: 0.5, y: 0.0, z: 0.0, t: 0.0 };
+      initX = 0.5;
+      initY = 0.0;
+      initZ = 0.0;
     }
-    setTrajectory([]);
+
+    const dt = 0.015;
+    const getDerivsLocal = (cx: number, cy: number, cz: number, ct: number) => {
+      if (systemType === 'lorenz') {
+        const dx = lorenzSigma * (cy - cx);
+        const dy = cx * (lorenzRho - cz) - cy;
+        const dz = cx * cy - lorenzBeta * cz;
+        return [dx, dy, dz];
+      } else if (systemType === 'rossler') {
+        const dx = -cy - cz;
+        const dy = cx + rosslerA * cy;
+        const dz = rosslerB + cz * (cx - rosslerC);
+        return [dx, dy, dz];
+      } else {
+        const dx = cy;
+        const dy = cx - Math.pow(cx, 3) - duffingDelta * cy + duffingGamma * Math.cos(duffingOmega * ct);
+        const dz = Math.sin(duffingOmega * ct);
+        return [dx, dy, dz];
+      }
+    };
+
+    const rk4Local = (cx: number, cy: number, cz: number, ct: number): [number, number, number, number] => {
+      const [dx1, dy1, dz1] = getDerivsLocal(cx, cy, cz, ct);
+      const [dx2, dy2, dz2] = getDerivsLocal(cx + 0.5 * dt * dx1, cy + 0.5 * dt * dy1, cz + 0.5 * dt * dz1, ct + 0.5 * dt);
+      const [dx3, dy3, dz3] = getDerivsLocal(cx + 0.5 * dt * dx2, cy + 0.5 * dt * dy2, cz + 0.5 * dt * dz2, ct + 0.5 * dt);
+      const [dx4, dy4, dz4] = getDerivsLocal(cx + dt * dx3, cy + dt * dy3, cz + dt * dz3, ct + dt);
+      return [
+        cx + (dt / 6.0) * (dx1 + 2 * dx2 + 2 * dx3 + dx4),
+        cy + (dt / 6.0) * (dy1 + 2 * dy2 + 2 * dy3 + dy4),
+        cz + (dt / 6.0) * (dz1 + 2 * dz2 + 2 * dz3 + dz4),
+        ct + dt,
+      ];
+    };
+
+    // Burn-in transient steps (600 steps) to settle onto attractor manifold
+    let curX = initX;
+    let curY = initY;
+    let curZ = initZ;
+    let curT = initT;
+    for (let i = 0; i < 600; i++) {
+      [curX, curY, curZ, curT] = rk4Local(curX, curY, curZ, curT);
+    }
+
+    // Collect developed trajectory (800 steps)
+    const initialTraj: Array<{ t: number; x: number; y: number; z: number }> = [];
+    for (let i = 0; i < 800; i++) {
+      [curX, curY, curZ, curT] = rk4Local(curX, curY, curZ, curT);
+      if (i % 2 === 0) {
+        initialTraj.push({ t: curT, x: curX, y: curY, z: curZ });
+      }
+    }
+
+    stateRef.current = { x: curX, y: curY, z: curZ, t: curT };
+    setTrajectory(initialTraj);
   }, [systemType]);
 
   // RK4 Integration Kernel
@@ -652,9 +715,19 @@ export const ChaosLabView: React.FC = () => {
         <div className="bg-[#FFFDF9] border border-[#E6DFC6] p-3 rounded-xl shadow-xs">
           <div className="text-[10px] text-[#78716C] uppercase font-bold">Largest Lyapunov Exponent</div>
           <div className="text-base font-bold text-[#B45F1B] mt-1">
-            {zeroOneMetrics.isChaotic ? '+0.905 nats/s' : '0.000 (neutral)'}
+            {systemType === 'lorenz'
+              ? (zeroOneMetrics.isChaotic ? '+0.905 nats/s' : '0.000 (neutral)')
+              : systemType === 'rossler'
+                ? (zeroOneMetrics.isChaotic ? '+0.071 nats/s' : '0.000 (neutral)')
+                : (zeroOneMetrics.isChaotic ? '+0.150 nats/s' : '0.000 (neutral)')}
           </div>
-          <div className="text-[10px] text-[#78716C]">Exponential horizon: ~1.10 s</div>
+          <div className="text-[10px] text-[#78716C]">
+            {systemType === 'lorenz'
+              ? 'Exponential horizon: ~1.10 s'
+              : systemType === 'rossler'
+                ? 'Exponential horizon: ~14.1 s'
+                : 'Exponential horizon: ~6.67 s'}
+          </div>
         </div>
 
         <div className="bg-[#FFFDF9] border border-[#E6DFC6] p-3 rounded-xl shadow-xs">
@@ -740,20 +813,24 @@ export const ChaosLabView: React.FC = () => {
 
           <div className="h-[360px] w-full">
             <ResponsiveContainer width="100%" height={360}>
-              <LineChart data={phaseSpaceData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+              <ScatterChart margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <XAxis
-                  dataKey={systemType === 'lorenz' ? 'x' : systemType === 'rossler' ? 'x' : 'x'}
+                  type="number"
+                  dataKey="x"
+                  domain={['auto', 'auto']}
                   tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                   label={{
                     value: systemType === 'duffing' ? 'Displacement x' : 'State X',
                     position: 'insideBottom',
-                    offset: -2,
+                    offset: -5,
                     fontSize: 10,
                     fill: '#6B6F7B',
                   }}
                 />
                 <YAxis
-                  dataKey={systemType === 'lorenz' ? 'z' : systemType === 'rossler' ? 'y' : 'y'}
+                  type="number"
+                  dataKey={systemType === 'lorenz' ? 'z' : 'y'}
+                  domain={['auto', 'auto']}
                   tick={{ fill: '#6B6F7B', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                   label={{
                     value: systemType === 'lorenz' ? 'State Z' : systemType === 'duffing' ? 'Velocity dx/dt' : 'State Y',
@@ -764,17 +841,16 @@ export const ChaosLabView: React.FC = () => {
                   }}
                 />
                 <Tooltip
+                  cursor={{ strokeDasharray: '3 3' }}
                   contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#DDD6C7', fontFamily: 'JetBrains Mono', fontSize: '11px' }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey={systemType === 'lorenz' ? 'z' : systemType === 'rossler' ? 'y' : 'y'}
-                  stroke="#B45F1B"
-                  strokeWidth={1.75}
-                  dot={false}
+                <Scatter
+                  data={phaseSpaceData}
+                  line={{ stroke: '#B45F1B', strokeWidth: 1.5 }}
+                  shape={() => null}
                   isAnimationActive={false}
                 />
-              </LineChart>
+              </ScatterChart>
             </ResponsiveContainer>
           </div>
 

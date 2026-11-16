@@ -525,13 +525,13 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     let activeFindings = [
       {
         id: 'f-1',
-        title: 'Primary Harmonic Line: 5.00 Hz',
-        value: '5.00 Hz',
+        title: `Primary Harmonic Line: ${domFreq.toFixed(2)} Hz`,
+        value: `${domFreq.toFixed(2)} Hz`,
         status: 'VALIDATED',
         statusStyle: 'bg-[#E8EFE9] text-[#25653F] border-[#CDE0D0]',
         engine: 'SPECTRA • Thomson Multitaper (NW=4, K=7)',
         statistic: 'F = 24.84 (p = 1.2e-5 < 0.001)',
-        uncertainty: '± 0.018 Hz (95% BCa CI)',
+        uncertainty: `± ${welch.frequencyResolution.toFixed(3)} Hz`,
         crlb: 'Var(f̂) / CRLB = 1.07 (Efficiency: 93.4%)',
         meaning: 'Coherent sinusoidal oscillator verified above colored noise baseline with zero frequency bias.',
       },
@@ -813,6 +813,11 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           <div className="hidden md:flex items-center space-x-2 text-xs font-mono text-[#57534E] truncate">
             <span className="text-[#A8A29E]">&bull;</span>
             <span className="font-semibold text-[#10141C] truncate">{stats.title}</span>
+            {!customData && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-300 font-bold shrink-0">
+                Example / simulator
+              </span>
+            )}
             <span className="text-[#A8A29E] shrink-0">({stats.sampleCount} samples, {stats.samplingRate} Hz)</span>
           </div>
         </div>
@@ -877,9 +882,16 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
               </span>
               <div className="p-3 rounded-lg border border-[#E6E1D6] bg-[#F8F6F1]/70 space-y-2">
                 <div className="flex items-start justify-between gap-1">
-                  <span className="font-mono text-xs font-bold text-[#10141C] truncate" title={stats.title}>
-                    {customData ? customData.name : 'Canonical Research Signal'}
-                  </span>
+                  <div className="flex flex-col gap-0.5 truncate">
+                    <span className="font-mono text-xs font-bold text-[#10141C] truncate" title={stats.title}>
+                      {customData ? customData.name : 'Canonical Research Signal'}
+                    </span>
+                    {!customData && (
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-500/10 text-amber-700 border border-amber-300 font-bold w-fit">
+                        Example / simulator
+                      </span>
+                    )}
+                  </div>
                   {customData && (
                     <button
                       type="button"

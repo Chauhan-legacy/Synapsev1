@@ -170,9 +170,9 @@ export const MultifractalDfaView: React.FC<MultifractalDfaViewProps> = ({ signal
                     />
                     <text
                       x={h2X + 2}
-                      y="20"
+                      y="18"
                       fill="#C0392B"
-                      fontSize="6"
+                      fontSize="2.4"
                       fontFamily="JetBrains Mono, monospace"
                     >
                       Monofractal α = h(2)
@@ -186,20 +186,23 @@ export const MultifractalDfaView: React.FC<MultifractalDfaViewProps> = ({ signal
                 const cx = toSvgX(a);
                 const cy = toSvgY(mfResult.fAlpha[i]);
                 const qVal = mfResult.ordersQ[i];
+                const showLabel = [-5, -2, 0, 2, 5].includes(qVal);
 
                 return (
                   <g key={i}>
-                    <circle cx={cx} cy={cy} r="2.8" fill="#0F766E" stroke="#FFFFFF" strokeWidth="0.8" />
-                    <text
-                      x={cx}
-                      y={cy - 4}
-                      fill="#1F2430"
-                      fontSize="5"
-                      fontFamily="JetBrains Mono, monospace"
-                      textAnchor="middle"
-                    >
-                      q={qVal}
-                    </text>
+                    <circle cx={cx} cy={cy} r="1.2" fill="#0F766E" stroke="#FFFFFF" strokeWidth="0.5" />
+                    {showLabel && (
+                      <text
+                        x={cx}
+                        y={cy - 2.5}
+                        fill="#1F2430"
+                        fontSize="2.4"
+                        fontFamily="JetBrains Mono, monospace"
+                        textAnchor="middle"
+                      >
+                        q={qVal}
+                      </text>
+                    )}
                   </g>
                 );
               })}

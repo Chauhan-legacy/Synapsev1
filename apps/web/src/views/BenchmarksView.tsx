@@ -179,7 +179,10 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
                   {megaBenchmarkResult.scientific_compute_time_ms} ms
                 </div>
                 <span className="text-[10px] text-green-700 font-bold flex items-center gap-1 mt-0.5">
-                  <CheckCircle2 className="w-3 h-3" /> Sub-Second Verified (&lt; 0.1s)
+                  <CheckCircle2 className="w-3 h-3" />{' '}
+                  {megaBenchmarkResult.scientific_compute_time_ms < 1000
+                    ? 'Sub-Second Verified (< 1.0s total)'
+                    : 'Compute Complete'}
                 </span>
               </div>
 

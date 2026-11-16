@@ -207,13 +207,13 @@ export const BandtPompePlaneView: React.FC<BandtPompePlaneViewProps> = ({
               const lx = toSvgX(lm.h);
               const ly = toSvgY(lm.c);
               return (
-                <g key={idx} opacity={0.65}>
-                  <circle cx={lx} cy={ly} r="2.2" fill="#6B6F7B" />
+                <g key={idx} opacity={0.75}>
+                  <circle cx={lx} cy={ly} r="0.8" fill="#6B6F7B" />
                   <text
-                    x={lx + 3}
-                    y={ly - 2}
+                    x={lx + 1.2}
+                    y={ly - 0.8}
                     fill="#6B6F7B"
-                    fontSize="7"
+                    fontSize="2.4"
                     fontFamily="JetBrains Mono, monospace"
                   >
                     {lm.name}
@@ -226,33 +226,33 @@ export const BandtPompePlaneView: React.FC<BandtPompePlaneViewProps> = ({
             <circle
               cx={activeX}
               cy={activeY}
-              r="6.5"
+              r="3.2"
               fill="rgba(15, 118, 110, 0.25)"
               className="animate-pulse"
             />
             <circle
               cx={activeX}
               cy={activeY}
-              r="3.5"
+              r="1.8"
               fill="#0F766E"
               stroke="#FFFFFF"
-              strokeWidth="1.2"
+              strokeWidth="0.8"
             />
             <line
-              x1={activeX - 8}
+              x1={activeX - 4}
               y1={activeY}
-              x2={activeX + 8}
+              x2={activeX + 4}
               y2={activeY}
               stroke="#0F766E"
-              strokeWidth="0.8"
+              strokeWidth="0.6"
             />
             <line
               x1={activeX}
-              y1={activeY - 8}
+              y1={activeY - 4}
               x2={activeX}
-              y2={activeY + 8}
+              y2={activeY + 4}
               stroke="#0F766E"
-              strokeWidth="0.8"
+              strokeWidth="0.6"
             />
           </svg>
 
