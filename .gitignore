@@ -41,6 +41,9 @@ data/raw/
 data/cache/
 data/synapse_stress_*.csv
 data/synapse_test_*.csv
+data/synapse_heavy_spikes_*.csv
+data/synapse_neural_stress_*.csv
+data/synapse_pure_linear_*.csv
 data/geophysical_sensor_*.csv
 data/deep_signal_processing_*.csv
 data/synapse_ultimate_stress_*.csv
