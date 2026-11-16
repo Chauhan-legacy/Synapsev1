@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from synapse_core.models.signal import Signal, ChannelInfo
 from synapse_core.diagnostics import run_preflight_diagnostics, PreflightDiagnostics
 from synapse_core.exceptions import ValidationError
+from apps.api.validator import validate_signal_input
 from synapse_core.analyser import EvidenceStatus
 from synapse_core.null_models import calibrate_against_null, NullModelType
 from synapse_core.consensus import ConsensusEngine
@@ -73,8 +74,13 @@ def get_validation_registry():
 @router.post("/diagnostics")
 def run_diagnostics_endpoint(req: AnalyzeRequest):
     """Run non-destructive preflight diagnostics on signal."""
-    if not req.channels:
-        raise HTTPException(status_code=400, detail="No channel data provided.")
+    validate_signal_input(
+        channels=req.channels,
+        sampling_rate=req.sampling_rate,
+        timestamps=req.timestamps,
+        allow_constant=False,
+        module="synapse_core",
+    )
 
     ch_names = list(req.channels.keys())
     primary = ch_names[0]
@@ -100,23 +106,45 @@ def run_live_analysis(req: AnalyzeRequest):
     All numbers returned are mathematically computed directly from the data.
     """
     t0 = time.perf_counter()
-    if not req.channels:
-        raise HTTPException(status_code=400, detail="No channels provided in request.")
+    validate_signal_input(
+        channels=req.channels,
+        sampling_rate=req.sampling_rate,
+        timestamps=req.timestamps,
+        allow_constant=False,
+        module="synapse_spectra",
+    )
 
     ch_names = list(req.channels.keys())
     primary_name = ch_names[0]
-    primary_vals = np.asarray(req.channels[primary_name], dtype=np.float64)
-    n = len(primary_vals)
-    if n < 8:
-        raise ValidationError(f"Signal must contain at least 8 samples for full pipeline analysis (received {n}).")
-    is_constant = float(np.var(primary_vals)) < 1e-12
+    raw_primary_vals = np.asarray(req.channels[primary_name], dtype=np.float64)
+    n_raw = len(raw_primary_vals)
 
     fs = float(req.sampling_rate)
     dt = 1.0 / fs
-    ts = np.asarray(req.timestamps, dtype=np.float64) if req.timestamps else np.arange(n) * dt
+
+    # Bounded cost for deep analysis on massive records (e.g. 350,000 samples)
+    MAX_DEEP_SAMPLES = 20000
+    if n_raw > MAX_DEEP_SAMPLES:
+        primary_vals = raw_primary_vals[:MAX_DEEP_SAMPLES]
+        n = len(primary_vals)
+        sampling_notice = f"analysed on a {n:,}-point view of {n_raw:,} samples"
+        ts = np.arange(n) * dt
+    else:
+        primary_vals = raw_primary_vals
+        n = n_raw
+        sampling_notice = None
+        ts = np.asarray(req.timestamps, dtype=np.float64) if req.timestamps else np.arange(n) * dt
+
+    is_constant = float(np.var(primary_vals)) < 1e-12
 
     # Construct canonical Signal
-    all_channel_cols = [np.asarray(req.channels[name], dtype=np.float64) for name in ch_names]
+    all_channel_cols = []
+    for name in ch_names:
+        ch_arr = np.asarray(req.channels[name], dtype=np.float64)
+        if n_raw > MAX_DEEP_SAMPLES:
+            ch_arr = ch_arr[:MAX_DEEP_SAMPLES]
+        all_channel_cols.append(ch_arr)
+
     val_matrix = np.column_stack(all_channel_cols) if len(all_channel_cols) > 1 else primary_vals
     channel_infos = [ChannelInfo(name=name) for name in ch_names]
 
@@ -315,9 +343,9 @@ def run_live_analysis(req: AnalyzeRequest):
             "engine": "Python Engine (v2.0.0)",
         })
     else:
-        stat_res = evaluate_stationarity(primary_vals)
-        norm_res = evaluate_normality(primary_vals)
-        dfa_res = compute_dfa(primary_vals)
+        stat_res = evaluate_stationarity(primary_vals[:2500] if n > 2500 else primary_vals)
+        norm_res = evaluate_normality(primary_vals[:5000] if n > 5000 else primary_vals)
+        dfa_res = compute_dfa(primary_vals[:5000] if n > 5000 else primary_vals)
 
         results_by_module["statistics"].append({
             "method": "Augmented Dickey-Fuller (ADF) Unit Root Test",
@@ -404,10 +432,12 @@ def run_live_analysis(req: AnalyzeRequest):
     try:
         from scipy.ndimage import gaussian_filter1d
         from sklearn.linear_model import HuberRegressor
+        drift_sub = min(n, 5000)
         sigma_val = max(5, int(fs * 0.25))
-        smoothed = gaussian_filter1d(primary_vals, sigma=sigma_val)
+        smoothed = gaussian_filter1d(primary_vals[:drift_sub], sigma=sigma_val)
         diff_s = np.diff(smoothed)
-        t_mid = (t_vec[:-1] + t_vec[1:]) / 2.0
+        t_sub = t_vec[:drift_sub]
+        t_mid = (t_sub[:-1] + t_sub[1:]) / 2.0
         huber_drift = HuberRegressor().fit(t_mid.reshape(-1, 1), diff_s)
         a_drift = (huber_drift.coef_[0] / dt_val) / 2.0
         b_drift = huber_drift.intercept_ / dt_val
@@ -430,20 +460,22 @@ def run_live_analysis(req: AnalyzeRequest):
                 M_harm.append(np.sin(2 * np.pi * f * t_vec))
             if M_harm:
                 M_mat = np.column_stack(M_harm)
-                harm_fit = HuberRegressor().fit(M_mat, x_detrended)
+                harm_sub = min(n, 5000)
+                harm_fit = HuberRegressor().fit(M_mat[:harm_sub], x_detrended[:harm_sub])
                 x_residual = x_detrended - harm_fit.predict(M_mat)
         except Exception:
             pass
 
-    # PELT changepoints on detrended signal
-    pelt_penalty = 80.0 if n >= 1000 else None
-    pelt_min_size = 50 if n >= 500 else 4
-    pelt_res = detect_pelt_changepoints(x_detrended, penalty=pelt_penalty, min_size=pelt_min_size)
+    # PELT changepoints on detrended signal (bound length to 1200 for sub-second execution)
+    pelt_sub = min(n, 1200)
+    pelt_penalty = 80.0 if pelt_sub >= 1000 else None
+    pelt_min_size = 50 if pelt_sub >= 500 else 4
+    pelt_res = detect_pelt_changepoints(x_detrended[:pelt_sub], penalty=pelt_penalty, min_size=pelt_min_size)
     pelt_cps = list(pelt_res.changepoints)
 
-    # Rosner ESD per regime
+    # Rosner ESD per regime (bound to first 2,000 points for real-time responsiveness)
     all_outliers = []
-    regime_bounds = [0] + pelt_cps + [n]
+    regime_bounds = [0] + pelt_cps + [min(n, 2000)]
     for r in range(len(regime_bounds) - 1):
         s_idx, e_idx = regime_bounds[r], regime_bounds[r + 1]
         if e_idx - s_idx >= 15:
@@ -452,11 +484,13 @@ def run_live_analysis(req: AnalyzeRequest):
             for idx in esd_sub.outlier_indices:
                 all_outliers.append(s_idx + idx)
     if not all_outliers:
-        all_outliers = list(generalized_esd_test(x_residual, max_outliers=10, alpha=0.05).outlier_indices)
+        all_outliers = list(generalized_esd_test(x_residual[:min(n, 2000)], max_outliers=10, alpha=0.05).outlier_indices)
     esd_outliers = sorted(all_outliers)
 
-    bocpd_res = compute_bocpd(primary_vals)
-    cusum_res = compute_cusum(primary_vals)
+    bocpd_sub = min(n, 2000)
+    bocpd_res = compute_bocpd(primary_vals[:bocpd_sub])
+    cusum_sub = min(n, 5000)
+    cusum_res = compute_cusum(primary_vals[:cusum_sub])
 
     esd_stat = "supported" if len(esd_outliers) > 0 else "inconclusive"
     results_by_module["anomalies"].append({
@@ -577,8 +611,9 @@ def run_live_analysis(req: AnalyzeRequest):
             "engine": "Python Engine (v2.0.0)",
         })
     else:
-        lags_ami, ami_vals, opt_tau = compute_average_mutual_information(primary_vals, max_lag=30)
-        dims_fnn, fnn_arr, opt_m = compute_false_nearest_neighbours(primary_vals, delay_tau=opt_tau, max_dim=8)
+        dyn_sub = min(n, 2000)
+        lags_ami, ami_vals, opt_tau = compute_average_mutual_information(primary_vals[:dyn_sub], max_lag=30)
+        dims_fnn, fnn_arr, opt_m = compute_false_nearest_neighbours(primary_vals[:dyn_sub], delay_tau=opt_tau, max_dim=8)
         sub_n = min(n, 500)
         rqa_res = compute_rqa(primary_vals[:sub_n], dimension=opt_m, delay=opt_tau)
         lyap_res = compute_largest_lyapunov_exponent(primary_vals[:sub_n], dimension=opt_m, delay=opt_tau)
@@ -646,20 +681,25 @@ def run_live_analysis(req: AnalyzeRequest):
     if len(ch_names) >= 2:
         t_mod = time.perf_counter()
         ch_y_vals = np.asarray(req.channels[ch_names[1]], dtype=np.float64)
+        if n_raw > MAX_DEEP_SAMPLES:
+            ch_y_vals = ch_y_vals[:MAX_DEEP_SAMPLES]
         # Detrend second channel to ensure stationarity
         if n >= 500:
             try:
                 from scipy.ndimage import gaussian_filter1d
                 from sklearn.linear_model import HuberRegressor
-                smoothed_y = gaussian_filter1d(ch_y_vals, sigma=max(5, int(fs * 0.25)))
+                drift_sub_y = min(n, 5000)
+                smoothed_y = gaussian_filter1d(ch_y_vals[:drift_sub_y], sigma=max(5, int(fs * 0.25)))
                 diff_sy = np.diff(smoothed_y)
-                t_mid = (t_vec[:-1] + t_vec[1:]) / 2.0
+                t_sub_y = t_vec[:drift_sub_y]
+                t_mid = (t_sub_y[:-1] + t_sub_y[1:]) / 2.0
                 huber_y = HuberRegressor().fit(t_mid.reshape(-1, 1), diff_sy)
                 poly_drift_y = ((huber_y.coef_[0] / dt_val) / 2.0) * (t_vec ** 2) + (huber_y.intercept_ / dt_val) * t_vec
                 ch_y_detrended = ch_y_vals - poly_drift_y
             except Exception:
                 ch_y_detrended = ch_y_vals
-            gc_res = compute_granger_causality(x_detrended, ch_y_detrended, max_lag=4)
+            gc_sub = min(n, 5000)
+            gc_res = compute_granger_causality(x_detrended[:gc_sub], ch_y_detrended[:gc_sub], max_lag=4)
         else:
             gc_res = compute_granger_causality(primary_vals, ch_y_vals, max_lag=5)
 
@@ -731,6 +771,7 @@ def run_live_analysis(req: AnalyzeRequest):
     # =========================================================================
     t_mod = time.perf_counter()
     # Calibrate dominant spectral variance against IAAFT surrogates
+    sub_iaaft = primary_vals[:2000] if n > 2000 else primary_vals
     def spectral_variance_stat(x_arr: np.ndarray) -> float:
         res = compute_multitaper_psd(x_arr, fs, nw=3.5, alpha=0.01, fdr_control=False)
         return float(np.max(res.f_statistics[1:])) if len(res.f_statistics) > 1 else 0.0
@@ -738,7 +779,7 @@ def run_live_analysis(req: AnalyzeRequest):
     iaaft_cal = calibrate_against_null(
         test_func=spectral_variance_stat,
         observed_statistic=mt_f_max,
-        signal_values=primary_vals,
+        signal_values=sub_iaaft,
         null_type=NullModelType.IAAFT_SURROGATE,
         n_surrogates=25,
         alpha=0.05,
@@ -844,6 +885,7 @@ def run_live_analysis(req: AnalyzeRequest):
             "inconclusive": n_inconclusive,
             "rejected": n_rejected,
         },
+        "sampling_notice": sampling_notice,
         "engine_source": "Python Engine (v2.0.0)",
     }
 
@@ -858,10 +900,43 @@ class FastBatchRequest(BaseModel):
 def run_ultra_fast_batch(req: FastBatchRequest):
     """High-throughput vectorized analysis capable of processing 120,000+ samples per channel in milliseconds."""
     t0 = time.perf_counter()
+    validate_signal_input(
+        channels=req.channels,
+        sampling_rate=req.sampling_rate,
+        allow_constant=True,
+        module="synapse_spectra",
+    )
     results: Dict[str, Any] = {}
 
     for ch_name, data in req.channels.items():
         arr = np.asarray(data, dtype=np.float64)
+        if len(arr) < 8:
+            results[ch_name] = {
+                "total_samples": len(arr),
+                "sampling_rate_hz": req.sampling_rate,
+                "status": "skipped",
+                "reason": f"Too few samples ({len(arr)} < 8)",
+            }
+            continue
+
+        if float(np.var(arr)) < 1e-12:
+            results[ch_name] = {
+                "total_samples": len(arr),
+                "sampling_rate_hz": req.sampling_rate,
+                "duration_sec": len(arr) / req.sampling_rate,
+                "status": "skipped",
+                "reason": "Zero variance / constant signal",
+                "mean": float(arr[0]),
+                "std": 0.0,
+                "rms": float(abs(arr[0])),
+                "dominant_frequency_hz": 0.0,
+                "dominant_power_db": 0.0,
+                "peaks": [],
+                "transient_events": [],
+                "changepoint_timestamps_sec": [],
+            }
+            continue
+
         res = fast_analyze_signal(arr, fs=req.sampling_rate, max_peaks=req.max_peaks)
         results[ch_name] = {
             "total_samples": res.total_samples,

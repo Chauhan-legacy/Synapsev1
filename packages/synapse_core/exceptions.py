@@ -23,7 +23,16 @@ class SynapseError(Exception):
 
 class ValidationError(SynapseError):
     """Raised when an input or parameter validation fails."""
-    pass
+    def __init__(
+        self,
+        message: str,
+        what_to_try: str = "Verify that the input signal is non-empty, contains at least 8 samples, has positive sampling rate, and is formatted correctly.",
+        module: str = "synapse_core",
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(message, details=details)
+        self.what_to_try = what_to_try
+        self.module = module
 
 
 class IncompatibleSamplingError(SynapseError):

@@ -97,14 +97,15 @@ def run_preflight_diagnostics(signal: Signal, channel_index: int = 0) -> Preflig
     regime = "Inconclusive"
 
     if n >= 32 and not is_const and not has_nan_inf:
+        stat_sub = vals[:2500] if len(vals) > 2500 else vals
         try:
-            adf_res = adfuller(vals, autolag="AIC")
+            adf_res = adfuller(stat_sub, autolag="AIC")
             adf_p = float(adf_res[1])
         except Exception:
             adf_p = 1.0
 
         try:
-            kpss_res = kpss(vals, regression="c", nlags="auto")
+            kpss_res = kpss(stat_sub, regression="c", nlags="auto")
             kpss_p = float(kpss_res[1])
         except Exception:
             kpss_p = 0.0

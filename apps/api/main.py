@@ -28,6 +28,8 @@ from pydantic import BaseModel, Field
 from synapse_core.models.signal import Signal
 from synapse_core.io.readers import read_signal
 from synapse_core.exceptions import ValidationError as SynapseValidationError, DataIntegrityError
+from apps.api.validator import validate_signal_input
+from fastapi.exceptions import RequestValidationError
 from synapse_spectra.engine import SpectraEngine
 from synapse_anomaly.engine import AnomalyEngine
 from synapse_structure.engine import StructureEngine
@@ -59,13 +61,15 @@ app = FastAPI(
 @app.exception_handler(SynapseValidationError)
 async def synapse_validation_exception_handler(request: Request, exc: SynapseValidationError):
     error_msg = str(exc)
-    what_to_try = "Verify that the input signal is non-empty, contains at least 8 samples, has positive sampling rate, and is formatted correctly."
-    if "sampling" in error_msg.lower() or "timestamp" in error_msg.lower():
-        what_to_try = "Ensure timestamps are strictly ascending and sampling_rate is strictly positive (> 0 Hz)."
-    elif "sample" in error_msg.lower():
-        what_to_try = "Provide at least 8 samples for spectral and anomaly analysis."
-    elif "column" in error_msg.lower():
-        what_to_try = "Specify a valid numeric time column using the 'time_column' query parameter."
+    what_to_try = getattr(exc, "what_to_try", None)
+    if not what_to_try:
+        what_to_try = "Verify that the input signal is non-empty, contains at least 8 samples, has positive sampling rate, and is formatted correctly."
+        if "sampling" in error_msg.lower() or "timestamp" in error_msg.lower():
+            what_to_try = "Ensure timestamps are strictly ascending and sampling_rate is strictly positive (> 0 Hz)."
+        elif "sample" in error_msg.lower():
+            what_to_try = "Provide at least 8 samples for spectral and anomaly analysis."
+        elif "column" in error_msg.lower():
+            what_to_try = "Specify a valid numeric time column using the 'time_column' query parameter."
 
     return JSONResponse(
         status_code=422,
@@ -73,6 +77,22 @@ async def synapse_validation_exception_handler(request: Request, exc: SynapseVal
             "error": error_msg,
             "what_to_try": what_to_try,
             "module": getattr(exc, "module", "synapse_core"),
+        },
+    )
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    first_err = errors[0] if errors else {}
+    loc = " -> ".join(str(l) for l in first_err.get("loc", []))
+    msg = first_err.get("msg", "Invalid request parameters.")
+    error_msg = f"Validation failed at {loc}: {msg}"
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": error_msg,
+            "what_to_try": "Verify that all required fields are present, sampling rate is > 0, and data types match.",
+            "module": "synapse_core",
         },
     )
 
@@ -263,6 +283,14 @@ async def upload_dataset(
             f.write(content)
 
         signal = read_signal(temp_path, time_column=time_column)
+        ch_dict = {ch.name: signal.values[:, i].tolist() for i, ch in enumerate(signal.channels)}
+        validate_signal_input(
+            channels=ch_dict,
+            sampling_rate=signal.sampling_rate,
+            timestamps=signal.timestamps.tolist() if signal.timestamps is not None else None,
+            allow_constant=False,
+            module="synapse_core",
+        )
         DATASETS_STORE[ds_id] = signal
         DATASETS_META[ds_id] = {
             "id": ds_id,
@@ -279,6 +307,8 @@ async def upload_dataset(
         }
 
         return DATASETS_META[ds_id]
+    except SynapseValidationError:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -307,6 +337,14 @@ def create_experiment(req: ExperimentCreateRequest):
     job_id = str(uuid.uuid4())
 
     sig = DATASETS_STORE[req.dataset_id]
+    ch_dict = {ch.name: sig.values[:, i].tolist() for i, ch in enumerate(sig.channels)}
+    validate_signal_input(
+        channels=ch_dict,
+        sampling_rate=sig.sampling_rate,
+        timestamps=sig.timestamps.tolist() if sig.timestamps is not None else None,
+        allow_constant=False,
+        module="synapse_discovery",
+    )
     experiment = run_discovery_pipeline(sig, experiment_id=exp_id, parameters=req.parameters)
     EXPERIMENTS_STORE[exp_id] = experiment
 
