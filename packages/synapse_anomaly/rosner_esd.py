@@ -51,7 +51,7 @@ def generalized_esd_test(
     values: np.ndarray,
     max_outliers: Optional[int] = None,
     alpha: float = 0.05,
-    prewhiten: bool = True,
+    prewhiten: bool = False,
 ) -> ESDResult:
     """
     Execute Rosner's Generalized ESD test with multiplicity correction and pre-whitening.
