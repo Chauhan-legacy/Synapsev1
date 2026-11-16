@@ -1024,7 +1024,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-mono font-bold ${
                     activeTab === 'papergraph' ? 'bg-white/20 text-white' : 'bg-[#E6F4F2] text-[#0F766E]'
                   }`}>
-                    ArXiv Live
+                    arXiv
                   </span>
                 </button>
               </div>

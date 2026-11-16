@@ -41,6 +41,8 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<ArXivPaper[]>(CURATED_ARXIV_CATALOG);
+  const [searchMode, setSearchMode] = useState<'live' | 'offline_sample'>('offline_sample');
+  const [searchSource, setSearchSource] = useState<string>('Offline sample (built-in, not live)');
   const [isSearching, setIsSearching] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedType, setCopiedType] = useState<'bibtex' | 'apa' | null>(null);
@@ -197,24 +199,17 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
     const query = (queryText !== undefined ? queryText : searchQuery).trim();
     if (!query) {
       setCatalog(CURATED_ARXIV_CATALOG);
+      setSearchMode('offline_sample');
+      setSearchSource('Offline sample (built-in, not live)');
       return;
     }
 
     setIsSearching(true);
     try {
-      const results = await searchArxiv(query, 15);
-      if (results && results.papers && results.papers.length > 0) {
-        setCatalog(results.papers);
-      } else {
-        const localMatches = CURATED_ARXIV_CATALOG.filter(
-          (p) =>
-            p.title.toLowerCase().includes(query.toLowerCase()) ||
-            p.abstract.toLowerCase().includes(query.toLowerCase()) ||
-            p.authors.some((a) => a.toLowerCase().includes(query.toLowerCase())) ||
-            p.category.toLowerCase().includes(query.toLowerCase())
-        );
-        setCatalog(localMatches);
-      }
+      const results = await searchArxiv(query, 1, 15);
+      setCatalog(results.papers || []);
+      setSearchMode(results.mode);
+      setSearchSource(results.source);
     } catch {
       const localMatches = CURATED_ARXIV_CATALOG.filter(
         (p) =>
@@ -222,6 +217,8 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
           p.abstract.toLowerCase().includes(query.toLowerCase())
       );
       setCatalog(localMatches);
+      setSearchMode('offline_sample');
+      setSearchSource('Offline sample (built-in, not live)');
     } finally {
       setIsSearching(false);
     }
@@ -334,8 +331,12 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
               <h1 className="font-serif italic font-bold text-lg sm:text-xl text-[#10141C]">
                 PaperGraph™ Literature &amp; Citation Network
               </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20 uppercase">
-                OPEN-ACCESS ARXIV LINK
+              <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border ${
+                searchMode === 'live'
+                  ? 'bg-[#E6F4F2] text-[#0F766E] border-[#0F766E]/20'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
+              }`}>
+                {searchMode === 'live' ? 'Live arXiv Gateway' : 'Verified Reference Canon'}
               </span>
             </div>
             <p className="text-xs text-[#78716C] font-mono leading-relaxed">
@@ -472,15 +473,34 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
         </div>
       </div>
 
+      {/* Offline sample banner with retry button */}
+      {searchMode === 'offline_sample' && searchQuery && (
+        <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-mono text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+            <span>
+              <strong>Offline sample:</strong> Live arXiv / OpenAlex gateway is currently unreachable. Displaying verified built-in reference canon.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleSearchSubmit()}
+            className="px-3 py-1.5 rounded-lg bg-amber-800 text-white font-bold text-xs hover:bg-amber-900 transition-colors shrink-0 flex items-center justify-center gap-1.5"
+          >
+            <span>Retry Live Search</span>
+          </button>
+        </div>
+      )}
+
       {/* Preprints & Literature List Header */}
       <div className="flex items-center justify-between text-xs font-mono px-1">
         <span className="font-bold text-[#1F2430]">
-          Verified Preprints &amp; Open-Access Articles ({catalog.length} in catalog, showing{' '}
+          Verified Scientific Literature ({catalog.length} in catalog, showing{' '}
           {filteredPapers.length})
         </span>
-        <span className="text-[#0F766E] flex items-center gap-1.5 font-semibold text-[11px]">
-          <span className="w-2 h-2 rounded-full bg-[#0F766E] animate-pulse" />
-          Direct PDF Downloads Active &bull; DOIs Calibrated
+        <span className={`flex items-center gap-1.5 font-semibold text-[11px] ${searchMode === 'live' ? 'text-[#0F766E]' : 'text-amber-700'}`}>
+          <span className={`w-2 h-2 rounded-full ${searchMode === 'live' ? 'bg-[#0F766E] animate-pulse' : 'bg-amber-500'}`} />
+          {searchSource}
         </span>
       </div>
 
@@ -488,28 +508,56 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
       {isSearching ? (
         <div className="p-12 bg-white rounded-xl border border-[#DDD6C7] text-center space-y-3 font-mono">
           <div className="w-8 h-8 mx-auto border-2 border-[#0F766E] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-[#78716C]">Querying Open-Access arXiv preprints &amp; DOIs...</p>
+          <p className="text-xs text-[#78716C]">Querying verified scientific literature repositories...</p>
         </div>
       ) : filteredPapers.length === 0 ? (
-        <div className="p-12 bg-white rounded-xl border border-[#DDD6C7] text-center space-y-3 font-mono">
-          <BookOpen className="w-8 h-8 mx-auto text-[#A8A29E]" />
-          <h3 className="font-serif italic font-bold text-base text-[#1F2430]">No Papers Found</h3>
-          <p className="text-xs text-[#78716C]">
-            No preprints matched "{searchQuery}". Try searching for terms like "black hole", "Higgs",
-            "chaos", or "multitaper".
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedTopic(null);
-              setCatalog(CURATED_ARXIV_CATALOG);
-            }}
-            className="px-3 py-1.5 rounded bg-[#0F766E] text-white text-xs font-bold"
-          >
-            Reset Search
-          </button>
-        </div>
+        searchQuery ? (
+          /* TENTATIVE card containing only the user's phrase and a "Search this on arXiv" link (no authors, ID, DOI, citation count or PDF link) */
+          <div className="p-8 bg-[#FFFDF9] border border-dashed border-[#DDD6C7] rounded-xl text-center space-y-4 font-mono shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+              <span>TENTATIVE</span>
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-serif italic font-bold text-lg text-[#1F2430]">
+                "{searchQuery}"
+              </h3>
+              <p className="text-xs text-[#78716C] max-w-md mx-auto">
+                No verified records matched this exact query in the current catalog. You can query the arXiv repository directly:
+              </p>
+            </div>
+            <div className="pt-2">
+              <a
+                href={`https://arxiv.org/search/?query=${encodeURIComponent(searchQuery)}&searchtype=all`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0F766E] text-white text-xs font-bold hover:bg-[#0D655E] transition-colors shadow-2xs"
+              >
+                <span>Search this on arXiv</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="p-12 bg-white rounded-xl border border-[#DDD6C7] text-center space-y-3 font-mono">
+            <BookOpen className="w-8 h-8 mx-auto text-[#A8A29E]" />
+            <h3 className="font-serif italic font-bold text-base text-[#1F2430]">No Papers Found</h3>
+            <p className="text-xs text-[#78716C]">
+              No preprints found for this category filter.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedTopic(null);
+                setCatalog(CURATED_ARXIV_CATALOG);
+              }}
+              className="px-3 py-1.5 rounded bg-[#0F766E] text-white text-xs font-bold"
+            >
+              Reset Search
+            </button>
+          </div>
+        )
       ) : (
         <div className="space-y-3">
           {filteredPapers.map((paper) => {
@@ -524,6 +572,16 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
                 {/* Card Header Badges */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Real Source Badge */}
+                    {paper.source?.startsWith('Live') || searchMode === 'live' ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+                        Live
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-bold border border-amber-200">
+                        Offline sample
+                      </span>
+                    )}
                     <a
                       href={`https://arxiv.org/abs/${paper.arxiv_id}`}
                       target="_blank"
@@ -536,7 +594,7 @@ export const PaperGraphView: React.FC<PaperGraphViewProps> = ({
                     <span className="text-[10px] px-2 py-0.5 rounded bg-[#FAF8F5] border border-[#DDD6C7] text-[#57534E]">
                       {paper.category}
                     </span>
-                    {paper.citationCount && (
+                    {paper.citationCount != null && paper.citationCount > 0 && (
                       <span className="text-[10px] text-[#78716C]">
                         {paper.citationCount.toLocaleString()} citations
                       </span>
