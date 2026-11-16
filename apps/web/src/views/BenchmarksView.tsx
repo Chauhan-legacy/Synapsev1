@@ -4,6 +4,7 @@ import { BENCHMARK_DATASETS } from '../data/benchmarkDatasets';
 import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer';
 import { Play, ChevronRight, Compass, Zap, CheckCircle2 } from 'lucide-react';
 import { WorkbenchView } from '../components/shell/Sidebar';
+import claimsData from '../data/claims.json';
 
 interface BenchmarksViewProps {
   onNavigate: (view: WorkbenchView) => void;
@@ -112,13 +113,13 @@ export const BenchmarksView: React.FC<BenchmarksViewProps> = ({ onNavigate }) =>
         </div>
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Null False Discoveries</div>
-          <div className="text-lg font-bold text-status-success mt-1">0.00%</div>
-          <div className="text-[10px] text-muted mt-0.5">300 Seeded Runs (95% CI: ≤ 0.64%)</div>
+          <div className="text-lg font-bold text-status-success mt-1">{claimsData.false_alarm_rate.false_alarm_rate_percent.toFixed(2)}%</div>
+          <div className="text-[10px] text-muted mt-0.5">{claimsData.false_alarm_rate.trials} Seeded Runs (95% CI: ≤ {claimsData.false_alarm_rate.confidence_interval_95.reported_upper_bound_percent}%)</div>
         </div>
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Automated Test Suite</div>
-          <div className="text-lg font-bold text-status-success mt-1">83 / 83</div>
-          <div className="text-[10px] text-muted mt-0.5">73 Pytest + 10 Math Benchmarks</div>
+          <div className="text-lg font-bold text-status-success mt-1">{claimsData.test_counts.total_automated_tests} / {claimsData.test_counts.total_automated_tests}</div>
+          <div className="text-[10px] text-muted mt-0.5">{claimsData.test_counts.python_pytest_tests} Pytest + {claimsData.test_counts.in_browser_math_benchmark_tests} Math Benchmarks</div>
         </div>
       </div>
 

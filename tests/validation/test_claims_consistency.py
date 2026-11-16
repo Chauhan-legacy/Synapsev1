@@ -48,3 +48,32 @@ def test_claims_json_structure_and_metrics():
     assert oss.get("license") == "MIT"
     assert "Priyansh Chauhan" in oss.get("copyright")
 
+
+def test_claims_synchronization_with_docs_and_ui():
+    """Verify that docs/claims.json matches apps/web/src/data/claims.json, README.md, and BENCHMARKS.md."""
+    web_claims_path = ROOT_DIR / "apps" / "web" / "src" / "data" / "claims.json"
+    assert web_claims_path.exists(), "apps/web/src/data/claims.json must exist"
+
+    with open(CLAIMS_PATH, "r", encoding="utf-8") as f:
+        docs_claims = json.load(f)
+    with open(web_claims_path, "r", encoding="utf-8") as f:
+        web_claims = json.load(f)
+
+    assert docs_claims == web_claims, "docs/claims.json and apps/web/src/data/claims.json must be identical"
+
+    readme_text = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
+    benchmarks_text = (ROOT_DIR / "BENCHMARKS.md").read_text(encoding="utf-8")
+
+    total_tests = str(docs_claims["test_counts"]["total_automated_tests"])
+    assert total_tests in readme_text, f"README.md must mention {total_tests} tests"
+    assert total_tests in benchmarks_text, f"BENCHMARKS.md must mention {total_tests} tests"
+
+    far_trials = str(docs_claims["false_alarm_rate"]["trials"])
+    assert far_trials in readme_text, f"README.md must mention {far_trials} trials"
+    assert far_trials in benchmarks_text, f"BENCHMARKS.md must mention {far_trials} trials"
+
+    reported_ci = str(docs_claims["false_alarm_rate"]["confidence_interval_95"]["reported_upper_bound_percent"])
+    assert reported_ci in readme_text, f"README.md must mention {reported_ci}% upper bound"
+    assert reported_ci in benchmarks_text, f"BENCHMARKS.md must mention {reported_ci}% upper bound"
+
+

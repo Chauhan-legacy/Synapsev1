@@ -12,6 +12,7 @@ import {
   Layers,
   Zap,
 } from 'lucide-react';
+import claimsData from '../data/claims.json';
 
 interface LandingHeroProps {
   onLaunchWorkbench: () => void;
@@ -26,7 +27,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   onOpenBenchmarks,
   onOpenRack,
   onOpenMethods,
-  realTestCount = 83,
+  realTestCount = claimsData.test_counts.total_automated_tests,
 }) => {
   const [activeTab, setActiveTab] = useState<'periodic' | 'chirp' | 'spikes'>('periodic');
 
@@ -108,7 +109,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EFEBE0] border border-[#DDD6C7] text-[11px] font-mono text-[#4A5060]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
-              <span>v2.0 &bull; {realTestCount}/83 tests passing</span>
+              <span>v2.0 &bull; {realTestCount}/{claimsData.test_counts.total_automated_tests} tests passing</span>
             </div>
           </div>
 
@@ -242,7 +243,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 <span className="text-[#1F2430] font-bold">24</span> Pure Math Engines
               </div>
               <div>
-                <span className="text-[#2E7D32] font-bold">{realTestCount}/83</span> Automated Suite Green
+                <span className="text-[#2E7D32] font-bold">{realTestCount}/{claimsData.test_counts.total_automated_tests}</span> Automated Suite Green
               </div>
               <div>
                 <span className="text-[#0F766E] font-bold">&le; 1e-12</span> Machine Epsilon

@@ -160,7 +160,7 @@ Detailed documentation:
 
 - **Stationarity for Granger Causality**: Vector autoregression assumes covariance stationarity. Signals with strong polynomial trends should be detrended or differenced first.
 - **Rayleigh Resolution Limit**: In Thomson multitaper spectral estimation, spectral lines closer than $\Delta f < 2 NW / N$ cannot be resolved as separate peaks.
-- **Minimum Record Length**: Statistical tests (such as KPSS or Rosner ESD) require minimal degrees of freedom; inputs with $N < 10$ samples return a descriptive HTTP 422 error.
+- **Minimum Record Length**: Statistical tests (such as KPSS or Rosner ESD) require minimal degrees of freedom; inputs with $N < 8$ samples return a descriptive HTTP 422 error.
 
 ---
 

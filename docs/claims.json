@@ -42,8 +42,15 @@
       500,
       1800
     ],
-    "causality_direction": "X -> Y unidirectional (F = 1441.0, p_adj = 0.00e+00; Y -> X rejected under BH FDR)",
+    "causality_direction": "X -> Y primary driving (F = 1441.0, p_adj = 0.00e+00; Y -> X F = 22.47, p_adj = 6.00e-18 documented feedback artifact, ratio > 64x)",
     "control_null_z_discoveries": 0
+  },
+  "power_curve": {
+    "snr_range_db": [-16.0, 10.0],
+    "tones_50pct_snr_threshold_db": -6.0,
+    "tones_100pct_snr_threshold_db": -2.0,
+    "data_path": "docs/validation/power_curve_data.json",
+    "svg_path": "docs/validation/periodicity_power_curve.svg"
   },
   "high_throughput_120k_benchmark": {
     "samples_per_channel": 120000,
