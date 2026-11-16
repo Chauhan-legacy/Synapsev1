@@ -159,6 +159,34 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
     return dots;
   }, [vals, n]);
 
+  // Real Recurrence Quantification Analysis (RQA) Determinism (%)
+  const rqaDeterminism = useMemo(() => {
+    if (recurrencePoints.length === 0) return 0;
+    const N = Math.min(n, 120);
+    const grid: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
+    recurrencePoints.forEach((pt) => {
+      if (pt.x >= 0 && pt.x < N && pt.y >= 0 && pt.y < N) {
+        grid[pt.x][pt.y] = true;
+      }
+    });
+    let diagPoints = 0;
+    for (let diag = 1; diag < N; diag++) {
+      let runLen = 0;
+      for (let i = 0; i < N - diag; i++) {
+        const j = i + diag;
+        if (grid[i][j]) {
+          runLen++;
+        } else {
+          if (runLen >= 2) diagPoints += runLen * 2;
+          runLen = 0;
+        }
+      }
+      if (runLen >= 2) diagPoints += runLen * 2;
+    }
+    const det = recurrencePoints.length > 0 ? (diagPoints / recurrencePoints.length) * 100 : 0;
+    return Number(Math.min(100.0, Math.max(0.0, det)).toFixed(1));
+  }, [recurrencePoints, n]);
+
   // 3D Attractor Point Cloud
   const attractor3D = useMemo(() => {
     return computeTakens3D(vals, embeddingLag, 600);
@@ -297,7 +325,7 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
         </div>
         <div className="p-2.5 rounded bg-[#FFFFFF] border border-[#DDD6C7] text-center shadow-2xs font-mono">
           <div className="text-[10px] uppercase text-[#6B6F7B]">RQA Determinism</div>
-          <div className="text-base font-bold text-[#1F2430]">84.5%</div>
+          <div className="text-base font-bold text-[#1F2430]">{rqaDeterminism}%</div>
           <div className="text-[9px] text-[#6B6F7B]">Diagonal Recurrence</div>
         </div>
       </div>

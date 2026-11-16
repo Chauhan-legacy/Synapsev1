@@ -30,6 +30,91 @@ export const AnomaliesView: React.FC<AnomaliesViewProps> = ({ onOpenMethodCard }
 
   const anomalyResults = resultsByModule['anomalies'] || [];
 
+  // Real multi-detector agreement matrix computed dynamically from loaded data
+  const detectorAgreement = useMemo(() => {
+    // 1. Robust Z (MAD) flagged indices
+    const setMAD = new Set<number>();
+    zScores.forEach((z, i) => { if (z >= 3.5) setMAD.add(i); });
+
+    // 2. Rosner ESD flagged indices
+    const setRosner = new Set<number>();
+    const rosnerResult = anomalyResults.find((r) => r.method.includes('Rosner'));
+    if (rosnerResult && typeof rosnerResult.estimate === 'number' && rosnerResult.estimate > 0) {
+      const sortedIdxs = vals.map((v, i) => ({ v: Math.abs(v), i })).sort((a, b) => b.v - a.v);
+      for (let k = 0; k < Math.min(sortedIdxs.length, Number(rosnerResult.estimate)); k++) {
+        setRosner.add(sortedIdxs[k].i);
+      }
+    } else {
+      zScores.forEach((z, i) => { if (z >= 4.0) setRosner.add(i); });
+    }
+
+    // 3. Local Diff / Energy Spikes flagged indices
+    const setIsolation = new Set<number>();
+    for (let i = 1; i < vals.length; i++) {
+      const diff = Math.abs(vals[i] - vals[i - 1]);
+      if (diff > 3.0 * (vals[i] !== undefined ? Math.abs(vals[i]) * 0.4 || 1.0 : 1.0)) {
+        setIsolation.add(i);
+      }
+    }
+
+    // 4. PELT Changepoint flagged indices
+    const setPELT = new Set<number>();
+    const peltResult = anomalyResults.find((r) => r.method.includes('PELT'));
+    if (peltResult && peltResult.diagnostics) {
+      const locDiag = peltResult.diagnostics.find((d) => d.name === 'Sample Locations');
+      if (locDiag && typeof locDiag.value === 'string') {
+        const matches = locDiag.value.match(/\d+/g);
+        if (matches) matches.forEach((m) => setPELT.add(parseInt(m, 10)));
+      }
+    }
+
+    const detectors = [
+      { name: 'Robust Z (MAD)', set: setMAD },
+      { name: 'Rosner ESD', set: setRosner },
+      { name: 'Isolation Spikes', set: setIsolation },
+      { name: 'PELT Changepoint', set: setPELT },
+    ];
+
+    // Compute pairwise Jaccard similarity with +/- 3 sample tolerance window
+    const matrix: number[][] = [];
+    for (let r = 0; r < detectors.length; r++) {
+      const row: number[] = [];
+      for (let c = 0; c < detectors.length; c++) {
+        if (r === c) {
+          row.push(1.0);
+          continue;
+        }
+        const setA = detectors[r].set;
+        const setB = detectors[c].set;
+        if (setA.size === 0 && setB.size === 0) {
+          row.push(1.0); // Both agree on zero anomalies
+          continue;
+        }
+        if (setA.size === 0 || setB.size === 0) {
+          row.push(0.0);
+          continue;
+        }
+        let matches = 0;
+        setA.forEach((idxA) => {
+          let found = false;
+          for (let d = -3; d <= 3; d++) {
+            if (setB.has(idxA + d)) {
+              found = true;
+              break;
+            }
+          }
+          if (found) matches++;
+        });
+        const union = setA.size + setB.size - matches;
+        const jaccard = union > 0 ? matches / union : 0;
+        row.push(Number(jaccard.toFixed(2)));
+      }
+      matrix.push(row);
+    }
+
+    return { detectors, matrix };
+  }, [vals, zScores, anomalyResults]);
+
   return (
     <div className="space-y-4 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b">
@@ -82,34 +167,19 @@ export const AnomaliesView: React.FC<AnomaliesViewProps> = ({ onOpenMethodCard }
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-secondary">
-              <tr>
-                <td className="py-2 px-3 font-sans font-medium text-primary">Robust Z (MAD)</td>
-                <td className="py-2 px-3 text-center text-primary font-bold">1.00</td>
-                <td className="py-2 px-3 text-center">0.92</td>
-                <td className="py-2 px-3 text-center">0.84</td>
-                <td className="py-2 px-3 text-center">0.40</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-sans font-medium text-primary">Rosner ESD</td>
-                <td className="py-2 px-3 text-center">0.92</td>
-                <td className="py-2 px-3 text-center text-primary font-bold">1.00</td>
-                <td className="py-2 px-3 text-center">0.88</td>
-                <td className="py-2 px-3 text-center">0.42</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-sans font-medium text-primary">Isolation Forest</td>
-                <td className="py-2 px-3 text-center">0.84</td>
-                <td className="py-2 px-3 text-center">0.88</td>
-                <td className="py-2 px-3 text-center text-primary font-bold">1.00</td>
-                <td className="py-2 px-3 text-center">0.36</td>
-              </tr>
-              <tr>
-                <td className="py-2 px-3 font-sans font-medium text-primary">PELT Changepoint</td>
-                <td className="py-2 px-3 text-center">0.40</td>
-                <td className="py-2 px-3 text-center">0.42</td>
-                <td className="py-2 px-3 text-center">0.36</td>
-                <td className="py-2 px-3 text-center text-primary font-bold">1.00</td>
-              </tr>
+              {detectorAgreement.detectors.map((det, r) => (
+                <tr key={det.name}>
+                  <td className="py-2 px-3 font-sans font-medium text-primary">{det.name}</td>
+                  {detectorAgreement.matrix[r].map((score, c) => (
+                    <td
+                      key={c}
+                      className={`py-2 px-3 text-center ${r === c ? 'text-primary font-bold' : ''}`}
+                    >
+                      {score.toFixed(2)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

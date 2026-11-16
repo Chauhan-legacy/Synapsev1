@@ -1204,6 +1204,9 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
                 <div className="flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-[#0F766E]" />
                   <h3 className="text-sm font-bold text-[#1F2430]">Custom Physics &amp; Nuclear Parameter Sandbox</h3>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono uppercase bg-[#EFEBE0] text-[#6B6F7B] border border-[#DDD6C7] font-semibold">
+                    Example / simulator
+                  </span>
                 </div>
                 <p className="text-xs text-[#6B6F7B] mt-0.5">
                   Tune particle resonance masses, control rod reactivities, or spin lattice temperatures to test distinct physical hypotheses.

@@ -17,7 +17,7 @@ import {
 
 interface SignalContextType {
   activeSignal: SignalData;
-  availableDatasets: Array<{ id: string; name: string; isBenchmark?: boolean; isCustom?: boolean }>;
+  availableDatasets: Array<{ id: string; name: string; isBenchmark?: boolean; isCustom?: boolean; isExample?: boolean }>;
   selectDataset: (id: string) => void;
   loadCustomSignal: (signal: SignalData) => void;
   deleteDataset: (id: string) => void;
@@ -340,22 +340,22 @@ export function createSignalPreset(code: string): SignalData {
 }
 
 const ALL_BENCHMARK_PRESETS = [
-  { id: 'benchmark_ALL', name: 'Dataset Ω: Master All-in-One Multi-Physics (Combined Testing)', isBenchmark: true },
-  { id: 'benchmark_MEGA_120K', name: 'Mega: 120,000-Point High-Throughput (4 Channels, 500Hz)', isBenchmark: true },
-  { id: 'astro_ligo_gw150914', name: 'Astro: LIGO GW150914 Gravitational Wave Strain', isBenchmark: true },
-  { id: 'astro_kepler_transit', name: 'Astro: Kepler-186f Exoplanet Transit Photometry', isBenchmark: true },
-  { id: 'astro_goes_solar_flare', name: 'Astro: NOAA GOES-16 M5.4 Solar X-Ray Flare', isBenchmark: true },
-  { id: 'astro_crab_pulsar', name: 'Astro: Crab Pulsar PSR B0531+21 Radio Pulses', isBenchmark: true },
-  { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true },
-  { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true },
-  { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true },
-  { id: 'benchmark_D', name: 'Dataset D: Regime Changes', isBenchmark: true },
-  { id: 'benchmark_E', name: 'Dataset E: Multichannel Coupling', isBenchmark: true },
-  { id: 'benchmark_F', name: 'Dataset F: Motifs & Recurrence', isBenchmark: true },
-  { id: 'benchmark_G', name: 'Dataset G: Pure Null Challenge', isBenchmark: true },
-  { id: 'benchmark_H', name: 'Dataset H: Irregular Sampling', isBenchmark: true },
-  { id: 'benchmark_I', name: 'Dataset I: Dynamic Range', isBenchmark: true },
-  { id: 'benchmark_J', name: 'Dataset J: Master Discovery Challenge', isBenchmark: true },
+  { id: 'benchmark_ALL', name: 'Dataset Ω: Master All-in-One Multi-Physics (Combined Testing)', isBenchmark: true, isExample: true },
+  { id: 'benchmark_MEGA_120K', name: 'Mega: 120,000-Point High-Throughput (4 Channels, 500Hz)', isBenchmark: true, isExample: true },
+  { id: 'astro_ligo_gw150914', name: 'Astro: LIGO GW150914 Gravitational Wave Strain', isBenchmark: true, isExample: true },
+  { id: 'astro_kepler_transit', name: 'Astro: Kepler-186f Exoplanet Transit Photometry', isBenchmark: true, isExample: true },
+  { id: 'astro_goes_solar_flare', name: 'Astro: NOAA GOES-16 M5.4 Solar X-Ray Flare', isBenchmark: true, isExample: true },
+  { id: 'astro_crab_pulsar', name: 'Astro: Crab Pulsar PSR B0531+21 Radio Pulses', isBenchmark: true, isExample: true },
+  { id: 'benchmark_A', name: 'Dataset A: Multi-Frequency Periodic', isBenchmark: true, isExample: true },
+  { id: 'benchmark_B', name: 'Dataset B: Non-Stationary Chirp', isBenchmark: true, isExample: true },
+  { id: 'benchmark_C', name: 'Dataset C: Anomaly-Rich Spikes', isBenchmark: true, isExample: true },
+  { id: 'benchmark_D', name: 'Dataset D: Regime Changes', isBenchmark: true, isExample: true },
+  { id: 'benchmark_E', name: 'Dataset E: Multichannel Coupling', isBenchmark: true, isExample: true },
+  { id: 'benchmark_F', name: 'Dataset F: Motifs & Recurrence', isBenchmark: true, isExample: true },
+  { id: 'benchmark_G', name: 'Dataset G: Pure Null Challenge', isBenchmark: true, isExample: true },
+  { id: 'benchmark_H', name: 'Dataset H: Irregular Sampling', isBenchmark: true, isExample: true },
+  { id: 'benchmark_I', name: 'Dataset I: Dynamic Range', isBenchmark: true, isExample: true },
+  { id: 'benchmark_J', name: 'Dataset J: Master Discovery Challenge', isBenchmark: true, isExample: true },
 ];
 
 export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -447,6 +447,11 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
       .catch(() => setApiConnected(false));
   }, []);
+
+  // Auto-run analysis whenever active signal changes
+  useEffect(() => {
+    runAnalysis();
+  }, [activeSignal.id]);
 
   const availableDatasets = useMemo(() => {
     const customs = customDatasets.map((c) => ({

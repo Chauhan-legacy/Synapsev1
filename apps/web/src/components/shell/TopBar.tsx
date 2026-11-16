@@ -14,7 +14,7 @@ import { WorkbenchView } from './Sidebar';
 interface TopBarProps {
   onToggleSidebarMobile: () => void;
   currentView: WorkbenchView;
-  datasets: Array<{ id: string; name: string; isCustom?: boolean }>;
+  datasets: Array<{ id: string; name: string; isCustom?: boolean; isBenchmark?: boolean }>;
   selectedDatasetId: string;
   onSelectDataset: (id: string) => void;
   onDeleteDataset?: (id: string) => void;
@@ -169,6 +169,11 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <div className="flex items-center gap-2 truncate mr-2">
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-[#0F766E]' : 'bg-[#DDD6C7]'}`} />
                       <span className="truncate">{ds.name}</span>
+                      {ds.isBenchmark && (
+                        <span className="px-1 py-0.5 rounded text-[8px] font-mono uppercase bg-[#EFEBE0] text-[#6B6F7B] border border-[#DDD6C7] shrink-0 font-sans">
+                          Example / simulator
+                        </span>
+                      )}
                     </div>
 
                     {/* Delete button inside each dropdown row */}

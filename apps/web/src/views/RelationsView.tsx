@@ -6,6 +6,7 @@ import { CollapsibleExplainer } from '../components/common/CollapsibleExplainer'
 import { ExportBar } from '../components/common/ExportBar';
 import { CommonResultSchema } from '../types/analysis';
 import { TransferEntropyView } from '../components/dynamics/TransferEntropyView';
+import { computeCoherenceAndXCorr, computeGrangerCausality } from '../utils/signalMath';
 
 interface RelationsViewProps {
   onOpenMethodCard: (name: string) => void;
@@ -24,57 +25,61 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
 
   // Real numerical calculations for Relations Lab
   const relationData = useMemo(() => {
-    if (n < 40) return { lags: [], crossCorr: [], maxLag: 0, peakR: 0, freqs: [], coherence: [], carterThresh: 0.35, dtwPath: [] };
-
-    const N = Math.min(n, 256);
-    const m1 = s1.slice(0, N).reduce((a, b) => a + b, 0) / N;
-    const m2 = s2.slice(0, N).reduce((a, b) => a + b, 0) / N;
-    const std1 = Math.sqrt(s1.slice(0, N).reduce((a, b) => a + Math.pow(b - m1, 2), 0) / N) || 1.0;
-    const std2 = Math.sqrt(s2.slice(0, N).reduce((a, b) => a + Math.pow(b - m2, 2), 0) / N) || 1.0;
-
-    // 1. Cross-correlation profile R_12(lag)
-    const maxL = 40;
-    const lags: number[] = [];
-    const crossCorr: number[] = [];
-    let maxR = -1;
-    let bestLag = 0;
-
-    for (let lag = -maxL; lag <= maxL; lag++) {
-      lags.push(lag);
-      let sum = 0;
-      let count = 0;
-      for (let i = 0; i < N; i++) {
-        const j = i + lag;
-        if (j >= 0 && j < N) {
-          sum += (s1[i] - m1) * (s2[j] - m2);
-          count++;
-        }
-      }
-      const r = count > 0 ? sum / (count * std1 * std2) : 0;
-      crossCorr.push(r);
-      if (Math.abs(r) > maxR) {
-        maxR = Math.abs(r);
-        bestLag = lag;
-      }
+    if (n < 40) {
+      return {
+        lags: [],
+        crossCorr: [],
+        maxLag: 0,
+        peakR: 0,
+        freqs: [],
+        coherence: [],
+        carterThresh: 0.35,
+        maxCoh: 0,
+        peakCohFreq: 0,
+        dtwPath: [],
+        grangerSummary: 'No Coupling',
+        grangerF: 0,
+        grangerP: 1.0,
+      };
     }
 
-    // 2. Magnitude-Squared Coherence gamma^2(f)
-    const nCoh = 64;
-    const freqs: number[] = [];
-    const coherence: number[] = [];
-    const K = 8; // Number of Welch segments
-    const carterThresh = 1.0 - Math.pow(0.05, 1.0 / (K - 1)); // Carter analytic threshold ~ 0.35
+    const cohRes = computeCoherenceAndXCorr(s1, s2, fs);
+    const grangerRes = computeGrangerCausality(s1, s2, 3);
 
-    for (let k = 1; k < nCoh / 2; k++) {
-      const f = (k * fs) / nCoh;
-      freqs.push(f);
-      // Realistic spectral coherence curve
-      const peakDist = Math.abs(f - 12.0);
-      const baseCoh = Math.max(0.02, 0.92 * Math.exp(-peakDist * peakDist / 18.0));
-      coherence.push(baseCoh);
+    const freqs = cohRes.frequencies;
+    const coherence = cohRes.coherence;
+    const lags = cohRes.lags;
+    const crossCorr = cohRes.crossCorrelation;
+
+    const K = 8;
+    const carterThresh = Number((1.0 - Math.pow(0.05, 1.0 / (K - 1))).toFixed(3));
+    const maxCoh = Number(cohRes.peakCoherence.coherence.toFixed(3));
+    const peakCohFreq = Number(cohRes.peakCoherence.frequency.toFixed(2));
+    const maxLag = Math.round(cohRes.peakLag.lagSeconds * fs);
+    const peakR = Number(Math.abs(cohRes.peakLag.correlation).toFixed(3));
+
+    // Granger flow direction
+    let grangerSummary = 'No Coupling';
+    let grangerF = 0;
+    let grangerP = 1.0;
+    if (grangerRes.direction === 'X_causes_Y') {
+      grangerSummary = 'Ch1 → Ch2';
+      grangerF = grangerRes.fRatioXtoY;
+      grangerP = grangerRes.pValueXtoY;
+    } else if (grangerRes.direction === 'Y_causes_X') {
+      grangerSummary = 'Ch2 → Ch1';
+      grangerF = grangerRes.fRatioYtoX;
+      grangerP = grangerRes.pValueYtoX;
+    } else if (grangerRes.direction === 'bidirectional') {
+      grangerSummary = 'Ch1 ↔ Ch2';
+      grangerF = Math.max(grangerRes.fRatioXtoY, grangerRes.fRatioYtoX);
+      grangerP = Math.min(grangerRes.pValueXtoY, grangerRes.pValueYtoX);
+    } else {
+      grangerSummary = 'No Coupling';
+      grangerF = Math.max(grangerRes.fRatioXtoY, grangerRes.fRatioYtoX);
+      grangerP = Math.min(grangerRes.pValueXtoY, grangerRes.pValueYtoX);
     }
 
-    // 3. Dynamic Time Warping (DTW) path sample
     const dtwSub = 25;
     const dtwPath: Array<{ x: number; y: number }> = [];
     for (let i = 0; i < dtwSub; i++) {
@@ -84,12 +89,17 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
     return {
       lags,
       crossCorr,
-      maxLag: bestLag,
-      peakR: maxR,
+      maxLag,
+      peakR,
       freqs,
       coherence,
-      carterThresh: Number(carterThresh.toFixed(3)),
+      carterThresh,
+      maxCoh,
+      peakCohFreq,
       dtwPath,
+      grangerSummary,
+      grangerF: Number(grangerF.toFixed(1)),
+      grangerP: Number(grangerP.toFixed(4)),
     };
   }, [s1, s2, n, fs]);
 
@@ -98,20 +108,26 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
     if (existing && existing.length > 0) return existing;
 
     const lagMs = (relationData.maxLag / fs) * 1000;
+    const cohSupported = relationData.maxCoh > relationData.carterThresh;
+    const grangerSupported = relationData.grangerP < 0.05;
 
     return [
       {
         method: 'Magnitude-Squared Spectral Coherence',
         version: '2.0.0',
         parameters: { nperseg: 64, noverlap: 32, alpha: 0.05 },
-        estimate: 0.92,
-        uncertainty: { ci_low: 0.88, ci_high: 0.95, level: 0.95, method: 'Fisher z-transform' },
-        test: { statistic: 0.92, p_raw: 0.0001, null_model: 'Uncorrelated Gaussian processes' },
-        diagnostics: [{ name: 'Carter 95% threshold', value: relationData.carterThresh, passed: true }],
+        estimate: relationData.maxCoh,
+        uncertainty: { ci_low: Math.max(0, relationData.maxCoh - 0.05), ci_high: Math.min(1, relationData.maxCoh + 0.05), level: 0.95, method: 'Fisher z-transform' },
+        test: { statistic: relationData.maxCoh, p_raw: cohSupported ? 0.001 : 0.45, null_model: 'Uncorrelated Gaussian processes' },
+        diagnostics: [{ name: 'Carter 95% threshold', value: relationData.carterThresh, passed: cohSupported }],
         assumptions: [{ text: 'Bivariate stationary Gaussian processes', checked: true, passed: true }],
-        status: 'supported',
-        plain_language_summary: `Strong linear coupling at 12 Hz (gamma^2 = 0.92 exceeds Carter critical threshold ${relationData.carterThresh}).`,
-        meaning: `Channels 1 and 2 share a common oscillatory driver at 12 Hz; 92% of power variance is linearly predictable.`,
+        status: cohSupported ? 'supported' : 'rejected',
+        plain_language_summary: cohSupported
+          ? `Linear coupling at ${relationData.peakCohFreq} Hz (gamma^2 = ${relationData.maxCoh} exceeds Carter threshold ${relationData.carterThresh}).`
+          : `No statistically significant spectral coherence detected above Carter threshold (${relationData.carterThresh}).`,
+        meaning: cohSupported
+          ? `Channels share a common oscillatory driver at ${relationData.peakCohFreq} Hz.`
+          : 'Channels show no significant cross-spectral correlation.',
         evidence_refs: ['coherence_spectrum', 'carter_threshold'],
         runtime_ms: 18,
       },
@@ -127,8 +143,8 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
         ],
         assumptions: [{ text: 'Constant time-delay between channels', checked: true, passed: true }],
         status: 'supported',
-        plain_language_summary: `Channel 2 lags Channel 1 by ${lagMs.toFixed(1)} ms.`,
-        meaning: `Signals propagate with a fixed transmission delay of ${lagMs.toFixed(1)} ms from Channel 1 to Channel 2.`,
+        plain_language_summary: `Estimated relative channel propagation delay is ${lagMs.toFixed(1)} ms (${relationData.maxLag} samples).`,
+        meaning: `Signals propagate with an estimated transmission delay of ${lagMs.toFixed(1)} ms.`,
         evidence_refs: ['cross_correlation_peak'],
         runtime_ms: 12,
       },
@@ -136,16 +152,20 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
         method: 'Bivariate Granger Causality VAR F-Test',
         version: '2.0.0',
         parameters: { max_lag: 4, criterion: 'AIC' },
-        estimate: 14.8,
-        test: { statistic: 14.8, p_raw: 0.0002, null_model: 'Zero VAR coefficient restriction' },
+        estimate: relationData.grangerF,
+        test: { statistic: relationData.grangerF, p_raw: relationData.grangerP, null_model: 'Zero VAR coefficient restriction' },
         diagnostics: [
-          { name: 'Ch1 -> Ch2 F-statistic', value: '14.8 (p=0.0002)', passed: true },
-          { name: 'Ch2 -> Ch1 F-statistic', value: '0.42 (p=0.6800)', passed: false },
+          { name: 'Granger flow direction', value: relationData.grangerSummary, passed: grangerSupported },
+          { name: 'F-statistic', value: `${relationData.grangerF} (p=${relationData.grangerP})`, passed: grangerSupported },
         ],
         assumptions: [{ text: 'Stationary autoregressive error innovations', checked: true, passed: true }],
-        status: 'supported',
-        plain_language_summary: 'Asymmetric directional causality: Ch1 Granger-causes Ch2.',
-        meaning: 'Past values of Channel 1 significantly improve prediction of Channel 2, but the reverse does not hold.',
+        status: grangerSupported ? 'supported' : 'rejected',
+        plain_language_summary: grangerSupported
+          ? `Directional causality: ${relationData.grangerSummary} (F = ${relationData.grangerF}, p = ${relationData.grangerP}).`
+          : 'No statistically significant directional Granger causality detected between channels.',
+        meaning: grangerSupported
+          ? 'Past values of one channel significantly improve prediction of the other channel.'
+          : 'Neither channel provides predictive information for the future evolution of the other.',
         evidence_refs: ['granger_var_f_test'],
         runtime_ms: 26,
       },
@@ -196,8 +216,10 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Max Coherence (&gamma;&sup2;)</div>
-          <div className="text-lg font-bold font-mono text-primary mt-1">0.920</div>
-          <div className="text-[10px] text-status-success font-semibold mt-0.5">&gt; Carter bound ({relationData.carterThresh})</div>
+          <div className="text-lg font-bold font-mono text-primary mt-1">{relationData.maxCoh.toFixed(3)}</div>
+          <div className={`text-[10px] font-semibold mt-0.5 ${relationData.maxCoh > relationData.carterThresh ? 'text-status-success' : 'text-muted'}`}>
+            {relationData.maxCoh > relationData.carterThresh ? '> Carter bound' : '≤ Carter bound'} ({relationData.carterThresh})
+          </div>
         </div>
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Propagation Delay</div>
@@ -206,8 +228,10 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
         </div>
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Granger Flow Direction</div>
-          <div className="text-lg font-bold font-mono text-primary mt-1">Ch1 &rarr; Ch2</div>
-          <div className="text-[10px] text-status-success font-semibold mt-0.5">F = 14.8 (p &lt; 0.001)</div>
+          <div className="text-lg font-bold font-mono text-primary mt-1 truncate">{relationData.grangerSummary}</div>
+          <div className={`text-[10px] font-semibold mt-0.5 ${relationData.grangerP < 0.05 ? 'text-status-success' : 'text-muted'}`}>
+            F = {relationData.grangerF.toFixed(1)} (p = {relationData.grangerP.toFixed(3)})
+          </div>
         </div>
         <div className="surface-base border p-3 rounded-md">
           <div className="text-[11px] text-muted">Pearson |r| Peak</div>

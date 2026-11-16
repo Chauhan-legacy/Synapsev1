@@ -102,7 +102,14 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold truncate">{ds.name.split(':')[0]}</span>
+                    <div className="flex items-center gap-1.5 truncate mr-1">
+                      <span className="font-semibold truncate">{ds.name.split(':')[0]}</span>
+                      {ds.isBenchmark && (
+                        <span className="px-1 py-0.5 rounded text-[8px] font-mono uppercase bg-[#EFEBE0] text-[#6B6F7B] border border-[#DDD6C7] shrink-0 font-sans">
+                          Example / simulator
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       {isSelected && <span className="text-[10px] text-[#0F766E] font-bold">ACTIVE</span>}
                       <button
