@@ -39,6 +39,11 @@ jobs:
           export PYTHONPATH=".:packages:connectors:benchmarks:apps"
           pytest -v tests/
 
+      - name: Verify Messy Dataset Answer Key Calibration
+        run: |
+          export PYTHONPATH=".:packages:connectors:benchmarks:apps"
+          python scripts/verify_answer_key.py
+
   test-frontend:
     name: Frontend TypeScript Build & In-Browser Math Benchmarks
     runs-on: ubuntu-latest
