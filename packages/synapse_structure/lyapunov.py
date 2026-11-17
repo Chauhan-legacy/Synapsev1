@@ -24,6 +24,101 @@ class LyapunovResult:
     fit_status: str                     # Supported vs Indicative
 
 
+def compute_lorenz_variational_lyapunov(
+    sigma: float = 10.0,
+    rho: float = 28.0,
+    beta: float = 8.0 / 3.0,
+    dt: float = 0.01,
+    n_transient: int = 1000,
+    n_steps: int = 6000,
+) -> Tuple[float, float]:
+    """
+    Compute largest Lyapunov exponent and Gottwald-Melbourne 0-1 test on developed Lorenz trajectory
+    after discarding initial transient steps.
+    For standard chaotic parameters (sigma=10, rho=28, beta=8/3), returns lambda_1 ~ +0.9 and K ~ 1.0.
+    """
+    x, y, z = 1.0, 1.0, 1.0
+
+    def derivs(cx: float, cy: float, cz: float) -> np.ndarray:
+        return np.array([sigma * (cy - cx), cx * (rho - cz) - cy, cx * cy - beta * cz], dtype=np.float64)
+
+    def jacobian(cx: float, cy: float, cz: float, cdx: float, cdy: float, cdz: float) -> np.ndarray:
+        return np.array([
+            -sigma * cdx + sigma * cdy,
+            (rho - cz) * cdx - cdy - cx * cdz,
+            cy * cdx + cx * cdy - beta * cdz
+        ], dtype=np.float64)
+
+    # 1. Discard transient steps
+    for _ in range(n_transient):
+        k1 = derivs(x, y, z)
+        k2 = derivs(x + 0.5 * dt * k1[0], y + 0.5 * dt * k1[1], z + 0.5 * dt * k1[2])
+        k3 = derivs(x + 0.5 * dt * k2[0], y + 0.5 * dt * k2[1], z + 0.5 * dt * k2[2])
+        k4 = derivs(x + dt * k3[0], y + dt * k3[1], z + dt * k3[2])
+        d_state = (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+        x += d_state[0]
+        y += d_state[1]
+        z += d_state[2]
+
+    # 2. Develop trajectory with variational tangent equations
+    dx, dy, dz = 1.0, 0.0, 0.0
+    lyap_sum = 0.0
+    subsampled_x: List[float] = []
+
+    for s in range(n_steps):
+        k1 = derivs(x, y, z)
+        j1 = jacobian(x, y, z, dx, dy, dz)
+
+        k2 = derivs(x + 0.5 * dt * k1[0], y + 0.5 * dt * k1[1], z + 0.5 * dt * k1[2])
+        j2 = jacobian(x + 0.5 * dt * k1[0], y + 0.5 * dt * k1[1], z + 0.5 * dt * k1[2], dx + 0.5 * dt * j1[0], dy + 0.5 * dt * j1[1], dz + 0.5 * dt * j1[2])
+
+        k3 = derivs(x + 0.5 * dt * k2[0], y + 0.5 * dt * k2[1], z + 0.5 * dt * k2[2])
+        j3 = jacobian(x + 0.5 * dt * k2[0], y + 0.5 * dt * k2[1], z + 0.5 * dt * k2[2], dx + 0.5 * dt * j2[0], dy + 0.5 * dt * j2[1], dz + 0.5 * dt * j2[2])
+
+        k4 = derivs(x + dt * k3[0], y + dt * k3[1], z + dt * k3[2])
+        j4 = jacobian(x + dt * k3[0], y + dt * k3[1], z + dt * k3[2], dx + dt * j3[0], dy + dt * j3[1], dz + dt * j3[2])
+
+        x += (dt / 6.0) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
+        y += (dt / 6.0) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
+        z += (dt / 6.0) * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
+
+        dx += (dt / 6.0) * (j1[0] + 2 * j2[0] + 2 * j3[0] + j4[0])
+        dy += (dt / 6.0) * (j1[1] + 2 * j2[1] + 2 * j3[1] + j4[1])
+        dz += (dt / 6.0) * (j1[2] + 2 * j2[2] + 2 * j3[2] + j4[2])
+
+        norm_d = float(np.sqrt(dx**2 + dy**2 + dz**2))
+        if norm_d > 0:
+            lyap_sum += float(np.log(norm_d))
+            dx /= norm_d
+            dy /= norm_d
+            dz /= norm_d
+
+        if s % 10 == 0:
+            subsampled_x.append(float(x))
+
+    lambda_1 = float(lyap_sum / (n_steps * dt))
+
+    # 3. Gottwald-Melbourne 0-1 test on developed subsampled x
+    arr_x = np.array(subsampled_x)
+    n = len(arr_x)
+    c = 0.85
+    j_idx = np.arange(1, n + 1)
+    p = np.cumsum(arr_x * np.cos(j_idx * c))
+    q = np.cumsum(arr_x * np.sin(j_idx * c))
+
+    max_lag = min(40, n // 8)
+    m_disp = np.zeros(max_lag)
+    for lag in range(1, max_lag + 1):
+        dp = p[lag:] - p[:-lag]
+        dq = q[lag:] - q[:-lag]
+        m_disp[lag - 1] = np.mean(dp**2 + dq**2)
+
+    lags = np.arange(1, max_lag + 1)
+    corr_k = float(np.corrcoef(lags, m_disp)[0, 1])
+
+    return (lambda_1, corr_k)
+
+
 def compute_largest_lyapunov_exponent(
     values: np.ndarray,
     dimension: int = 3,

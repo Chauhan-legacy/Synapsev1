@@ -101,12 +101,12 @@ export const ChaosLabView: React.FC = () => {
       ];
     };
 
-    // Burn-in transient steps (600 steps) to settle onto attractor manifold
+    // Burn-in transient steps (800 steps) to settle onto attractor manifold after discarding transient
     let curX = initX;
     let curY = initY;
     let curZ = initZ;
     let curT = initT;
-    for (let i = 0; i < 600; i++) {
+    for (let i = 0; i < 800; i++) {
       [curX, curY, curZ, curT] = rk4Local(curX, curY, curZ, curT);
     }
 
@@ -121,7 +121,7 @@ export const ChaosLabView: React.FC = () => {
 
     stateRef.current = { x: curX, y: curY, z: curZ, t: curT };
     setTrajectory(initialTraj);
-  }, [systemType]);
+  }, [systemType, lorenzSigma, lorenzRho, lorenzBeta, rosslerA, rosslerB, rosslerC, duffingDelta, duffingGamma, duffingOmega]);
 
   // RK4 Integration Kernel
   const stepRK4 = (dt: number) => {
@@ -188,19 +188,25 @@ export const ChaosLabView: React.FC = () => {
     return () => clearInterval(interval);
   }, [isLive, simSpeed, systemType, lorenzSigma, lorenzRho, lorenzBeta, rosslerA, rosslerB, rosslerC, duffingDelta, duffingGamma, duffingOmega]);
 
-  // Gottwald-Melbourne 0-1 Test Computation on active trajectory
+  // Gottwald-Melbourne 0-1 Test Computation on active developed trajectory
   const zeroOneMetrics = useMemo(() => {
     if (trajectory.length < 50) {
       return { growthK: 0.0, isChaotic: false, pqPoints: [] };
     }
-    const c = 1.71828; // Constant frequency offset in (0, pi)
+    const c = 0.85; // Optimal continuous-flow Fourier test wavenumber in (0, pi)
     let p = 0;
     let q = 0;
     const pqPoints: Array<{ p: number; q: number }> = [];
     const pHistory: number[] = [];
     const qHistory: number[] = [];
 
-    const sampled = trajectory.slice(-300);
+    // Subsample trajectory to prevent continuous-flow oversampling
+    const stride = 2;
+    const sampled: Array<{ x: number; y: number; z: number }> = [];
+    for (let i = 0; i < trajectory.length; i += stride) {
+      sampled.push(trajectory[i]);
+    }
+
     for (let j = 0; j < sampled.length; j++) {
       const val = sampled[j].x;
       p += val * Math.cos((j + 1) * c);
@@ -212,48 +218,84 @@ export const ChaosLabView: React.FC = () => {
       }
     }
 
-    // Mean square displacement M(n)
-    const nMax = Math.min(60, Math.floor(sampled.length / 4));
-    const logN: number[] = [];
-    const logM: number[] = [];
-    for (let n = 2; n <= nMax; n += 2) {
-      let mSum = 0;
-      let count = 0;
-      for (let j = 0; j < sampled.length - n; j += 4) {
-        const dp = pHistory[j + n] - pHistory[j];
-        const dq = qHistory[j + n] - qHistory[j];
-        mSum += dp * dp + dq * dq;
-        count++;
+    // Mean square displacement M(lag) and correlation K
+    const maxLag = Math.min(40, Math.floor(sampled.length / 8));
+    const mDisp: number[] = [];
+    const lags: number[] = [];
+    for (let lag = 1; lag <= maxLag; lag++) {
+      let dispSum = 0;
+      const count = sampled.length - lag;
+      for (let j = 0; j < count; j++) {
+        const dp = pHistory[j + lag] - pHistory[j];
+        const dq = qHistory[j + lag] - qHistory[j];
+        dispSum += dp * dp + dq * dq;
       }
-      if (count > 0 && mSum > 0) {
-        logN.push(Math.log(n));
-        logM.push(Math.log(mSum / count));
-      }
+      mDisp.push(dispSum / count);
+      lags.push(lag);
     }
 
-    // Linear regression slope of log M(n) vs log n
-    let slope = 0;
-    if (logN.length > 5) {
-      const meanN = logN.reduce((a, b) => a + b, 0) / logN.length;
-      const meanM = logM.reduce((a, b) => a + b, 0) / logM.length;
-      let num = 0;
-      let den = 0;
-      for (let k = 0; k < logN.length; k++) {
-        num += (logN[k] - meanN) * (logM[k] - meanM);
-        den += (logN[k] - meanN) ** 2;
+    let growthK = 0.0;
+    if (lags.length > 5) {
+      const meanL = lags.reduce((a, b) => a + b, 0) / lags.length;
+      const meanM = mDisp.reduce((a, b) => a + b, 0) / mDisp.length;
+      let num = 0, dL = 0, dM = 0;
+      for (let i = 0; i < lags.length; i++) {
+        const dl = lags[i] - meanL;
+        const dm = mDisp[i] - meanM;
+        num += dl * dm;
+        dL += dl * dl;
+        dM += dm * dm;
       }
-      slope = den > 0 ? num / den : 0;
+      growthK = dL > 0 && dM > 0 ? Math.max(0.01, Math.min(0.999, num / Math.sqrt(dL * dM))) : 0.01;
     }
 
-    const growthK = Math.max(0.01, Math.min(1.0, slope / 2.0));
     const isChaotic = growthK > 0.65;
-
     return {
       growthK: Number(growthK.toFixed(3)),
       isChaotic,
       pqPoints,
     };
   }, [trajectory]);
+
+  // Largest Lyapunov Exponent Computation via variational tangent vector evolution
+  const lyapunovExponent = useMemo(() => {
+    if (trajectory.length < 50) return 0.0;
+    const dt = 0.015;
+    let dx = 1.0, dy = 0.0, dz = 0.0;
+    let lyapSum = 0;
+    const steps = Math.min(trajectory.length, 350);
+
+    for (let s = 1; s < steps; s++) {
+      const pt = trajectory[s];
+      let jdx = 0, jdy = 0, jdz = 0;
+      if (systemType === 'lorenz') {
+        jdx = -lorenzSigma * dx + lorenzSigma * dy;
+        jdy = (lorenzRho - pt.z) * dx - dy - pt.x * dz;
+        jdz = pt.y * dx + pt.x * dy - lorenzBeta * dz;
+      } else if (systemType === 'rossler') {
+        jdx = -dy - dz;
+        jdy = dx + rosslerA * dy;
+        jdz = pt.z * dx + (pt.x - rosslerC) * dz;
+      } else {
+        jdx = dy;
+        jdy = (1 - 3 * pt.x * pt.x) * dx - duffingDelta * dy;
+      }
+
+      dx += dt * jdx;
+      dy += dt * jdy;
+      dz += dt * jdz;
+
+      const norm = Math.hypot(dx, dy, dz);
+      if (norm > 0) {
+        lyapSum += Math.log(norm);
+        dx /= norm;
+        dy /= norm;
+        dz /= norm;
+      }
+    }
+    const rawVal = lyapSum / (steps * dt);
+    return Math.max(-2.0, Math.min(5.0, rawVal));
+  }, [trajectory, systemType, lorenzSigma, lorenzRho, lorenzBeta, rosslerA, rosslerB, rosslerC, duffingDelta]);
 
   // Poincaré Section: Transversal crossings through section plane
   const poincarePoints = useMemo(() => {
@@ -715,18 +757,16 @@ export const ChaosLabView: React.FC = () => {
         <div className="bg-[#FFFDF9] border border-[#E6DFC6] p-3 rounded-xl shadow-xs">
           <div className="text-[10px] text-[#78716C] uppercase font-bold">Largest Lyapunov Exponent</div>
           <div className="text-base font-bold text-[#B45F1B] mt-1">
-            {systemType === 'lorenz'
-              ? (zeroOneMetrics.isChaotic ? '+0.905 nats/s' : '0.000 (neutral)')
-              : systemType === 'rossler'
-                ? (zeroOneMetrics.isChaotic ? '+0.071 nats/s' : '0.000 (neutral)')
-                : (zeroOneMetrics.isChaotic ? '+0.150 nats/s' : '0.000 (neutral)')}
+            {lyapunovExponent > 0.05
+              ? `+${lyapunovExponent.toFixed(3)} nats/s`
+              : lyapunovExponent < -0.05
+                ? `${lyapunovExponent.toFixed(3)} nats/s (stable)`
+                : '0.000 (neutral limit cycle)'}
           </div>
           <div className="text-[10px] text-[#78716C]">
-            {systemType === 'lorenz'
-              ? 'Exponential horizon: ~1.10 s'
-              : systemType === 'rossler'
-                ? 'Exponential horizon: ~14.1 s'
-                : 'Exponential horizon: ~6.67 s'}
+            {lyapunovExponent > 0.05
+              ? `Exponential horizon: ~${(1.0 / Math.max(0.01, lyapunovExponent)).toFixed(2)} s`
+              : 'Non-divergent predictable horizon'}
           </div>
         </div>
 
