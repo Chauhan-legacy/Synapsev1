@@ -77,11 +77,14 @@ export const AporiaView: React.FC = () => {
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState<'png' | 'jpeg' | null>(null);
+  const [storageWarning, setStorageWarning] = useState<string | null>(null);
+  const [backupNotice, setBackupNotice] = useState<string | null>(null);
 
   const titleInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const autosaveTimeoutRef = useRef<number | null>(null);
   const exportDropdownRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Active Entry
   const activeEntry = useMemo(() => {
@@ -95,14 +98,89 @@ export const AporiaView: React.FC = () => {
     }
   }, [activeEntry, entries]);
 
-  // Persist entries to localStorage whenever they change
+  // Persist entries to localStorage whenever they change, capturing failure
   const persistEntries = useCallback((newEntries: AporiaEntry[]) => {
     try {
       localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(newEntries));
+      setStorageWarning(null);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Storage quota exceeded or disabled';
       console.error('Failed to save Aporia entries to localStorage:', err);
+      setStorageWarning(`Local Storage Warning: Failed to save changes locally (${msg}). Export a JSON backup to prevent data loss.`);
     }
   }, []);
+
+  // Export full diary database as a portable JSON backup file
+  const exportJsonBackup = useCallback(() => {
+    try {
+      const payload = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        entries,
+      };
+      const jsonStr = JSON.stringify(payload, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateStamp = new Date().toISOString().split('T')[0];
+      link.href = url;
+      link.download = `synthesized-thoughts-backup-${dateStamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setIsExportMenuOpen(false);
+      setBackupNotice(`Exported ${entries.length} reflection(s) to JSON backup.`);
+      setTimeout(() => setBackupNotice(null), 3000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to export backup';
+      setStorageWarning(`Export Backup Error: ${msg}`);
+    }
+  }, [entries]);
+
+  // Import JSON backup and restore entries
+  const handleImportBackup = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        const importedList: AporiaEntry[] = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed.entries)
+            ? parsed.entries
+            : null;
+
+        if (!importedList || importedList.length === 0) {
+          throw new Error('No valid entries array found in backup JSON');
+        }
+
+        const validList = importedList.filter(
+          (item) => typeof item.id === 'string' && typeof item.title === 'string' && typeof item.content === 'string'
+        );
+
+        if (validList.length === 0) {
+          throw new Error('Backup entries missing required fields (id, title, content)');
+        }
+
+        setEntries(validList);
+        persistEntries(validList);
+        setActiveEntryId(validList[0].id);
+        setStorageWarning(null);
+        setBackupNotice(`Successfully restored ${validList.length} reflection(s) from JSON backup.`);
+        setTimeout(() => setBackupNotice(null), 4000);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Invalid backup JSON file';
+        setStorageWarning(`Import Backup Error: ${msg}`);
+      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    reader.readAsText(file);
+    setIsExportMenuOpen(false);
+  }, [persistEntries]);
 
   // Persist active ID
   useEffect(() => {
@@ -740,11 +818,92 @@ export const AporiaView: React.FC = () => {
                     Balanced image size for sharing and presentations
                   </span>
                 </button>
+
+                <div
+                  className="px-3 py-1.5 border-t border-b border-[#E8E2D5] text-[11px] font-semibold uppercase tracking-wider bg-[#F9F7F1] mt-1"
+                  style={{ color: '#2B4A37' }}
+                >
+                  Database JSON Backup
+                </div>
+                <button
+                  type="button"
+                  onClick={exportJsonBackup}
+                  className="w-full text-left px-3 py-2 hover:bg-[#F6F4ED] text-[#1F2430] flex flex-col gap-0.5 transition-colors"
+                >
+                  <span className="font-semibold text-[#1F2430] flex items-center gap-1.5">
+                    <Download className="w-3 h-3 text-[#2B4A37]" />
+                    Export Backup (JSON)
+                  </span>
+                  <span className="text-[10px] text-[#7A756B] pl-4">
+                    Download full archive of all saved diary reflections
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full text-left px-3 py-2 hover:bg-[#F6F4ED] text-[#1F2430] flex flex-col gap-0.5 transition-colors border-t border-[#F0ECE4]"
+                >
+                  <span className="font-semibold text-[#1F2430] flex items-center gap-1.5">
+                    <Plus className="w-3 h-3 text-[#2B4A37]" />
+                    Import Backup (JSON)
+                  </span>
+                  <span className="text-[10px] text-[#7A756B] pl-4">
+                    Restore reflections from a JSON backup file
+                  </span>
+                </button>
               </div>
             )}
           </div>
         </div>
       </header>
+
+      {/* Hidden file input for importing JSON backup */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".json,application/json"
+        onChange={handleImportBackup}
+        className="hidden"
+      />
+
+      {/* Visible warning when saving to localStorage fails */}
+      {storageWarning && (
+        <div
+          role="alert"
+          className="w-full bg-[#FFFBEB] border-b border-[#F59E0B] text-[#92400E] px-4 py-2.5 text-xs flex items-center justify-between gap-3 shadow-xs shrink-0 select-none z-20"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-[#D97706] shrink-0" />
+            <span className="font-medium">{storageWarning}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={exportJsonBackup}
+              className="px-2 py-0.5 rounded bg-[#F59E0B] text-white hover:bg-[#D97706] font-semibold text-[11px] transition-colors"
+            >
+              Export Backup Now
+            </button>
+            <button
+              type="button"
+              onClick={() => setStorageWarning(null)}
+              className="text-[#B45309] hover:text-[#78350F] font-bold px-1.5 py-0.5"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Backup notification */}
+      {backupNotice && (
+        <div className="w-full bg-[#ECFDF5] border-b border-[#10B981] text-[#065F46] px-4 py-2 text-xs flex items-center justify-between select-none z-20">
+          <span>{backupNotice}</span>
+          <button type="button" onClick={() => setBackupNotice(null)} className="font-bold text-[#047857]">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Main Workspace Body */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
@@ -844,10 +1003,30 @@ export const AporiaView: React.FC = () => {
               )}
             </div>
 
-            {/* Sidebar Footer */}
-            <div className="p-3 border-t border-[#D5CFC2] bg-[#F2ECE1] text-[10px] text-[#7A756B] flex items-center justify-between">
-              <span>{entries.length} reflections stored</span>
-              <span className="font-semibold text-[#2D4D3A]">100% Offline</span>
+            {/* Sidebar Footer with Backup Buttons */}
+            <div className="p-3 border-t border-[#D5CFC2] bg-[#F2ECE1] text-[10px] text-[#7A756B] flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span>{entries.length} reflections stored</span>
+                <span className="font-semibold text-[#2D4D3A]">100% Local</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-sans pt-1 border-t border-[#E8E2D5]">
+                <button
+                  type="button"
+                  onClick={exportJsonBackup}
+                  className="flex-1 py-1 rounded border border-[#D5CFC2] bg-white hover:border-[#82a18f] text-[#374151] hover:text-[#0A1C12] text-center font-medium transition-colors"
+                  title="Export all reflections as JSON"
+                >
+                  Export Backup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 py-1 rounded border border-[#D5CFC2] bg-white hover:border-[#82a18f] text-[#374151] hover:text-[#0A1C12] text-center font-medium transition-colors"
+                  title="Import reflections from JSON"
+                >
+                  Import Backup
+                </button>
+              </div>
             </div>
           </aside>
         )}
