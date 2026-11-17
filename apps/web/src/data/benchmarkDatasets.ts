@@ -152,7 +152,7 @@ export const BENCHMARK_DATASETS: BenchmarkDatasetInfo[] = [
       { name: 'Seismic S-Wave Arrival', type: 'Waveform Onset', ground_truth: '4.80 Hz at t=110.0s', detected: true, error_pct: 0.35 },
       { name: 'Geomagnetic Storm Step', type: 'Regime Shift', ground_truth: '+42.5 nT at t=90.0s', detected: true },
       { name: 'Ocean KdV Soliton Depression', type: 'Solitary Wave', ground_truth: '-24.8 cm at t=120.0s', detected: true },
-      { name: 'Control Null Channel Calibration', type: 'FDR Control', ground_truth: 'N(0, 1) Zero False Positives', detected: true },
+      { name: 'Control Null Channel Calibration', type: 'FDR Control', ground_truth: 'N(0, 1) Controls False Positives (0.00% measured)', detected: true },
     ],
   },
 ];

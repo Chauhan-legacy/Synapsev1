@@ -275,7 +275,7 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
         assumptions: [{ text: 'Positive regression dependency (PRDS) or arbitrary dependence (BY)', checked: true, passed: true }],
         status: inferenceData.discoveriesCount > 0 ? 'Significant' : 'Not significant',
         plain_language_summary: `${inferenceData.discoveriesCount} of ${inferenceData.hypothesisTests.length} candidate hypotheses survive False Discovery Rate control at q = 0.05.`,
-        meaning: 'Controls expected proportion of false positive discoveries under 5%.',
+        meaning: 'Controls expected false discovery rate bounded under 5% (q <= 0.05).',
         evidence_refs: ['fdr_bh_ranking'],
         runtime_ms: 4,
       },
