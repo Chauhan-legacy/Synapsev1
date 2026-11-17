@@ -22,8 +22,9 @@ from apps.api.main import app
 def run_350k_stress_benchmark():
     csv_path = os.path.join("data", "synapse_ultimate_stress_test_350k.csv")
     if not os.path.exists(csv_path):
-        print(f"ERROR: {csv_path} not found.")
-        sys.exit(1)
+        print(f"{csv_path} not found. Generating via scripts/generate_stress_dataset.py...")
+        from scripts.generate_stress_dataset import generate_stress_dataset
+        generate_stress_dataset(csv_path)
 
     print(f"=== Starting 350,000 Sample Stress Benchmark ===")
     print(f"Reading dataset: {csv_path}...")
