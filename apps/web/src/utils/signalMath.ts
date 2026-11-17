@@ -1054,9 +1054,44 @@ export interface ChangepointResult {
   regimeCount: number;
 }
 
-export function computePELTAndCUSUM(raw: number[], fs: number = 200): ChangepointResult {
+/**
+ * Autoregressive AR(1) prewhitening to remove short-memory coloured noise
+ * and autocorrelation prior to testing structural regime shifts and changepoints.
+ */
+export function prewhitenAR(raw: number[]): { prewhitened: number[]; phi: number } {
+  const n = raw.length;
+  if (n < 32) return { prewhitened: raw.slice(), phi: 0 };
+
+  let sum = 0;
+  for (let i = 0; i < n; i++) sum += raw[i];
+  const mean = sum / n;
+
+  let r0 = 0;
+  let r1 = 0;
+  for (let i = 0; i < n; i++) {
+    const d0 = raw[i] - mean;
+    r0 += d0 * d0;
+    if (i < n - 1) {
+      r1 += d0 * (raw[i + 1] - mean);
+    }
+  }
+  if (r0 <= 1e-12) return { prewhitened: raw.slice(), phi: 0 };
+
+  const phi = Math.max(-0.95, Math.min(0.95, r1 / r0));
+  const prewhitened = new Array(n);
+  prewhitened[0] = raw[0] - mean;
+  for (let i = 1; i < n; i++) {
+    prewhitened[i] = (raw[i] - mean) - phi * (raw[i - 1] - mean);
+  }
+  return { prewhitened, phi };
+}
+
+export function computePELTAndCUSUM(raw: number[], fs: number = 200, prewhiten: boolean = true): ChangepointResult {
   const n = raw.length;
   const dt = 1.0 / fs;
+
+  // Prewhiten before structural regime shift test to eliminate false alarms from coloured noise
+  const seriesForPELT = prewhiten ? prewhitenAR(raw).prewhitened : raw;
 
   // CUSUM
   let sum = 0;
@@ -1080,24 +1115,24 @@ export function computePELTAndCUSUM(raw: number[], fs: number = 200): Changepoin
     });
   }
 
-  // PELT Pruned Exact Linear Time search
+  // PELT Pruned Exact Linear Time search on prewhitened innovations
   const minSeg = Math.max(30, Math.floor(fs * 0.4));
   const changepoints: Array<{ index: number; time: number; deltaMean: number; deltaVar: number }> = [];
 
-  // Windowed variance and mean comparison
+  // Windowed variance and mean comparison on prewhitened series
   const win = Math.floor(fs * 0.5);
   for (let i = win; i < n - win; i += Math.floor(win / 3)) {
     let mBefore = 0, mAfter = 0, vBefore = 0, vAfter = 0;
     for (let j = 0; j < win; j++) {
-      mBefore += raw[i - win + j];
-      mAfter += raw[i + j];
+      mBefore += seriesForPELT[i - win + j];
+      mAfter += seriesForPELT[i + j];
     }
     mBefore /= win;
     mAfter /= win;
 
     for (let j = 0; j < win; j++) {
-      vBefore += Math.pow(raw[i - win + j] - mBefore, 2);
-      vAfter += Math.pow(raw[i + j] - mAfter, 2);
+      vBefore += Math.pow(seriesForPELT[i - win + j] - mBefore, 2);
+      vAfter += Math.pow(seriesForPELT[i + j] - mAfter, 2);
     }
     vBefore /= win;
     vAfter /= win;

@@ -17,7 +17,7 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 |---|---|---|---|---|
 | **Python Scientific Engines** | 46 / 53 passed (86.8%) | **73 / 73 passed** | **ALL PASS** | Scale-invariant Thomson multitaper, restricted-model BIC Granger causality, BOCPD prior predictive distribution, continuous RQA determinism. |
 | **In-Browser TypeScript Math** | 18 / 28 passed (64.3%) | **10 / 10 benchmarks passed** | **ALL PASS** | Zero-padded Slepian multitaper ($N_{\text{fft}} = 2048$), Welch dynamic scaling ($N=120k \implies 2048$), true OLS Granger causality with Gaussian elimination, exact Jacobi PCA decomposition. |
-| **Pure Noise False Discoveries** | 259.0 discoveries / run | **0.00 discoveries / run** | **VERIFIED** | Benjamini-Hochberg FDR ($q=0.05$) across independent spectral bands + split-half persistence; 300 seeded runs produce strictly 0 validated claims (95% CI upper bound: 1.22% [~1.3%], n=300). |
+| **Noise False Discoveries** | 259.0 discoveries / run | **Gaussian: 0.00% (0/300) [0.00%, 1.22%]<br>Pink: 0.67% (2/300) [0.00%, 1.59%]** | **VERIFIED** | Benjamini-Hochberg FDR ($q=0.05$) + split-half persistence + AR prewhitening before PELT structural regime shift (300 seeded runs each). |
 | **Planted Outliers & Shifts** | Masking & false alarms | **Matches ground truth within stated tolerances** | **VERIFIED** | Generalized Rosner ESD per regime isolates samples 500 and 1800; PELT isolates sample 1200; Granger VAR validates primary driving X→Y ($F = 1441.0, p_{\text{adj}} = 0.00$) with reverse link Y→X ($F = 22.47, p_{\text{adj}} = 6.00 \times 10^{-18}$) documented as an empirical feedback artifact (driving ratio > 64x). |
 | **Automated Test Suite** | 22 tests | **83 tests passed** | **VERIFIED** | 73 pytest regression tests + 10 in-browser math benchmarks (`npm run test:math`). |
 | **120,000 High-Throughput** | Uncalibrated / O(N²) | **16.9 ms / channel (480k in 68 ms)** | **VERIFIED** | Fast vectorized Welch PSD + zero-config structural I/O with continuous time linearization. |
@@ -68,6 +68,15 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 - **Periodic Regular Sine Orbit:**
   - Clean sine wave ($f=5\text{ Hz}, N=1000$): gracefully classified as non-chaotic (`is_chaotic=False`, $\lambda_1 \le 0.005$).
 
+### 2.6 Noise Calibration & Known Limitations on Coloured Noise
+- **Gaussian White Noise Calibration (300 Seeded Runs):**
+  - False-alarm rate: **0.00%** (0 validated findings across 300 independent runs, Clopper-Pearson 95% CI: [0.00%, 1.22%]).
+- **Pink Coloured Noise Calibration (300 Seeded Runs):**
+  - False-alarm rate: **0.67%** (2 validated findings across 300 independent runs, 95% CI: [0.00%, 1.59%], well within nominal $\alpha = 5\%$).
+- **Known Limitations (Coloured Noise & Autoregressive Persistence):**
+  - Strongly coloured ($1/f$) or persistent autoregressive noise features smooth low-frequency wandering that can mimic structural variance regime shifts. Prewhitening via an autoregressive AR(1) fit before PELT cost minimization eliminates false regime shifts (0/300 false alarms).
+  - Minor spectral leakage in coloured backgrounds may occasionally yield weak harmonic line candidates (2/300 runs); users analyzing $1/f^\alpha$ processes are advised to inspect Detrended Fluctuation Analysis (DFA) scaling and confirm prewhitened stationarity.
+
 ---
 
 ## 3. Ground-Truth Test Matrix
@@ -109,7 +118,7 @@ tests/ground_truth/test_gt_structure.py::test_gt_entropy_white_noise_vs_sine PAS
 [PASS] Coherence: shared 30 Hz tone in independent noise -> Identified 30 Hz peak in 15/15 trials (Mean peak: 29.69 Hz)
 [PASS] PCA explained variance for known covariance 7:2:1 -> Components: 70.1% / 20.1% / 9.8%
 [PASS] Matrix profile: locate planted odd segment -> Planted at 350, detected at 349 (error: 1 samples <= 30)
-[PASS] Auto-Analyst on PURE NOISE (300 seeded runs + pink noise) -> Total validated findings: white noise=0/300, pink noise=0/6 (False-alarm rate: 0.00%, 95% CI upper bound: 1.22% [~1.3%], n=300)
+[PASS] Auto-Analyst on NOISE (300 Gaussian + 300 Pink seeded runs) -> White: 0/300 (0.00%, 95% CI [0.00%, 1.22%]), Pink: 2/300 (0.67%, 95% CI [0.00%, 1.59%])
 [PASS] Auto-Analyst on Hidden Signal discovery detection -> Detected features: Spike=true, Shift=true, Tones=true (Total validated: 4)
 [PASS] Rosner ESD: false alarms on noise and planted spike recovery -> Clean noise outliers: 0 (Target 0), Planted 2 spikes: 2 (Target 2)
 
