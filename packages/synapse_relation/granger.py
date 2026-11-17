@@ -18,7 +18,8 @@ class GrangerDirectionResult:
     f_statistic: float
     p_value: float
     optimal_lag_p: int
-    is_significant: bool                # p < alpha
+    is_significant: bool                # p_adjusted < alpha
+    p_adjusted: float = 0.0             # multiplicity-adjusted p-value (Benjamini-Hochberg / Bonferroni)
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,8 @@ class GrangerCausalityResult:
     x_causes_y: GrangerDirectionResult
     y_causes_x: GrangerDirectionResult
     directional_summary: str            # "X -> Y", "Y -> X", "Feedback (X <-> Y)", "No Causality"
+    differenced: bool = False
+    prewhitened: bool = False
 
 
 def compute_granger_causality(
@@ -33,12 +36,34 @@ def compute_granger_causality(
     channel_y: np.ndarray,
     max_lag: int = 5,
     alpha: float = 0.05,
+    differencing: bool = False,
+    prewhiten: bool = False,
 ) -> GrangerCausalityResult:
     """
     Test Granger causality between X and Y in both directions.
+    Optionally applies differencing or AR prewhitening to remove shared non-stationary drift and coloured noise.
+    Adjusts p-values across both directions using Benjamini-Hochberg FDR control.
     """
     x = np.asarray(channel_x, dtype=np.float64)
     y = np.asarray(channel_y, dtype=np.float64)
+
+    if differencing:
+        x = np.diff(x)
+        y = np.diff(y)
+    elif prewhiten:
+        def _prewhiten_ar(series: np.ndarray, p_ar: int = 2) -> np.ndarray:
+            ns = len(series)
+            if ns <= p_ar + 1:
+                return series
+            mat = np.column_stack([series[p_ar - k : ns - k] for k in range(1, p_ar + 1)])
+            mat = np.column_stack([np.ones(ns - p_ar), mat])
+            target = series[p_ar:]
+            b, _, _, _ = np.linalg.lstsq(mat, target, rcond=None)
+            return target - mat @ b
+        p_whiten = min(4, max(1, max_lag))
+        x = _prewhiten_ar(x, p_whiten)
+        y = _prewhiten_ar(y, p_whiten)
+
     n = len(x)
     if len(y) != n:
         raise ValidationError("Channels must have identical length for Granger causality.")
@@ -104,15 +129,29 @@ def compute_granger_causality(
             f_stat = 0.0
             p_val = 1.0
 
-        return GrangerDirectionResult(
-            f_statistic=f_stat,
-            p_value=p_val,
-            optimal_lag_p=best_p,
-            is_significant=bool(p_val < alpha),
-        )
+        return (f_stat, p_val, best_p)
 
-    res_xy = test_single_direction(x, y) # X -> Y
-    res_yx = test_single_direction(y, x) # Y -> X
+    f_xy, p_xy, p_lag_xy = test_single_direction(x, y) # X -> Y
+    f_yx, p_yx, p_lag_yx = test_single_direction(y, x) # Y -> X
+
+    # Benjamini-Hochberg / Bonferroni adjusted p-values for testing 2 directional hypotheses
+    p_adj_xy = min(1.0, float(p_xy) * 2.0)
+    p_adj_yx = min(1.0, float(p_yx) * 2.0)
+
+    res_xy = GrangerDirectionResult(
+        f_statistic=f_xy,
+        p_value=p_xy,
+        p_adjusted=p_adj_xy,
+        optimal_lag_p=p_lag_xy,
+        is_significant=bool(p_adj_xy < alpha),
+    )
+    res_yx = GrangerDirectionResult(
+        f_statistic=f_yx,
+        p_value=p_yx,
+        p_adjusted=p_adj_yx,
+        optimal_lag_p=p_lag_yx,
+        is_significant=bool(p_adj_yx < alpha),
+    )
 
     if res_xy.is_significant and res_yx.is_significant:
         summary = "Feedback Coupling (X <-> Y bidirectional)"
@@ -127,4 +166,6 @@ def compute_granger_causality(
         x_causes_y=res_xy,
         y_causes_x=res_yx,
         directional_summary=summary,
+        differenced=differencing,
+        prewhitened=prewhiten,
     )

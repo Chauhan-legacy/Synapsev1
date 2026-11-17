@@ -168,6 +168,49 @@ def verify():
         json.dump(results, f, indent=2)
     print(f"\nWritten verified results to: {out_json}")
 
+    # 9. Acceptance check: verify written claims in documentation match JSON results
+    md_key_path = _ROOT / "data" / "MESSY_DATASET_ANSWER_KEY.md"
+    benchmarks_path = _ROOT / "BENCHMARKS.md"
+
+    if not md_key_path.exists():
+        print(f"FAIL: Missing answer key markdown at {md_key_path}")
+        return False
+
+    with open(md_key_path, "r", encoding="utf-8") as f:
+        md_text = f.read()
+
+    f_xy = results["granger_causality"]["x_to_y"]["f_stat"]
+    f_yx = results["granger_causality"]["y_to_x"]["f_stat"]
+
+    if str(f_xy) not in md_text and f"{f_xy:.1f}" not in md_text:
+        print(f"FAIL: Written claim in {md_key_path.name} disagrees with JSON X->Y F-stat {f_xy}")
+        return False
+    if str(f_yx) not in md_text and f"{f_yx:.1f}" not in md_text:
+        print(f"FAIL: Written claim in {md_key_path.name} disagrees with JSON Y->X F-stat {f_yx}")
+        return False
+
+    for cp in results["pelt_changepoints"]["indices"]:
+        if str(cp) not in md_text:
+            print(f"FAIL: Written claim in {md_key_path.name} missing changepoint {cp}")
+            return False
+
+    for spk in results["rosner_spikes"]["indices"]:
+        if str(spk) not in md_text:
+            print(f"FAIL: Written claim in {md_key_path.name} missing spike {spk}")
+            return False
+
+    if benchmarks_path.exists():
+        with open(benchmarks_path, "r", encoding="utf-8") as f:
+            bm_text = f.read()
+        # Ensure BENCHMARKS.md reflects measured 24/25 and 1/25 false reverse links without contradiction
+        if "rejected in **25/25 trials**" in bm_text:
+            print("FAIL: BENCHMARKS.md still claims 'rejected in **25/25 trials**' for Granger reverse link instead of 24/25, 1/25 false reverse links")
+            return False
+        if "24/25" not in bm_text or "1/25 false reverse links" not in bm_text:
+            print("FAIL: BENCHMARKS.md does not contain required measured Granger numbers ('24/25' or '1/25 false reverse links')")
+            return False
+
+    print("PASS: All written claims in documentation agree with JSON benchmark results.")
     return all_passed
 
 

@@ -53,3 +53,65 @@ def test_written_claims_match_json():
     coh_freq = data["coherence"]["peak_frequency_hz"]
     assert str(coh_peak) in md_text, f"Written claims missing peak coherence {coh_peak}"
     assert str(coh_freq) in md_text, f"Written claims missing peak frequency {coh_freq}"
+
+
+def test_verify_answer_key_fails_on_claim_disagreement(monkeypatch):
+    """
+    Requirement: verify_answer_key.py must fail if a written claim and the JSON disagree.
+    """
+    import scripts.verify_answer_key as vak
+
+    # Test failure when answer key markdown disagrees with JSON
+    orig_open = open
+    def mock_open(file, *args, **kwargs):
+        f = orig_open(file, *args, **kwargs)
+        if "MESSY_DATASET_ANSWER_KEY.md" in str(file) and "r" in args:
+            class MockFile:
+                def __enter__(self):
+                    return self
+                def __exit__(self, *a):
+                    pass
+                def read(self):
+                    return "Corrupted claims file with no matching numbers: F = 999999.9"
+            return MockFile()
+        return f
+
+    monkeypatch.setattr("builtins.open", mock_open)
+    res = vak.verify()
+    assert res is False, "verify_answer_key.py must return False / fail when written claims disagree with JSON"
+
+
+def test_granger_causality_differencing_prewhitening_and_adjusted_p():
+    """
+    Requirement: verify Granger causality reports adjusted p-values and handles differencing/prewhitening.
+    """
+    from synapse_relation.granger import compute_granger_causality
+    import numpy as np
+
+    rng = np.random.default_rng(42)
+    n = 500
+    t = np.linspace(0, 10, n)
+    drift = 0.5 * t
+    x = np.zeros(n)
+    y = np.zeros(n)
+    for i in range(1, n):
+        x[i] = 0.5 * x[i - 1] + rng.normal(0, 0.5)
+        y[i] = 0.4 * y[i - 1] + 0.6 * x[i - 1] + rng.normal(0, 0.5)
+
+    x_drift = x + drift
+    y_drift = y + drift
+
+    # Test with differencing: populates p_adjusted and handles differencing
+    res_diff = compute_granger_causality(x_drift, y_drift, max_lag=2, differencing=True)
+    assert res_diff.differenced is True
+    assert hasattr(res_diff.x_causes_y, "p_adjusted")
+    assert hasattr(res_diff.y_causes_x, "p_adjusted")
+    assert res_diff.x_causes_y.p_adjusted <= 1.0
+    assert res_diff.y_causes_x.p_adjusted <= 1.0
+    assert res_diff.x_causes_y.is_significant
+
+    # Test with prewhitening: removes shared linear drift and AR correlation
+    res_pw = compute_granger_causality(x_drift, y_drift, max_lag=2, prewhiten=True)
+    assert res_pw.prewhitened is True
+    assert res_pw.x_causes_y.is_significant
+    assert not res_pw.y_causes_x.is_significant

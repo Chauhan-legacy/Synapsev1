@@ -40,7 +40,9 @@ Every single typed-in mock metric has been removed. All numbers on screen are co
 ### 2.2 Directional Granger Causality (VAR & BIC Lag Selection)
 - **Unidirectional Recovery ($X \to Y$):**
   - Process: $X_t = 0.5 X_{t-1} + \epsilon_t$; $Y_t = 0.4 Y_{t-1} + 0.6 X_{t-1} + \eta_t$.
-  - Result: $X \to Y$ detected with $p < 10^{-10}$ in **25/25 trials**; reverse link $Y \to X$ rejected in **25/25 trials**.
+  - Result: $X \to Y$ detected with $p < 10^{-10}$ in **24/25 trials**; reverse link $Y \to X$ rejected in **24/25 trials (1/25 false reverse links, 4% empirical rate within nominal $\alpha = 5\%$)**.
+- **Investigation of Reverse Coupling on Messy Data (`messy_test_dataset.csv`):**
+  - On raw levels, non-stationary quadratic drift ($0.03(t-6.25)^2$) and coloured $1/f$ AR(1) noise ($\phi=0.65$) induce spurious cross-correlations (Granger-Newbold spurious regression), yielding $F_{Y \to X} = 22.47$ ($p_{\text{adj}} = 6.00 \times 10^{-18}$). Applying differencing or AR prewhitening controls this artifact, while the dominant forward driving $X \to Y$ ($F = 1440.99, p_{\text{adj}} = 0.00$) maintains a driving ratio exceeding $64\times$.
 - **False-Alarm Rate on Independent Noise:**
   - 40 independent trials of bivariate Gaussian white noise ($N=400$).
   - False discovery rate: **2.5%** (nominal $\alpha = 5\%$).
