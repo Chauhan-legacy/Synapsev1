@@ -124,8 +124,74 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
     }
     const higuchiD = Math.max(1.0, Math.min(2.0, num / (den || 1)));
 
-    // 5. Largest Lyapunov Exponent estimate
-    const lyapunov = sampEn > 0.6 ? 0.082 : 0.005;
+    // 5. Largest Lyapunov Exponent estimate via Rosenstein nearest-neighbor divergence
+    let computedLyap = 0.0;
+    const mEmb = Math.max(2, Math.min(5, mStar));
+    const tauEmb = Math.max(1, Math.min(10, tauStar));
+    const nVec = n - (mEmb - 1) * tauEmb;
+
+    if (nVec > 40) {
+      const maxTrack = Math.min(15, Math.floor(nVec / 4));
+      const theiler = (mEmb - 1) * tauEmb;
+      const refCount = Math.min(80, nVec - maxTrack - 1);
+      const refStep = Math.max(1, Math.floor((nVec - maxTrack - 1) / refCount));
+
+      const logDivSum = new Float64Array(maxTrack);
+      const countSum = new Float64Array(maxTrack);
+
+      for (let r = 0; r < nVec - maxTrack - 1; r += refStep) {
+        let bestDist = Infinity;
+        let bestNeighbor = -1;
+
+        for (let j = 0; j < nVec - maxTrack - 1; j += 2) {
+          if (Math.abs(r - j) <= theiler) continue;
+          let distSq = 0;
+          for (let dim = 0; dim < mEmb; dim++) {
+            const diff = vals[r + dim * tauEmb] - vals[j + dim * tauEmb];
+            distSq += diff * diff;
+          }
+          if (distSq > 1e-8 && distSq < bestDist) {
+            bestDist = distSq;
+            bestNeighbor = j;
+          }
+        }
+
+        if (bestNeighbor >= 0 && bestDist < Infinity) {
+          for (let k = 1; k <= maxTrack; k++) {
+            let dSq = 0;
+            for (let dim = 0; dim < mEmb; dim++) {
+              const diff = vals[r + k + dim * tauEmb] - vals[bestNeighbor + k + dim * tauEmb];
+              dSq += diff * diff;
+            }
+            if (dSq > 1e-10) {
+              logDivSum[k - 1] += Math.log(Math.sqrt(dSq));
+              countSum[k - 1]++;
+            }
+          }
+        }
+      }
+
+      let sumK = 0, sumY = 0, sumKY = 0, sumK2 = 0, pts = 0;
+      for (let k = 1; k <= maxTrack; k++) {
+        if (countSum[k - 1] > 5) {
+          const avgLogD = logDivSum[k - 1] / countSum[k - 1];
+          sumK += k;
+          sumY += avgLogD;
+          sumKY += k * avgLogD;
+          sumK2 += k * k;
+          pts++;
+        }
+      }
+      if (pts > 3) {
+        const denom = pts * sumK2 - sumK * sumK;
+        if (denom !== 0) {
+          const slope = (pts * sumKY - sumK * sumY) / denom;
+          computedLyap = Math.max(-0.5, Math.min(2.5, slope));
+        }
+      }
+    }
+    const isExample = n < 50;
+    const lyapunov = isExample ? 0.082 : computedLyap;
 
     return {
       amiLags,
@@ -137,6 +203,7 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
       sampEn: Number(sampEn.toFixed(3)),
       higuchiD: Number(higuchiD.toFixed(3)),
       lyapunov: Number(lyapunov.toFixed(3)),
+      isExample,
     };
   }, [vals, n]);
 
@@ -319,9 +386,15 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
           <div className="text-[9px] text-[#6B6F7B]">Roughness [1, 2]</div>
         </div>
         <div className="p-2.5 rounded bg-[#FFFFFF] border border-[#DDD6C7] text-center shadow-2xs font-mono">
-          <div className="text-[10px] uppercase text-[#6B6F7B]">Lyapunov λ₁</div>
-          <div className="text-base font-bold text-[#0F766E]">+{dynamicsData.lyapunov}</div>
-          <div className="text-[9px] text-[#6B6F7B]">Rosenstein Fit</div>
+          <div className="text-[10px] uppercase text-[#6B6F7B]">
+            Lyapunov λ₁ {dynamicsData.isExample ? <span className="text-amber-600 font-bold">(Example)</span> : null}
+          </div>
+          <div className="text-base font-bold text-[#0F766E]">
+            {dynamicsData.lyapunov >= 0 ? `+${dynamicsData.lyapunov}` : dynamicsData.lyapunov}
+          </div>
+          <div className="text-[9px] text-[#6B6F7B]">
+            {dynamicsData.isExample ? 'Synthetic Baseline Example' : 'Rosenstein Measured Fit'}
+          </div>
         </div>
         <div className="p-2.5 rounded bg-[#FFFFFF] border border-[#DDD6C7] text-center shadow-2xs font-mono">
           <div className="text-[10px] uppercase text-[#6B6F7B]">RQA Determinism</div>
