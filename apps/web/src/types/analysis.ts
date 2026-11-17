@@ -1,4 +1,4 @@
-export type FindingStatus = 'supported' | 'inconclusive' | 'rejected' | 'not_run';
+export type FindingStatus = 'supported' | 'inconclusive' | 'rejected' | 'not_run' | 'Significant' | 'Not significant';
 
 export interface MethodDiagnostic {
   name: string;
@@ -26,6 +26,10 @@ export interface StatisticalTest {
   correction?: string;
   null_model: string;
   n_surrogates?: number;
+  surrogate_values?: number[];
+  null_mean?: number;
+  null_std?: number;
+  exceeded_count?: number;
 }
 
 export interface CommonResultSchema {

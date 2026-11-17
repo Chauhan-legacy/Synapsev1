@@ -14,10 +14,11 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
   const renderStatusBadge = (status: FindingStatus) => {
     switch (status) {
       case 'supported':
+      case 'Significant':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#E8F5E9] text-[#2E7D32] border border-[#C8E6C9]">
             <CheckCircle2 className="w-3 h-3 text-[#2E7D32]" />
-            <span>supported</span>
+            <span>Significant</span>
           </span>
         );
       case 'inconclusive':
@@ -28,10 +29,11 @@ export const MeaningTable: React.FC<MeaningTableProps> = ({
           </span>
         );
       case 'rejected':
+      case 'Not significant':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold rounded bg-[#FDEDEC] text-[#C0392B] border border-[#FADBD8]">
             <XCircle className="w-3 h-3 text-[#C0392B]" />
-            <span>rejected</span>
+            <span>Not significant</span>
           </span>
         );
       case 'not_run':

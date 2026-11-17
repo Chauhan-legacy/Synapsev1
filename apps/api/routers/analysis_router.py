@@ -770,31 +770,40 @@ def run_live_analysis(req: AnalyzeRequest):
     # 6. INFERENCE & NULL-MODEL LAB
     # =========================================================================
     t_mod = time.perf_counter()
-    # Calibrate dominant spectral variance against IAAFT surrogates
+    # Calibrate non-linear / transient structure against IAAFT surrogates
     sub_iaaft = primary_vals[:2000] if n > 2000 else primary_vals
-    def spectral_variance_stat(x_arr: np.ndarray) -> float:
-        res = compute_multitaper_psd(x_arr, fs, nw=3.5, alpha=0.01, fdr_control=False)
-        return float(np.max(res.f_statistics[1:])) if len(res.f_statistics) > 1 else 0.0
+    def iaaft_difference_kurtosis_stat(x_arr: np.ndarray) -> float:
+        diff = np.diff(x_arr)
+        m2 = np.mean((diff - np.mean(diff))**2) or 1.0
+        m4 = np.mean((diff - np.mean(diff))**4)
+        return float(m4 / (m2**2))
+
+    obs_iaaft_stat = iaaft_difference_kurtosis_stat(sub_iaaft)
 
     iaaft_cal = calibrate_against_null(
-        test_func=spectral_variance_stat,
-        observed_statistic=mt_f_max,
+        test_func=iaaft_difference_kurtosis_stat,
+        observed_statistic=obs_iaaft_stat,
         signal_values=sub_iaaft,
         null_type=NullModelType.IAAFT_SURROGATE,
-        n_surrogates=25,
+        n_surrogates=40,
         alpha=0.05,
+        seed=42,
     )
-    iaaft_stat = "supported" if iaaft_cal.is_statistically_significant else "rejected"
+    iaaft_stat = "Significant" if iaaft_cal.is_statistically_significant else "Not significant"
 
     results_by_module["inference"].append({
         "method": "IAAFT Phase-Randomized Surrogate Test",
         "version": "2.0.0",
-        "parameters": {"n_surrogates": 25, "null_type": "IAAFT"},
-        "estimate": round(iaaft_cal.z_score_effect_size, 2),
+        "parameters": {"n_surrogates": 40, "null_type": "IAAFT"},
+        "estimate": round(iaaft_cal.observed_statistic, 3),
         "test": {
-            "statistic": round(iaaft_cal.observed_statistic, 2),
+            "statistic": round(iaaft_cal.observed_statistic, 3),
             "p_raw": float(iaaft_cal.empirical_p_value),
             "null_model": "Iterated Amplitude Adjusted Fourier Transform (IAAFT)",
+            "surrogate_values": [round(float(v), 3) for v in iaaft_cal.surrogate_values],
+            "null_mean": round(float(iaaft_cal.null_mean), 3),
+            "null_std": round(float(iaaft_cal.null_std), 3),
+            "exceeded_count": int(np.sum(iaaft_cal.surrogate_values >= iaaft_cal.observed_statistic)),
         },
         "effect_size": round(iaaft_cal.z_score_effect_size, 2),
         "diagnostics": [
@@ -803,7 +812,7 @@ def run_live_analysis(req: AnalyzeRequest):
         ],
         "assumptions": [{"text": "Linear Gaussian process under null", "checked": True, "passed": True}],
         "status": iaaft_stat,
-        "plain_language_summary": f"Observed pattern exceeds surrogate null (z = {iaaft_cal.z_score_effect_size:.2f} sigma, p = {iaaft_cal.empirical_p_value:.4f})." if iaaft_cal.is_statistically_significant else "Observed fluctuations are entirely consistent with surrogate linear noise (null cannot be rejected).",
+        "plain_language_summary": f"Observed pattern exceeds surrogate null (z = {iaaft_cal.z_score_effect_size:.2f} sigma, p = {iaaft_cal.empirical_p_value:.4f})." if iaaft_cal.is_statistically_significant else f"Observed fluctuations are consistent with surrogate linear noise (p = {iaaft_cal.empirical_p_value:.4f}, H0 not rejected).",
         "meaning": "Verifies whether patterns exceed the physical bounds of a random linear surrogate.",
         "references": ["Schreiber & Schmitz (1996), Phys. Rev. Lett."],
         "runtime_ms": round((time.perf_counter() - t_mod) * 1000.0, 1),
