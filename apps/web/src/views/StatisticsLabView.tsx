@@ -11,8 +11,8 @@ interface StatisticsLabViewProps {
 
 export const StatisticsLabView: React.FC<StatisticsLabViewProps> = ({ onOpenMethodCard }) => {
   const { activeSignal, resultsByModule } = useSignal();
-  const channelName = activeSignal.channelNames[0];
-  const vals = activeSignal.channels[channelName] || [];
+  const channelName = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'Channel 1';
+  const vals = activeSignal?.channels?.[channelName] || [];
   const n = vals.length;
 
   // Real ACF computation for chart

@@ -18,11 +18,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 }) => {
   const { activeSignal, resultsByModule } = useSignal();
 
-  const channelName = activeSignal.channelNames[0] || 'Channel 1';
-  const vals = activeSignal.channels[channelName] || [];
-  const times = activeSignal.timestamps || [];
+  const channelName = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'Channel 1';
+  const vals = activeSignal?.channels?.[channelName] || [];
+  const times = activeSignal?.timestamps || [];
   const n = vals.length;
-  const fs = activeSignal.samplingRate;
+  const fs = activeSignal?.samplingRate || 200;
 
   // Real summary metrics
   const stats = useMemo(() => {

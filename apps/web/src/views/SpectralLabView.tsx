@@ -15,8 +15,8 @@ export const SpectralLabView: React.FC<SpectralLabViewProps> = ({ onOpenMethodCa
   const { activeSignal, resultsByModule } = useSignal();
   const [psdMode, setPsdMode] = useState<'welch' | 'multitaper' | 'burg'>('welch');
 
-  const channelName = activeSignal.channelNames[0];
-  const vals = activeSignal.channels[channelName] || [];
+  const channelName = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'Channel 1';
+  const vals = activeSignal?.channels?.[channelName] || [];
   const fs = activeSignal.samplingRate || 200;
   const n = vals.length;
 

@@ -17,11 +17,11 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
   const { activeSignal, resultsByModule, setCurrentView } = useSignal();
   const [activeTab, setActiveTab] = useState<'coherence' | 'crosscorr' | 'causality' | 'transfer_entropy' | 'dtw'>('coherence');
 
-  const ch1Name = activeSignal.channelNames[0] || 'Channel 1';
-  const ch2Name = activeSignal.channelNames[1] || 'Channel 2 (Coupled)';
-  const s1 = activeSignal.channels[ch1Name] || [];
-  const s2 = activeSignal.channels[ch2Name] || s1.map((v, i) => 0.8 * v + ((i % 7) - 3) * 0.05);
-  const fs = activeSignal.samplingRate;
+  const ch1Name = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'Channel 1';
+  const ch2Name = activeSignal?.channelNames?.[1] || Object.keys(activeSignal?.channels || {})[1] || 'Channel 2 (Coupled)';
+  const s1 = activeSignal?.channels?.[ch1Name] || [];
+  const s2 = activeSignal?.channels?.[ch2Name] || s1.map((v, i) => 0.8 * v + ((i % 7) - 3) * 0.05);
+  const fs = activeSignal?.samplingRate || 200;
   const n = Math.min(s1.length, s2.length);
 
   // Real numerical calculations for Relations Lab
@@ -202,11 +202,12 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
       {
         method: 'Bivariate Granger Causality VAR F-Test',
         version: '2.0.0',
-        parameters: { max_lag: 4, criterion: 'AIC' },
+        parameters: { max_lag: 4, criterion: 'AIC', max_align_lag: 50 },
         estimate: relationData.grangerF,
         test: { statistic: relationData.grangerF, p_raw: relationData.grangerP, null_model: 'Zero VAR coefficient restriction' },
         diagnostics: [
           { name: 'Granger flow direction', value: relationData.grangerSummary, passed: grangerSupported },
+          { name: 'Estimated propagation delay', value: `${relationData.maxLag} samples (${((relationData.maxLag / fs) * 1000).toFixed(1)} ms)`, passed: true },
           { name: 'F-statistic', value: `${relationData.grangerF} (p=${relationData.grangerP})`, passed: grangerSupported },
         ],
         assumptions: [{ text: 'Stationary autoregressive error innovations', checked: true, passed: true }],
@@ -261,7 +262,7 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
           </button>
           <ExportBar
             title="SYNAPSE_Relations_Report"
-            data={{ activeSignal: activeSignal.filename, relationData, relationsResults }}
+            data={{ activeSignal: activeSignal?.filename || 'signal.csv', relationData, relationsResults }}
             csvContent={relationData.freqs.map((f, i) => `${f},${relationData.coherence[i]}`).join('\n')}
           />
         </div>

@@ -30,8 +30,8 @@ export const WignerVille3DSurface: React.FC<WignerVille3DSurfaceProps> = ({
   const isDraggingRef = useRef<boolean>(false);
   const lastMousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const nTimes = densityMatrix.length;
-  const nFreqs = densityMatrix[0]?.length || 0;
+  const nTimes = densityMatrix?.length || 0;
+  const nFreqs = densityMatrix?.[0]?.length || 0;
 
   // Auto-Orbit animation
   useEffect(() => {

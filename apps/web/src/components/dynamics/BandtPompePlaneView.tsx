@@ -151,7 +151,8 @@ export const BandtPompePlaneView: React.FC<BandtPompePlaneViewProps> = ({
 
             {/* Theoretical Allowable Corridor (Shaded between C_min and C_max) */}
             {(() => {
-              const { entropyValues, cMin, cMax } = bpResult.theoreticalCurves;
+              const { entropyValues, cMin, cMax } = bpResult?.theoreticalCurves || {};
+              if (!entropyValues?.length || !cMin?.length || !cMax?.length) return null;
               let pathStr = `M ${toSvgX(entropyValues[0])} ${toSvgY(cMin[0])}`;
               for (let i = 0; i < entropyValues.length; i++) {
                 pathStr += ` L ${toSvgX(entropyValues[i])} ${toSvgY(cMin[i])}`;

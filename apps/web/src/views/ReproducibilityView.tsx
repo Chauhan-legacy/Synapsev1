@@ -13,8 +13,8 @@ export const ReproducibilityView: React.FC = () => {
     let isMounted = true;
     const calculateHash = async () => {
       try {
-        const chName = activeSignal.channelNames[0] || 'lead_1';
-        const vals = activeSignal.channels[chName] || [];
+        const chName = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'lead_1';
+        const vals = activeSignal?.channels?.[chName] || [];
         const contentStr = `${activeSignal.filename}:${vals.length}:${vals.slice(0, 100).join(',')}`;
         const encoder = new TextEncoder();
         const data = encoder.encode(contentStr);

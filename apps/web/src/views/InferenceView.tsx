@@ -16,10 +16,10 @@ export const InferenceView: React.FC<InferenceViewProps> = ({ onOpenMethodCard }
 
   // Dynamic mathematical surrogate and inference quantities computed directly from data
   const inferenceData = useMemo(() => {
-    const chName = activeSignal.channelNames[0] || 'lead_1';
-    const vals = activeSignal.channels[chName] || [];
+    const chName = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'lead_1';
+    const vals = activeSignal?.channels?.[chName] || [];
     const n = vals.length;
-    const fs = activeSignal.samplingRate || 200;
+    const fs = activeSignal?.samplingRate || 200;
 
     const subN = Math.min(n, 2048);
     const subVals = vals.slice(0, subN);

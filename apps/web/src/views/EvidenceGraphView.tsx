@@ -182,9 +182,9 @@ export const EvidenceGraphView: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <Database className="w-4 h-4 text-[#2563eb]" />
-                  <span className="font-bold text-xs text-primary font-mono">{nodes[0].label}</span>
+                  <span className="font-bold text-xs text-primary font-mono">{nodes?.[0]?.label || 'Input Stream'}</span>
                 </div>
-                <div className="text-[10px] text-muted truncate mt-1">{nodes[0].hash}</div>
+                <div className="text-[10px] text-muted truncate mt-1">{nodes?.[0]?.hash || ''}</div>
               </button>
             </div>
 

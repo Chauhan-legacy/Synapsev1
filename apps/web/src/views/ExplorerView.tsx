@@ -24,7 +24,8 @@ import {
 
 export const ExplorerView: React.FC = () => {
   const { activeSignal } = useSignal();
-  const [selectedChannel, setSelectedChannel] = useState<string>(activeSignal.channelNames[0] || 'Channel 1');
+  const defaultCh = activeSignal?.channelNames?.[0] || Object.keys(activeSignal?.channels || {})[0] || 'Channel 1';
+  const [selectedChannel, setSelectedChannel] = useState<string>(defaultCh);
   const [showAllChannels, setShowAllChannels] = useState<boolean>(true);
   const [renderEngine, setRenderEngine] = useState<'uplot' | 'svg'>('uplot');
 
@@ -39,13 +40,14 @@ export const ExplorerView: React.FC = () => {
   const [arqueroResult, setArqueroResult] = useState<ArqueroSummaryResult | null>(null);
   const [pcaResult, setPcaResult] = useState<PcaPreviewResult | null>(null);
 
-  const vals = activeSignal.channels[selectedChannel] || [];
-  const times = activeSignal.timestamps || [];
+  const vals = activeSignal?.channels?.[selectedChannel] || [];
+  const times = activeSignal?.timestamps || [];
 
   // Update selected channel when active signal changes
   useEffect(() => {
-    if (!activeSignal.channelNames.includes(selectedChannel)) {
-      setSelectedChannel(activeSignal.channelNames[0] || 'Channel 1');
+    const chNames = activeSignal?.channelNames || Object.keys(activeSignal?.channels || {});
+    if (!chNames.includes(selectedChannel)) {
+      setSelectedChannel(chNames[0] || 'Channel 1');
     }
   }, [activeSignal, selectedChannel]);
 
