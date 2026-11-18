@@ -8,6 +8,9 @@ import pytest
 from synapse_anomaly.bocpd import compute_bocpd
 from synapse_anomaly.pelt import detect_pelt_changepoints
 from synapse_anomaly.rosner_esd import generalized_esd_test
+from synapse_anomaly.variance_shift import evaluate_variance_shift, detect_variance_shifts
+from synapse_anomaly.discords import find_matrix_profile_discords
+from synapse_anomaly.blind_transient import detect_blind_transients
 
 
 def test_gt_bocpd_five_sigma_jump_probability_spike():
@@ -70,3 +73,82 @@ def test_gt_rosner_esd_planted_outliers_and_clean_noise():
     assert res_planted.n_outliers_detected == 3, f"Expected 3 outliers, found {res_planted.n_outliers_detected}"
     indices = set(res_planted.outlier_indices)
     assert indices == {50, 150, 250}, f"Detected indices {indices} do not match {50, 150, 250}"
+
+
+def test_gt_dataset_j_variance_shift():
+    """
+    Ground-truth validation on Dataset J (30,000 samples, 4 channels):
+    - Channel 1 exhibits an elevated variance regime between samples 24000 and 27000.
+    - Verified via median-centered Levene test with p < 1e-6 and variance ratio > 1.5.
+    """
+    from pathlib import Path
+    import pandas as pd
+
+    data_path = Path(__file__).resolve().parent.parent.parent / "benchmarks" / "SYNAPSE_BENCHMARK_DATA" / "data" / "J_master_discovery_challenge.csv"
+    if not data_path.exists():
+        pytest.skip("Dataset J not found")
+
+    df = pd.read_csv(data_path)
+    c1 = df["channel_1"].values
+
+    res = evaluate_variance_shift(c1, candidate_start=24000, candidate_end=27000, alpha=1e-6)
+    assert res.is_significant, f"Variance shift not significant: p={res.p_value}"
+    assert res.p_value < 1e-6, f"p-value {res.p_value} exceeded 1e-6"
+    assert res.variance_ratio > 1.5, f"Variance ratio {res.variance_ratio} was <= 1.5"
+    assert res.start_index == 24000
+    assert res.end_index == 27000
+
+
+def test_gt_dataset_j_matrix_profile_discord():
+    """
+    Ground-truth validation on Dataset J (30,000 samples, 4 channels):
+    - Planted non-repeating Hann-windowed sawtooth discord at index 14000 (length 200).
+    - Verified using STOMP Matrix Profile: completes in < 10s and ranks index 14000 first with window 150.
+    """
+    import time
+    from pathlib import Path
+    import pandas as pd
+
+    data_path = Path(__file__).resolve().parent.parent.parent / "benchmarks" / "SYNAPSE_BENCHMARK_DATA" / "data" / "J_master_discovery_challenge.csv"
+    if not data_path.exists():
+        pytest.skip("Dataset J not found")
+
+    df = pd.read_csv(data_path)
+    c1 = df["channel_1"].values[:30000]
+
+    t0 = time.perf_counter()
+    res = find_matrix_profile_discords(c1, window_size=150, top_k=3)
+    elapsed = time.perf_counter() - t0
+
+    assert elapsed < 10.0, f"STOMP matrix profile exceeded 10s time limit: {elapsed:.2f}s"
+    assert len(res.discord_indices) >= 1, "No discords detected"
+    assert abs(res.discord_indices[0] - 14000) <= 25, f"Top discord index was {res.discord_indices[0]}, expected ~14000"
+
+
+def test_gt_blind_transient_clean_noise_zero_false_alarms():
+    """Verify blind transient detector yields 0 false events on pure Gaussian white noise at alpha = 0.05."""
+    rng = np.random.default_rng(999)
+    noise = rng.normal(0, 1.0, 5000)
+    res = detect_blind_transients(noise, sampling_rate=100.0, alpha=0.05)
+    assert res.n_events == 0, f"False events detected on clean white noise: {res.n_events}"
+
+
+def test_gt_dataset_j_blind_transient_discovery():
+    """
+    Ground-truth validation on Dataset J (30,000 samples, 4 channels):
+    - Planted transient burst at indices 7000–7079 (damped 2.5 Hz burst, peak amplitude 5.0).
+    - Verified: blind transient detector identifies index ~7005 among top 3 events without frequency hints.
+    """
+    from pathlib import Path
+    import pandas as pd
+
+    data_path = Path(__file__).resolve().parent.parent.parent / "benchmarks" / "SYNAPSE_BENCHMARK_DATA" / "data" / "J_master_discovery_challenge.csv"
+    if not data_path.exists():
+        pytest.skip("Dataset J not found")
+
+    df = pd.read_csv(data_path)
+    c1 = df["channel_1"].values[:30000]
+
+    res = detect_blind_transients(c1, sampling_rate=10.0, alpha=0.05, min_separation_samples=500, top_k=3)
+    peak_indices = [ev.peak_index for ev in res.events]
+    assert any(abs(idx - 7005) <= 50 for idx in peak_indices), f"Planted transient at ~7000 not found in top 3: {peak_indices}"

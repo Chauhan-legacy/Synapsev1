@@ -8,6 +8,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Tuple, Optional, Dict, Any, List
 import numpy as np
+import warnings
+from statsmodels.tools.sm_exceptions import InterpolationWarning
 from statsmodels.tsa.stattools import adfuller, kpss
 
 from synapse_core.exceptions import ValidationError
@@ -41,18 +43,20 @@ def evaluate_stationarity(
         raise ValidationError("Need at least 16 samples for stationarity testing.")
 
     # 1. ADF Test: H0 = Has unit root (non-stationary), H1 = Stationary
-    adf_out = adfuller(x, autolag="AIC")
-    adf_stat = float(adf_out[0])
-    adf_p = float(adf_out[1])
-    adf_lags = int(adf_out[2])
+    adf_res = adfuller(x, autolag="AIC", result_object=True)
+    adf_stat = float(adf_res.statistic)
+    adf_p = float(adf_res.pvalue)
+    adf_lags = int(adf_res.lags)
     adf_stat_pass = bool(adf_p < alpha)
 
     # 2. KPSS Test: H0 = Stationary around level, H1 = Unit root / non-stationary
     try:
-        kpss_out = kpss(x, regression="c", nlags="auto")
-        kpss_stat = float(kpss_out[0])
-        kpss_p = float(kpss_out[1])
-        kpss_lags = int(kpss_out[2])
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always", InterpolationWarning)
+            kpss_res = kpss(x, regression="c", nlags="auto", result_object=True)
+            kpss_stat = float(kpss_res.statistic)
+            kpss_p = float(kpss_res.pvalue)
+            kpss_lags = int(kpss_res.lags)
     except Exception:
         kpss_stat = 0.0
         kpss_p = 0.10

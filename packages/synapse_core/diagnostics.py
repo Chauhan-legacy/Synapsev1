@@ -10,8 +10,10 @@ Evaluates foundational signal properties before running complex inferential engi
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
+import warnings
 import numpy as np
 import scipy.stats as stats
+from statsmodels.tools.sm_exceptions import InterpolationWarning
 from statsmodels.tsa.stattools import adfuller, kpss
 
 from synapse_core.models.signal import Signal
@@ -99,14 +101,16 @@ def run_preflight_diagnostics(signal: Signal, channel_index: int = 0) -> Preflig
     if n >= 32 and not is_const and not has_nan_inf:
         stat_sub = vals[:2500] if len(vals) > 2500 else vals
         try:
-            adf_res = adfuller(stat_sub, autolag="AIC")
-            adf_p = float(adf_res[1])
+            adf_res = adfuller(stat_sub, autolag="AIC", result_object=True)
+            adf_p = float(adf_res.pvalue)
         except Exception:
             adf_p = 1.0
 
         try:
-            kpss_res = kpss(stat_sub, regression="c", nlags="auto")
-            kpss_p = float(kpss_res[1])
+            with warnings.catch_warnings(record=True):
+                warnings.simplefilter("always", InterpolationWarning)
+                kpss_res = kpss(stat_sub, regression="c", nlags="auto", result_object=True)
+                kpss_p = float(kpss_res.pvalue)
         except Exception:
             kpss_p = 0.0
 

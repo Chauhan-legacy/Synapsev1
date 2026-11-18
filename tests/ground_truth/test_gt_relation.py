@@ -57,3 +57,42 @@ def test_gt_spectral_coherence_shared_tone_in_noise():
     res = compute_spectral_coherence(ch1, ch2, sampling_rate=fs, n_perseg=128)
     assert abs(res.peak_frequency_hz - 30.0) <= 2.0, f"Coherence peak {res.peak_frequency_hz} Hz != 30 Hz"
     assert res.peak_coherence > res.significance_threshold_95, "Peak coherence did not exceed Carter threshold"
+
+
+def test_gt_dataset_j_delay_aware_granger_causality():
+    """
+    Ground-truth validation on Dataset J (30,000 samples, 4 channels):
+    - Channel 1 drives Channel 3 with a 40-sample (4.0s) propagation delay.
+    - Channel 1 drives Channel 2 with zero delay.
+    - Channel 4 is independent background noise (no link).
+    """
+    from pathlib import Path
+    import pandas as pd
+
+    data_path = Path(__file__).resolve().parent.parent.parent / "benchmarks" / "SYNAPSE_BENCHMARK_DATA" / "data" / "J_master_discovery_challenge.csv"
+    if not data_path.exists():
+        pytest.skip("Dataset J not found")
+
+    df = pd.read_csv(data_path)
+    c1 = df["channel_1"].values
+    c2 = df["channel_2"].values
+    c3 = df["channel_3"].values
+    c4 = df["channel_4"].values
+    fs = 10.0
+
+    # 1. Channel 1 -> Channel 3 (Delayed coupling: 40 samples = 4.0s)
+    res_13 = compute_granger_causality(c1, c3, max_lag=5, differencing=True, max_align_lag=50, sampling_rate=fs)
+    assert res_13.aligned, "Failed to detect cross-channel delay between channel_1 and channel_3"
+    assert res_13.estimated_lag == 40, f"Estimated lag was {res_13.estimated_lag}, expected 40"
+    assert res_13.x_causes_y.is_significant, f"Channel 1 -> Channel 3 forward driving failed: p={res_13.x_causes_y.p_value}"
+    assert not res_13.y_causes_x.is_significant, f"Channel 3 -> Channel 1 reverse spurious link: p={res_13.y_causes_x.p_value}"
+
+    # 2. Channel 1 -> Channel 2 (Instantaneous one-way driving)
+    res_12 = compute_granger_causality(c1, c2, max_lag=5, differencing=True, max_align_lag=50, sampling_rate=fs)
+    assert res_12.x_causes_y.is_significant, f"Channel 1 -> Channel 2 forward driving failed: p={res_12.x_causes_y.p_value}"
+    assert not res_12.y_causes_x.is_significant, f"Channel 2 -> Channel 1 reverse link: p={res_12.y_causes_x.p_value}"
+
+    # 3. Channel 1 -> Channel 4 (Uncorrelated noise, no link)
+    res_14 = compute_granger_causality(c1, c4, max_lag=5, differencing=True, max_align_lag=50, sampling_rate=fs)
+    assert not res_14.x_causes_y.is_significant, f"Channel 1 -> Channel 4 false link: p={res_14.x_causes_y.p_value}"
+    assert not res_14.y_causes_x.is_significant, f"Channel 4 -> Channel 1 false link: p={res_14.y_causes_x.p_value}"

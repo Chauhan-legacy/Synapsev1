@@ -29,6 +29,9 @@ class GrangerCausalityResult:
     directional_summary: str            # "X -> Y", "Y -> X", "Feedback (X <-> Y)", "No Causality"
     differenced: bool = False
     prewhitened: bool = False
+    estimated_lag: int = 0
+    lag_seconds: float = 0.0
+    aligned: bool = False
 
 
 def compute_granger_causality(
@@ -38,14 +41,62 @@ def compute_granger_causality(
     alpha: float = 0.05,
     differencing: bool = False,
     prewhiten: bool = False,
+    max_align_lag: int = 50,
+    sampling_rate: Optional[float] = None,
 ) -> GrangerCausalityResult:
     """
     Test Granger causality between X and Y in both directions.
-    Optionally applies differencing or AR prewhitening to remove shared non-stationary drift and coloured noise.
+    Optionally applies delay-aware alignment, differencing, or AR prewhitening.
     Adjusts p-values across both directions using Benjamini-Hochberg FDR control.
     """
-    x = np.asarray(channel_x, dtype=np.float64)
-    y = np.asarray(channel_y, dtype=np.float64)
+    x_raw = np.asarray(channel_x, dtype=np.float64)
+    y_raw = np.asarray(channel_y, dtype=np.float64)
+
+    n_raw = len(x_raw)
+    if len(y_raw) != n_raw:
+        raise ValidationError("Channels must have identical length for Granger causality.")
+    if n_raw < 32:
+        raise ValidationError("Need at least 32 samples for Granger causality test.")
+
+    # 0. Delay-Aware Cross-Correlation Alignment
+    estimated_lag = 0
+    lag_seconds = 0.0
+    aligned = False
+
+    if max_align_lag > 0 and n_raw >= max_align_lag * 2:
+        sx = float(np.std(x_raw))
+        sy = float(np.std(y_raw))
+        if sx > 1e-12 and sy > 1e-12:
+            x_norm = (x_raw - np.mean(x_raw)) / sx
+            y_norm = (y_raw - np.mean(y_raw)) / sy
+            best_lag = 0
+            best_r = 0.0
+            for k in range(-max_align_lag, max_align_lag + 1):
+                if k > 0:
+                    r_k = float(np.mean(x_norm[:-k] * y_norm[k:]))
+                elif k < 0:
+                    r_k = float(np.mean(x_norm[-k:] * y_norm[:k]))
+                else:
+                    r_k = float(np.mean(x_norm * y_norm))
+                if abs(r_k) > abs(best_r):
+                    best_r = r_k
+                    best_lag = k
+
+            if best_lag != 0 and abs(best_r) >= 0.15:
+                estimated_lag = best_lag
+                fs = sampling_rate if (sampling_rate and sampling_rate > 0) else 1.0
+                lag_seconds = float(best_lag / fs)
+                if abs(best_lag) > max_lag:
+                    aligned = True
+                    if best_lag > 0:
+                        x_raw = x_raw[:-best_lag]
+                        y_raw = y_raw[best_lag:]
+                    else:
+                        x_raw = x_raw[-best_lag:]
+                        y_raw = y_raw[:best_lag]
+
+    x = x_raw
+    y = y_raw
 
     if differencing:
         x = np.diff(x)
@@ -168,4 +219,7 @@ def compute_granger_causality(
         directional_summary=summary,
         differenced=differencing,
         prewhitened=prewhiten,
+        estimated_lag=estimated_lag,
+        lag_seconds=lag_seconds,
+        aligned=aligned,
     )

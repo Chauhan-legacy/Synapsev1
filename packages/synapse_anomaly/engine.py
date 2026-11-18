@@ -24,6 +24,7 @@ from synapse_anomaly.zscore import compute_robust_zscore
 from synapse_anomaly.cusum import compute_cusum
 from synapse_anomaly.changepoint import detect_change_points
 from synapse_anomaly.isolation_forest import compute_isolation_forest_anomalies
+from synapse_anomaly.variance_shift import detect_variance_shifts
 
 
 class AnomalyEngine(AnalysisEngine):
@@ -129,7 +130,30 @@ class AnomalyEngine(AnalysisEngine):
                 )
             )
 
-        # 3. Isolation Forest (if requested or default)
+        # 3. Structural Variance Shifts (Brown-Forsythe / Levene)
+        var_shifts = detect_variance_shifts(vals)
+        for vs in var_shifts:
+            if vs.is_significant:
+                findings.append(
+                    Finding(
+                        label=f"Volatility Regime Shift ({vs.variance_ratio:.2f}x) at samples [{vs.start_index}:{vs.end_index}]",
+                        finding_type=FindingType.CHANGE_POINT,
+                        value=float(vs.start_index),
+                        unit="sample",
+                        confidence_level=min(0.999, 1.0 - vs.p_value),
+                        status=FindingStatus.CONFIRMED,
+                        details={
+                            "start_index": vs.start_index,
+                            "end_index": vs.end_index,
+                            "variance_ratio": vs.variance_ratio,
+                            "levene_statistic": vs.levene_statistic,
+                            "p_value": vs.p_value,
+                            "method": "Brown-Forsythe Levene",
+                        },
+                    )
+                )
+
+        # 4. Isolation Forest (if requested or default)
         run_if = cfg.get("run_isolation_forest", True)
         contamination = cfg.get("contamination", 0.02)
         if run_if:
@@ -143,6 +167,7 @@ class AnomalyEngine(AnalysisEngine):
             "robust_mad": MetricValue("Baseline MAD", mad, "units", "Median Absolute Deviation."),
             "transient_events_count": MetricValue("Detected Outlier Events", float(len(events)), "events"),
             "change_points_count": MetricValue("Detected Change Points", float(len(cps)), "points"),
+            "variance_shifts_count": MetricValue("Detected Variance Shifts", float(len([v for v in var_shifts if v.is_significant])), "shifts"),
             "isolation_forest_anomalies": MetricValue("Isolation Forest Anomalies", float(total_if_anom), "samples"),
         }
 
