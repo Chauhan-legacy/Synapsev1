@@ -51,7 +51,7 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-6xl mx-auto">
+    <div className="space-y-5 w-full">
       <div>
         <h1 className="text-base font-bold text-primary">Datasets & Preprocessing Pipeline</h1>
         <p className="text-xs text-secondary mt-0.5">
@@ -233,6 +233,66 @@ export const DatasetsView: React.FC<DatasetsViewProps> = () => {
             />
             <span className="text-primary font-medium">Unit Variance Normalization (Z-score)</span>
           </label>
+        </div>
+      </div>
+
+      {/* 100-Row Fast Tabular Preview */}
+      <div className="surface-base border rounded-md p-4 space-y-2">
+        <div className="flex items-center justify-between border-b pb-2">
+          <div className="font-semibold text-xs text-primary flex items-center gap-2">
+            <span>First 100 Rows Preview</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-[#9CAF88]/20 text-[#252925] font-semibold border border-[#252925]/20">
+              Virtualized Tabular Buffer
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-muted">
+            Displaying rows 1 – {Math.min(100, activeSignal.timestamps?.length || 0)} of {activeSignal.quality.total_samples.toLocaleString()}
+          </span>
+        </div>
+
+        <div className="max-h-64 overflow-y-auto border border-[#252925]/20 rounded-md bg-[#FFFFFF] shadow-2xs">
+          <table className="w-full text-left text-xs font-mono">
+            <thead className="sticky top-0 bg-[#F7F5EF] border-b border-[#252925]/20 text-[10px] text-muted z-10 font-sans">
+              <tr>
+                <th className="py-1.5 px-3">Row</th>
+                <th className="py-1.5 px-3">Timestamp (s)</th>
+                {activeSignal.channelNames.map((name) => (
+                  <th key={name} className="py-1.5 px-3 truncate max-w-[150px]">{name}</th>
+                ))}
+                <th className="py-1.5 px-3">Validity</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#252925]/10 text-[11px]">
+              {Array.from({ length: Math.min(100, activeSignal.timestamps?.length || 0) }).map((_, idx) => {
+                const t = activeSignal.timestamps?.[idx] ?? idx;
+                const isAllValid = activeSignal.channelNames.every((ch) => {
+                  const val = activeSignal.channels[ch]?.[idx];
+                  return val !== undefined && !Number.isNaN(val);
+                });
+
+                return (
+                  <tr key={idx} className="hover:bg-[#F7F5EF]/60 transition-colors">
+                    <td className="py-1 px-3 text-muted">{idx + 1}</td>
+                    <td className="py-1 px-3 font-semibold text-primary">{t.toFixed(4)}</td>
+                    {activeSignal.channelNames.map((ch) => {
+                      const val = activeSignal.channels[ch]?.[idx];
+                      const isNan = val === undefined || Number.isNaN(val);
+                      return (
+                        <td key={ch} className={`py-1 px-3 ${isNan ? 'text-[#E8412C] font-bold' : 'text-[#252925]'}`}>
+                          {isNan ? 'NaN (Gapped)' : (val as number).toFixed(4)}
+                        </td>
+                      );
+                    })}
+                    <td className="py-1 px-3">
+                      <span className={`inline-block px-1.5 py-0.2 rounded text-[9px] font-sans font-semibold ${isAllValid ? 'bg-[#9CAF88]/30 text-[#252925]' : 'bg-[#E8412C]/20 text-[#E8412C]'}`}>
+                        {isAllValid ? 'Valid' : 'Gapped'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

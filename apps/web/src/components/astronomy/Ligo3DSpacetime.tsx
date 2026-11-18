@@ -250,7 +250,7 @@ export const Ligo3DSpacetime: React.FC<Ligo3DSpacetimeProps> = () => {
     drawScene();
   }, [drawScene]);
 
-  // Handle Resize
+  // Handle Resize with ResizeObserver & High-DPI scaling
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -258,20 +258,18 @@ export const Ligo3DSpacetime: React.FC<Ligo3DSpacetimeProps> = () => {
     if (!parent) return;
 
     const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = parent.clientWidth || 600;
       const h = parent.clientHeight || 380;
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
       drawScene();
     };
 
     resize();
-    const timer = setTimeout(resize, 50);
-    window.addEventListener('resize', resize);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', resize);
-    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(parent);
+    return () => observer.disconnect();
   }, [drawScene]);
 
   // Mouse Drag Handlers

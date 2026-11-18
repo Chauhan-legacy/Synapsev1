@@ -71,10 +71,67 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
     }
     if (!foundMin) tauStar = 6;
 
-    // 2. False Nearest Neighbours (FNN)
+    // 2. Real Kennel False Nearest Neighbours (FNN) Algorithm (Kennel et al. 1992)
     const fnnDims = [1, 2, 3, 4, 5, 6, 7, 8];
-    const fnnValues = [78.4, 32.1, 8.5, 1.8, 0.4, 0.2, 0.1, 0.0];
-    const mStar = 4;
+    const fnnValues: number[] = [];
+    const tauFnn = tauStar;
+    const rTol = 15.0;
+    const aTol = 2.0;
+    const subN_Fnn = Math.min(sample.length - 8 * tauFnn, 150);
+
+    let mStar = 3;
+    let foundM = false;
+
+    for (const d of fnnDims) {
+      if (subN_Fnn <= 10) {
+        fnnValues.push(0);
+        continue;
+      }
+      let falseCount = 0;
+      let validCount = 0;
+
+      for (let i = 0; i < subN_Fnn; i++) {
+        let minDistSq = Infinity;
+        let nnIdx = -1;
+
+        for (let j = 0; j < subN_Fnn; j++) {
+          if (i === j) continue;
+          let distSq = 0;
+          for (let k = 0; k < d; k++) {
+            const diff = sample[i + k * tauFnn] - sample[j + k * tauFnn];
+            distSq += diff * diff;
+          }
+          if (distSq > 1e-12 && distSq < minDistSq) {
+            minDistSq = distSq;
+            nnIdx = j;
+          }
+        }
+
+        if (nnIdx >= 0) {
+          validCount++;
+          const distD = Math.sqrt(minDistSq);
+          const nextDiff = Math.abs(sample[i + d * tauFnn] - sample[nnIdx + d * tauFnn]);
+          const isFalse1 = nextDiff / distD > rTol;
+          const isFalse2 = Math.sqrt(minDistSq + nextDiff * nextDiff) / std > aTol;
+
+          if (isFalse1 || isFalse2) {
+            falseCount++;
+          }
+        }
+      }
+
+      const fnnPct = validCount > 0 ? Number(((falseCount / validCount) * 100).toFixed(1)) : 0;
+      fnnValues.push(fnnPct);
+
+      if (!foundM && fnnPct < 5.0) {
+        mStar = d;
+        foundM = true;
+      }
+    }
+    if (!foundM) {
+      const minFnn = Math.min(...fnnValues);
+      mStar = fnnDims[fnnValues.indexOf(minFnn)] || 4;
+    }
 
     // 3. Sample Entropy (SampEn)
     const rThresh = 0.2 * std;
@@ -332,7 +389,7 @@ export const DynamicsView: React.FC<DynamicsViewProps> = ({ onOpenMethodCard }) 
   }, [resultsByModule, embeddingLag, dynamicsData]);
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto font-sans pb-16">
+    <div className="space-y-4 w-full font-georgia pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#DDD6C7]">
         <div>

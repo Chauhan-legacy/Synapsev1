@@ -48,6 +48,7 @@ export type WorkbenchView =
   | 'anomalies'
   | 'dynamics'
   | 'relations'
+  | 'cdco'
   | 'astronomy'
   | 'physics'
   | 'biosignals'
@@ -134,6 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: 'anomalies', label: 'Anomalies & Events', icon: AlertOctagon },
         { id: 'dynamics', label: 'Dynamics & Structure', icon: GitBranch },
         { id: 'relations', label: 'Relations Lab', icon: Network },
+        { id: 'cdco', label: 'Cross-Dataset Observatory', icon: Network },
       ],
     },
     {
@@ -190,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'done':
         return (
           <span
-            className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0"
+            className="w-2 h-2 rounded-full bg-[#E8412C] inline-block shrink-0"
             title="Module executed: done"
             aria-label="Status: done"
           />
@@ -198,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'running':
         return (
           <span
-            className="w-2 h-2 rounded-full bg-blue-500 animate-pulse inline-block shrink-0"
+            className="w-2 h-2 rounded-full bg-[#E8412C] animate-pulse inline-block shrink-0"
             title="Module computation: running"
             aria-label="Status: running"
           />
@@ -206,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'needs_attention':
         return (
           <span
-            className="w-2 h-2 rounded-full bg-amber-500 inline-block shrink-0"
+            className="w-2 h-2 rounded-full bg-[#E8412C] inline-block shrink-0"
             title="Module: needs attention"
             aria-label="Status: needs attention"
           />
@@ -215,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       default:
         return (
           <span
-            className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 inline-block shrink-0"
+            className="w-2 h-2 rounded-full bg-[#252925]/30 inline-block shrink-0"
             title="Module status: Not run"
             aria-label="Status: not run"
           />
@@ -224,16 +226,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const content = (
-    <div className="flex flex-col h-full bg-[#FFFFFF] border-r border-[#DDD6C7] select-none text-[#1F2430]">
+    <div className="flex flex-col h-full bg-[#9CAF88] border-r border-[#252925]/20 select-none text-[#252925]">
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between h-14 px-3 border-b border-[#DDD6C7]">
+      <div className="flex items-center justify-between h-14 px-3 border-b border-[#252925]/20 bg-[#9CAF88]">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="w-7 h-7 rounded-lg bg-[#0F766E] flex items-center justify-center text-white font-bold text-xs shrink-0 font-mono shadow-2xs">
+          <div className="w-7 h-7 rounded-lg bg-[#252925] flex items-center justify-center text-[#F7F5EF] font-bold text-xs shrink-0 font-georgia shadow-2xs">
             S
           </div>
           {!collapsed && (
-            <div className="truncate font-semibold tracking-wide text-xs text-[#1F2430] font-mono uppercase">
-              SYNAPSE <span className="text-[10px] text-[#6B6F7B] font-sans font-normal lowercase">v1</span>
+            <div className="truncate font-semibold tracking-wide text-xs text-[#252925] font-georgia uppercase">
+              SYNAPSE <span className="text-[10px] text-[#252925]/70 font-normal lowercase">v1</span>
             </div>
           )}
         </div>
@@ -242,7 +244,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="lg:hidden p-1 rounded text-[#6B6F7B] hover:text-[#1F2430]"
+            className="lg:hidden p-1 rounded text-[#252925]/70 hover:text-[#252925]"
             aria-label="Close navigation"
           >
             <X className="w-5 h-5" />
@@ -251,7 +253,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex p-1 rounded text-[#6B6F7B] hover:text-[#1F2430] transition-colors"
+            className="hidden lg:flex p-1 rounded text-[#252925]/70 hover:text-[#252925] transition-colors"
             title={collapsed ? 'Expand sidebar (240px)' : 'Collapse to icon rail (64px)'}
             aria-label="Toggle sidebar width"
           >
@@ -261,7 +263,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Nav Groups Scrollable Area */}
-      <div className="flex-1 overflow-y-auto py-2 space-y-4 px-2">
+      <div className="flex-1 overflow-y-auto py-2 space-y-4 px-2 font-georgia">
         {navGroups.map((group) => {
           const isGroupCollapsed = collapsedGroups[group.title] && !collapsed;
           return (
@@ -270,11 +272,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleGroup(group.title)}
-                  className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-semibold text-[#6B6F7B] uppercase tracking-wider hover:text-[#1F2430]"
+                  className="w-full flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-[#252925]/80 uppercase tracking-wider hover:text-[#252925]"
                 >
                   <span>{group.title}</span>
                   <ChevronDown
-                    className={`w-3 h-3 transition-transform ${isGroupCollapsed ? '-rotate-90' : ''}`}
+                    className={`w-3 h-3 text-[#252925]/70 transition-transform ${isGroupCollapsed ? '-rotate-90' : ''}`}
                   />
                 </button>
               )}
@@ -293,14 +295,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           onCloseMobile();
                         }}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${isActive
-                          ? 'bg-[#0F766E] text-white shadow-2xs font-semibold'
-                          : 'text-[#4A5060] hover:text-[#1F2430] hover:bg-[#EFEBE0]'
+                          ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] shadow-xs font-bold'
+                          : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                           } ${collapsed ? 'justify-center px-1' : ''}`}
                         title={collapsed ? item.label : undefined}
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
-                        {!collapsed && <span className="truncate flex-1 text-left font-mono">{item.label}</span>}
+                        {!collapsed && <span className="truncate flex-1 text-left font-georgia">{item.label}</span>}
                         {!collapsed && renderStatusDot(item.id)}
                       </button>
                     );
@@ -319,30 +321,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
       />
 
       {/* Pinned Bottom Actions */}
-      <div className="p-2 border-t border-[#DDD6C7] space-y-1">
+      <div className="p-2 border-t border-[#252925]/20 bg-[#9CAF88] space-y-1">
         <button
           type="button"
           onClick={onOpenAccessibility}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${collapsed ? 'justify-center px-1' : ''
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#252925] hover:bg-[#F7F5EF]/50 transition-colors ${collapsed ? 'justify-center px-1' : ''
             }`}
           title="Accessibility & Themes"
         >
-          <Sliders className="w-4 h-4 shrink-0 text-[#B45F1B]" />
+          <Sliders className="w-4 h-4 shrink-0 text-[#252925]" />
           {!collapsed && <span className="font-mono">Accessibility</span>}
         </button>
 
         <button
           type="button"
           onClick={onOpenShortcuts}
-          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#57534E] hover:text-[#10141C] hover:bg-[#F2EFE9] transition-colors ${collapsed ? 'justify-center px-1' : ''
+          className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs text-[#252925] hover:bg-[#F7F5EF]/50 transition-colors ${collapsed ? 'justify-center px-1' : ''
             }`}
           title="Keyboard shortcuts (?)"
         >
-          <HelpCircle className="w-4 h-4 shrink-0" />
+          <HelpCircle className="w-4 h-4 shrink-0 text-[#252925]" />
           {!collapsed && (
             <div className="flex items-center justify-between flex-1 font-mono">
               <span>Shortcuts</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#EFEBE0] rounded border border-[#DDD6C7]">?</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-[#F7F5EF] text-[#252925] rounded border border-[#252925]/30">?</kbd>
             </div>
           )}
         </button>

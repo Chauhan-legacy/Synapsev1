@@ -47,6 +47,12 @@ data/synapse_pure_linear_*.csv
 data/geophysical_sensor_*.csv
 data/deep_signal_processing_*.csv
 data/synapse_ultimate_stress_*.csv
+data/benchmarks/
+data/EXTREME.csv
+data/SYNAPSE_699K_NOISE_DATA.csv
+data/SYNAPSE_COMPLETE_DATASET.zip
+data/India_App_Testing_Route.csv
+tmp_cdco/
 
 # Node / Frontend
 node_modules/

@@ -103,6 +103,10 @@ self.onmessage = (e: MessageEvent<CsvParseWorkerMessage>) => {
       if (isFirstRow) {
         isFirstRow = false;
         const first = rows[0];
+        // Strip UTF-8 Byte Order Mark (BOM) if present
+        if (first && first[0] && typeof first[0] === 'string' && first[0].charCodeAt(0) === 0xFEFF) {
+          first[0] = first[0].slice(1);
+        }
         const firstValIsNum = !isNaN(Number(first[0]?.trim()));
 
         if (!firstValIsNum) {
@@ -154,23 +158,23 @@ self.onmessage = (e: MessageEvent<CsvParseWorkerMessage>) => {
         const row = rows[r];
         if (!row || row.length === 0) continue;
 
-        // Timestamp
+        // Timestamp (parseFloat natively handles whitespace without allocating strings)
         let tVal = 0;
         if (hasTimeCol && row.length > 0) {
-          const parsedT = parseFloat(row[0].trim());
+          const parsedT = parseFloat(row[0]);
           tVal = isNaN(parsedT) ? rowsParsed : parsedT;
         } else {
           tVal = rowsParsed;
         }
         chunkTime.push(tVal);
 
-        // Channels
+        // Channels (fast parse without string trimming allocations)
         for (let c = 0; c < totalChannels; c++) {
           const colIdx = c + dataOffset;
           const chName = channelNames[c];
           if (colIdx < row.length) {
             const raw = row[colIdx];
-            const v = parseFloat(raw?.trim());
+            const v = parseFloat(raw);
             if (isNaN(v)) {
               nanCount++;
               chunkData[chName].push(0.0);

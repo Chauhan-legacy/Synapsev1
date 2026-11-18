@@ -7,14 +7,19 @@
   --density-padding: 0.5rem;
 }
 
-/* Base Body Styling: Single fixed Paper Teal look */
-html, body {
+/* Base Body Styling: Botanical Signal (Georgia is Primary Font) */
+html,
+body {
   background-color: var(--color-bg-page);
-  color: var(--color-text-ink);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--color-charcoal);
+  font-family: Georgia, "Times New Roman", serif;
   min-height: 100vh;
   margin: 0;
   padding: 0;
+}
+
+.font-georgia {
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 /* Text Size Scalers */
@@ -22,14 +27,17 @@ html, body {
   --font-scale: 0.875rem;
   font-size: 14px;
 }
+
 [data-text-size="md"] {
   --font-scale: 1rem;
   font-size: 16px;
 }
+
 [data-text-size="lg"] {
   --font-scale: 1.15rem;
   font-size: 18px;
 }
+
 [data-text-size="xl"] {
   --font-scale: 1.3rem;
   font-size: 20px;
@@ -40,6 +48,7 @@ html, body {
   --line-height-scale: 1.5;
   line-height: 1.5;
 }
+
 [data-line-spacing="relaxed"] {
   --line-height-scale: 1.8;
   line-height: 1.8;
@@ -49,6 +58,7 @@ html, body {
 [data-density="compact"] {
   --density-padding: 0.35rem;
 }
+
 [data-density="comfortable"] {
   --density-padding: 0.75rem;
 }
@@ -60,7 +70,7 @@ html, body {
   word-spacing: 0.1em;
 }
 
-/* Always show focus rings */
+/* Focus rings with Signal Red */
 .always-focus-rings *:focus-visible {
   outline: 2px solid var(--color-accent) !important;
   outline-offset: 2px !important;
@@ -75,15 +85,15 @@ html, body {
   min-width: 44px;
 }
 
-/* Visible, elegant scientific parchment scrollbar */
+/* Visible, crisp scientific scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-border) var(--color-bg-page);
+  scrollbar-color: var(--color-sage) var(--color-bg-page);
 }
 
 ::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -91,43 +101,84 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--color-sage);
   border-radius: 4px;
-  border: 2px solid var(--color-bg-page);
+  border: 1px solid var(--color-bg-page);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #C4BCAC;
+  background: var(--color-charcoal);
 }
 
-/* Standardized Semantic Surface Classes (Fixed Single Palette) */
+/* Standardized Semantic Surface Classes — Botanical Signal System */
+/* 30% Off-white content cards */
 .surface-base {
   background-color: var(--color-bg-panel);
   border-color: var(--color-border);
+  color: var(--color-text-ink);
 }
 
 .surface-subtle {
   background-color: var(--color-bg-tint);
   border-color: var(--color-border);
-}
-
-.text-primary {
   color: var(--color-text-ink);
 }
 
+/* 60% Sage Green Surfaces */
+.surface-sage {
+  background-color: var(--color-sage);
+  border-color: var(--color-border-subtle);
+  color: var(--color-charcoal);
+}
+
+.surface-offwhite {
+  background-color: var(--color-bg-page);
+  border-color: var(--color-border);
+  color: var(--color-text-ink);
+}
+
+.text-primary {
+  color: var(--color-charcoal);
+}
+
 .text-secondary {
-  color: var(--color-text-secondary);
+  color: var(--color-charcoal);
+  opacity: 0.85;
 }
 
 .text-muted {
-  color: var(--color-text-muted);
+  color: var(--color-charcoal);
+  opacity: 0.70;
 }
 
-/* Graticule grid pattern for engineering charts */
+.text-on-dark {
+  color: var(--color-charcoal);
+}
+
+/* 10% Signal Red Accent utilities */
+.border-signal {
+  border-color: var(--color-accent);
+}
+
+.bg-signal {
+  background-color: var(--color-accent);
+}
+
+.text-signal {
+  color: var(--color-accent);
+}
+
+.badge-signal {
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+/* Subtle Engineering Graticule */
 .chart-graticule {
-  background-image: 
-    linear-gradient(to right, rgba(221, 214, 199, 0.5) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(221, 214, 199, 0.5) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, rgba(37, 41, 37, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 41, 37, 0.08) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
@@ -135,11 +186,15 @@ html, body {
 @media print {
   body {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #252925 !important;
   }
-  aside, nav, .no-print {
+
+  aside,
+  nav,
+  .no-print {
     display: none !important;
   }
+
   main {
     width: 100% !important;
     margin: 0 !important;

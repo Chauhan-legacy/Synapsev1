@@ -19,6 +19,7 @@ import {
   Link2,
   Radio,
   ExternalLink,
+  X,
 } from 'lucide-react';
 import { useSignal } from '../../context/SignalContext';
 import {
@@ -427,13 +428,17 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
         for (let i = 0; i < bufferLength / 2; i++) {
           const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
-          ctx.fillStyle = '#1F2430';
+          const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+          gradient.addColorStop(0, '#9CAF88');
+          gradient.addColorStop(0.6, '#E8412C');
+          gradient.addColorStop(1, '#252925');
+          ctx.fillStyle = gradient;
           ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
           x += barWidth;
         }
       } else {
         // Gentle wave idle state
-        ctx.strokeStyle = '#1F2430';
+        ctx.strokeStyle = '#9CAF88';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         const sliceWidth = canvas.width / 20;
@@ -599,145 +604,20 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Collapsed Minimal Sidebar Pill
-  if (!isExpanded) {
-    return (
-      <div className="w-full p-2 border-t border-[#DDD6C7] bg-[#FFFFFF] font-mono">
-        <div
-          onClick={() => setIsExpanded(true)}
-          className="cursor-pointer group flex items-center justify-between p-2 rounded-lg bg-[#F7F0D6] border border-[#E6DFC6] hover:shadow-xs transition"
-          title="Click to open full Music Player"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Soft sage square album art */}
-            <div className="w-8 h-8 rounded-md bg-[#8FAE8B] flex items-center justify-center shrink-0 text-[#1F2430]">
-              {isPlaying ? <Activity className="w-4 h-4 animate-pulse" /> : <Sparkles className="w-4 h-4" />}
-            </div>
-            {!collapsedSidebar && (
-              <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-[#1F2430] truncate">
-                  {activeEmbed ? activeEmbed.title : (currentTrack?.title || 'Ambient Chords')}
-                </span>
-                <span className="text-[9px] text-[#6B6F7B] truncate flex items-center gap-1">
-                  {activeEmbed ? (
-                    <span className="text-[#0F766E] font-semibold uppercase">{activeEmbed.provider} Stream</span>
-                  ) : (
-                    currentTrack?.artist || '432 Hz Resonant'
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
+  // Keyboard Escape listener to minimize expanded player
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isExpanded) {
+        setIsExpanded(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isExpanded]);
 
-          {!collapsedSidebar && (
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePlay();
-                }}
-                className="w-7 h-7 rounded-full bg-[#8FAE8B] hover:bg-[#7D9D79] text-[#1F2430] flex items-center justify-center transition"
-              >
-                {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // -------------------------------------------------------------
-  // VIEW 1: ACTIVE THIRD-PARTY STREAMING EMBED (YouTube, Spotify, Apple)
-  // Uncluttered, modern, elegant widget design
-  // -------------------------------------------------------------
-  if (activeEmbed && activeEmbed.provider !== 'direct') {
-    return (
-      <div className="w-full p-2 border-t border-[#DDD6C7] bg-[#FFFFFF] font-mono">
-        <div className="relative rounded-2xl bg-[#F7F0D6] border border-[#E6DFC6] p-3 shadow-sm flex flex-col gap-2.5 transition">
-          {/* Sleek Top Header */}
-          <div className="flex items-center justify-between text-[#1F2430] text-[11px]">
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span
-                className={`w-2 h-2 rounded-full animate-pulse ${
-                  activeEmbed.provider === 'spotify'
-                    ? 'bg-green-500'
-                    : activeEmbed.provider === 'youtube'
-                    ? 'bg-red-500'
-                    : 'bg-pink-500'
-                }`}
-              />
-              <span className="font-bold uppercase tracking-wider text-[10px]">
-                {activeEmbed.provider} Stream
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 text-[10px]">
-              <a
-                href={activeEmbed.originalUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[#6B6F7B] hover:text-[#1F2430] flex items-center gap-0.5 hover:underline"
-                title="Open stream in external tab"
-              >
-                Open <ExternalLink className="w-2.5 h-2.5" />
-              </a>
-              <button
-                type="button"
-                onClick={() => setActiveEmbed(null)}
-                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-red-100 text-red-600 font-bold transition text-[10px]"
-                title="Detach stream and return to internal synth"
-              >
-                Detach
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsExpanded(false)}
-                className="p-1 rounded hover:bg-[#EFE8CC] text-[#6B6F7B] transition"
-                title="Minimize player"
-              >
-                <Minimize2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Video / Track Player (Hero Centerpiece) */}
-          <div className="rounded-xl overflow-hidden border border-[#DDD6C7] bg-black shadow-inner">
-            <iframe
-              src={activeEmbed.embedUrl}
-              width="100%"
-              height={activeEmbed.provider === 'youtube' ? '155' : activeEmbed.provider === 'spotify' ? '80' : '110'}
-              frameBorder="0"
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              title={activeEmbed.title}
-              className="w-full block"
-            />
-          </div>
-
-          {/* Action: Single Prominent Button to Bridge into SYNAPSE Analytics */}
-          <button
-            type="button"
-            onClick={handleAnalyseThisSong}
-            className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#0F766E] hover:bg-[#0B5E58] text-white text-xs font-bold shadow-xs transition active:scale-95"
-            title="Inject audio stream buffer into SYNAPSE analytical pipeline for Fourier & Wavelet investigation"
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Analyse this song</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // -------------------------------------------------------------
-  // VIEW 2: NATIVE / 432Hz SYNTH / LOCAL AUDIO PLAYER
-  // Spacious, minimalist, beautiful pastel cream & soft sage design
-  // -------------------------------------------------------------
   return (
-    <div className="w-full p-2 border-t border-[#DDD6C7] bg-[#FFFFFF] font-mono">
-      {/* Hidden Audio Tag */}
+    <>
+      {/* Hidden Audio & File Inputs */}
       <audio
         ref={audioRef}
         onEnded={handleNext}
@@ -753,303 +633,416 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
         className="hidden"
       />
 
-      {/* Main Pastel Cream Container */}
-      <div className="relative rounded-2xl bg-[#F7F0D6] border border-[#E6DFC6] p-3.5 shadow-md flex flex-col gap-3 transition">
-        {/* Top Header Row */}
-        <div className="flex items-center justify-between text-[#6B6F7B] text-[10px] gap-1">
-          <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
-            <span className="font-bold text-[#1F2430] uppercase text-[11px] tracking-wider">Audio Lab</span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#EFE8CC] text-[#1F2430] font-semibold">
-              432Hz
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1 shrink-0">
-            {/* Stream Link Player Button */}
-            <button
-              type="button"
-              onClick={() => setShowUrlInput(!showUrlInput)}
-              title="Stream from Spotify, YouTube Music, Apple Music or direct audio link"
-              className={`p-1 rounded transition flex items-center ${
-                showUrlInput
-                  ? 'bg-[#0F766E] text-white font-bold'
-                  : 'hover:bg-[#EFE8CC] text-[#1F2430]'
-              }`}
-            >
-              <Link2 className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Upload Local Track */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              title="Upload Audio File (mp3, wav, flac)"
-              className="p-1 rounded hover:bg-[#EFE8CC] text-[#1F2430] transition"
-            >
-              <Upload className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Toggle Real-Time Visualizer */}
-            <button
-              type="button"
-              onClick={() => setShowVisualizer((v) => !v)}
-              title={showVisualizer ? 'Hide Audio Visualizer' : 'Show Audio Visualizer'}
-              className="p-1 rounded hover:bg-[#EFE8CC] text-[#1F2430] transition"
-            >
-              {showVisualizer ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            </button>
-
-            {/* Minimize */}
-            <button
-              type="button"
-              onClick={() => setIsExpanded(false)}
-              title="Minimize player"
-              className="p-1 rounded hover:bg-[#EFE8CC] text-[#1F2430] transition"
-            >
-              <Minimize2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Link Player Ingestion Drawer */}
-        {showUrlInput && (
-          <div className="p-2.5 rounded-xl bg-[#FFFFFF] border border-[#DDD6C7] shadow-xs flex flex-col gap-2">
-            <div className="flex items-center justify-between text-[10px] font-bold text-[#1F2430]">
-              <span className="flex items-center gap-1">
-                <Radio className="w-3 h-3 text-[#0F766E]" />
-                Paste Streaming Link
-              </span>
-              <span className="text-[9px] text-[#78716C]">Spotify / YouTube / Apple / MP3</span>
-            </div>
-
-            <div className="flex gap-1.5">
-              <input
-                type="text"
-                value={streamUrl}
-                onChange={(e) => {
-                  setStreamUrl(e.target.value);
-                  if (urlError) setUrlError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleConnectStream();
-                }}
-                placeholder="Paste Spotify, YouTube or Apple Music link..."
-                className="flex-1 px-2 py-1 text-xs font-mono bg-[#FFFDF9] border border-[#DDD6C7] rounded focus:outline-hidden focus:border-[#0F766E] text-[#1F2430]"
-              />
-              <button
-                type="button"
-                onClick={() => handleConnectStream()}
-                className="px-2.5 py-1 rounded bg-[#0F766E] hover:bg-[#0B5E58] text-white text-[10px] font-bold transition flex items-center gap-1 shrink-0"
-              >
-                <span>Connect</span>
-              </button>
-            </div>
-
-            {urlError && (
-              <p className="text-[10px] text-red-600 font-sans">{urlError}</p>
+      {/* 1. COLLAPSED MINIMAL SIDEBAR PILL (Always mounted, stable height) */}
+      <div className="w-full p-2 border-t border-[#252925]/20 bg-[#9CAF88]">
+        {collapsedSidebar ? (
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            className="w-10 h-10 mx-auto rounded-lg bg-[#F7F5EF] hover:bg-[#FFFFFF] border border-[#252925]/20 text-[#252925] flex items-center justify-center transition shadow-2xs"
+            title="Open Audio Lab (432 Hz)"
+          >
+            {isPlaying ? (
+              <Activity className="w-4 h-4 animate-pulse text-[#E8412C]" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-[#252925]" />
             )}
+          </button>
+        ) : (
+          <div
+            onClick={() => setIsExpanded(true)}
+            className="cursor-pointer group flex items-center justify-between p-2 rounded-lg bg-[#F7F5EF] border border-[#252925]/20 hover:border-[#252925] transition shadow-2xs"
+            title="Click to open Audio Lab"
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1 mr-1.5">
+              <div className="w-7 h-7 rounded-md bg-[#9CAF88]/30 border border-[#252925]/20 flex items-center justify-center shrink-0 text-[#252925]">
+                {isPlaying ? (
+                  <Activity className="w-3.5 h-3.5 animate-pulse text-[#E8412C]" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-[#252925]" />
+                )}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] font-georgia font-semibold text-[#252925] truncate">
+                  {activeEmbed ? activeEmbed.title : (currentTrack?.title || 'Ambient Resonant')}
+                </span>
+                <span className="text-[9px] text-[#252925]/70 truncate flex items-center gap-1 font-mono">
+                  {activeEmbed ? (
+                    <span className="text-[#E8412C] font-semibold uppercase">{activeEmbed.provider} Stream</span>
+                  ) : (
+                    currentTrack?.artist || '432 Hz Resonant'
+                  )}
+                </span>
+              </div>
+            </div>
 
-            {/* Quick Demo Preset Links */}
-            <div className="flex flex-wrap gap-1 text-[9px]">
-              <span className="text-[#78716C] self-center mr-0.5">Quick demo:</span>
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
-                onClick={() => handleConnectStream('https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT')}
-                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePlay();
+                }}
+                className="w-6 h-6 rounded-full bg-[#E8412C] hover:bg-[#D03522] text-[#F7F5EF] flex items-center justify-center transition shadow-2xs"
+                title={isPlaying ? 'Pause' : 'Play'}
               >
-                Spotify
-              </button>
-              <button
-                type="button"
-                onClick={() => handleConnectStream('https://www.youtube.com/watch?v=jfKfPfyJRdk')}
-                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
-              >
-                YouTube Lofi
-              </button>
-              <button
-                type="button"
-                onClick={() => handleConnectStream('https://music.apple.com/us/album/mozart-requiem/1452583842')}
-                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
-              >
-                Apple Music
-              </button>
-              <button
-                type="button"
-                onClick={() => handleConnectStream('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3')}
-                className="px-1.5 py-0.5 rounded bg-[#EFE8CC] hover:bg-[#E2D9B8] text-[#1F2430] border border-[#DDD6C7]"
-              >
-                Direct MP3
+                {isPlaying ? (
+                  <Pause className="w-3 h-3 fill-current" />
+                ) : (
+                  <Play className="w-3 h-3 fill-current ml-0.5" />
+                )}
               </button>
             </div>
           </div>
         )}
+      </div>
 
-        {/* Sage-Green Album Art with Waveform Canvas */}
-        <div className="relative w-full aspect-square rounded-2xl bg-[#8FAE8B] overflow-hidden flex flex-col items-center justify-center shadow-inner">
-          <canvas
-            ref={canvasRef}
-            width={200}
-            height={120}
-            className="w-full h-full object-cover opacity-80"
-          />
-          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between px-2 text-[9px] font-bold text-[#1F2430] bg-[#8FAE8B]/90 backdrop-blur-xs rounded">
-            <span className="truncate flex-1 mr-2">{currentTrack?.title || 'Ambient Resonant Chord'}</span>
-            <span className="shrink-0 font-mono">432 Hz</span>
-          </div>
-        </div>
+      {/* 2. EXPANDED FLOATING AUDIO LAB PANEL (Docked safely outside sidebar at all viewports) */}
+      {isExpanded && (
+        <>
+          {/* Non-modal Floating Botanical Audio Studio Card */}
+          <div
+            className={`fixed bottom-4 z-50 w-[340px] sm:w-[370px] max-w-[calc(100vw-2rem)] rounded-2xl bg-[#F7F5EF] border border-[#252925]/30 shadow-2xl p-4 flex flex-col gap-3 font-mono text-[#252925] animate-in fade-in zoom-in-95 ${
+              collapsedSidebar
+                ? 'left-4 md:left-20'
+                : 'left-1/2 -translate-x-1/2 md:translate-x-0 md:left-[272px]'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Header Row */}
+            <div className="flex items-center justify-between text-[11px] border-b border-[#252925]/20 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="font-georgia font-bold text-[#252925] uppercase tracking-wider text-xs">
+                  Audio Lab
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#9CAF88]/30 text-[#252925] font-bold border border-[#252925]/20 font-mono">
+                  432 Hz
+                </span>
+                {activeEmbed && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 text-[#E8412C] font-bold border border-[#E8412C]/30 uppercase font-mono">
+                    {activeEmbed.provider}
+                  </span>
+                )}
+              </div>
 
-        {/* Track Info & Heart */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex flex-col min-w-0 flex-1 mr-2">
-            <h4 className="text-xs font-bold text-[#1F2430] truncate">
-              {currentTrack?.title || 'Ambient Resonant Chords'}
-            </h4>
-            <p className="text-[10px] text-[#6B6F7B] truncate">
-              {currentTrack?.artist || 'SYNAPSE Harmonic Synthesizer'}
-            </p>
-          </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                  title="Stream from Spotify, YouTube, Apple Music or MP3 URL"
+                  className={`p-1.5 rounded transition ${
+                    showUrlInput
+                      ? 'bg-[#252925] text-[#F7F5EF] font-bold'
+                      : 'hover:bg-[#9CAF88]/20 text-[#252925]'
+                  }`}
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                </button>
 
-          <div className="flex items-center gap-1 shrink-0">
-            {tracks.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload local audio file"
+                  className="p-1.5 rounded hover:bg-[#9CAF88]/20 text-[#252925] transition"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowVisualizer((v) => !v)}
+                  title={showVisualizer ? 'Hide Visualizer' : 'Show Visualizer'}
+                  className="p-1.5 rounded hover:bg-[#9CAF88]/20 text-[#252925] transition"
+                >
+                  {showVisualizer ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  title="Minimize Audio Lab (Esc)"
+                  className="p-1.5 rounded hover:bg-[#9CAF88]/20 text-[#252925] transition"
+                >
+                  <Minimize2 className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  title="Close Audio Lab"
+                  className="p-1.5 rounded hover:bg-[#E8412C]/20 text-[#252925] hover:text-[#E8412C] transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* URL Streaming Ingestion Drawer */}
+            {showUrlInput && (
+              <div className="p-2.5 rounded-xl bg-[#FFFFFF] border border-[#252925]/20 shadow-inner flex flex-col gap-2">
+                <div className="flex items-center justify-between text-[10px] text-[#252925]/80">
+                  <span className="flex items-center gap-1 font-semibold text-[#252925]">
+                    <Radio className="w-3 h-3 text-[#E8412C]" />
+                    Paste Streaming URL
+                  </span>
+                  <span className="text-[9px]">Spotify / YouTube / Apple / MP3</span>
+                </div>
+
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    value={streamUrl}
+                    onChange={(e) => {
+                      setStreamUrl(e.target.value);
+                      if (urlError) setUrlError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleConnectStream();
+                    }}
+                    placeholder="Paste track or playlist link..."
+                    className="flex-1 px-2.5 py-1 text-xs font-mono bg-[#F7F5EF] border border-[#252925]/20 rounded text-[#252925] placeholder-[#252925]/40 focus:outline-hidden focus:border-[#252925]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleConnectStream()}
+                    className="px-2.5 py-1 rounded bg-[#252925] hover:bg-[#252925]/90 text-[#F7F5EF] text-[10px] font-bold transition shrink-0"
+                  >
+                    Connect
+                  </button>
+                </div>
+
+                {urlError && <p className="text-[10px] text-[#E8412C] font-sans">{urlError}</p>}
+
+                <div className="flex flex-wrap gap-1 text-[9px] pt-1">
+                  <span className="text-[#252925]/60 self-center mr-0.5">Quick demo:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleConnectStream('https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT')}
+                    className="px-1.5 py-0.5 rounded bg-[#9CAF88]/30 hover:bg-[#9CAF88]/50 text-[#252925] border border-[#252925]/20"
+                  >
+                    Spotify
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleConnectStream('https://www.youtube.com/watch?v=jfKfPfyJRdk')}
+                    className="px-1.5 py-0.5 rounded bg-[#9CAF88]/30 hover:bg-[#9CAF88]/50 text-[#252925] border border-[#252925]/20"
+                  >
+                    YouTube Lofi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleConnectStream('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3')}
+                    className="px-1.5 py-0.5 rounded bg-[#9CAF88]/30 hover:bg-[#9CAF88]/50 text-[#252925] border border-[#252925]/20"
+                  >
+                    Direct MP3
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Embedded Third-Party Stream Player */}
+            {activeEmbed && activeEmbed.provider !== 'direct' ? (
+              <div className="space-y-2">
+                <div className="rounded-xl overflow-hidden border border-[#252925]/20 bg-black shadow-inner">
+                  <iframe
+                    src={activeEmbed.embedUrl}
+                    width="100%"
+                    height={activeEmbed.provider === 'youtube' ? '150' : activeEmbed.provider === 'spotify' ? '80' : '100'}
+                    frameBorder="0"
+                    allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    title={activeEmbed.title}
+                    className="w-full block"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] px-1">
+                  <a
+                    href={activeEmbed.originalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#252925] hover:text-[#E8412C] flex items-center gap-1 hover:underline"
+                  >
+                    Open in new tab <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setActiveEmbed(null)}
+                    className="px-2 py-0.5 rounded bg-[#FFFFFF] hover:bg-red-50 text-[#E8412C] text-[10px] border border-[#E8412C]/30 transition"
+                  >
+                    Detach stream
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Waveform & Real-Time Spectrum Canvas (Compact 16:9 Ribbon) */
+              showVisualizer && (
+                <div className="relative w-full h-24 rounded-xl bg-[#FFFFFF] border border-[#252925]/20 overflow-hidden flex flex-col items-center justify-center shadow-inner">
+                  <canvas
+                    ref={canvasRef}
+                    width={320}
+                    height={96}
+                    className="w-full h-full object-cover opacity-90"
+                  />
+                  <div className="absolute bottom-1.5 left-2 right-2 flex items-center justify-between px-2 py-0.5 text-[9px] font-bold text-[#252925] bg-[#F7F5EF]/90 backdrop-blur-xs rounded border border-[#252925]/20">
+                    <span className="truncate flex-1 mr-2">{currentTrack?.title || 'Ambient Resonant Chords'}</span>
+                    <span className="shrink-0 text-[#E8412C] font-mono">432 Hz Master</span>
+                  </div>
+                </div>
+              )
+            )}
+
+            {/* Track Info & Heart Row */}
+            <div className="flex items-center justify-between px-0.5">
+              <div className="flex flex-col min-w-0 flex-1 mr-2">
+                <h4 className="font-georgia text-sm font-bold text-[#252925] truncate">
+                  {currentTrack?.title || 'Ambient Resonant Chords'}
+                </h4>
+                <p className="text-[10px] text-[#252925]/70 truncate font-mono">
+                  {currentTrack?.artist || 'SYNAPSE Harmonic Synthesizer'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {tracks.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteCurrentTrack}
+                    className="p-1.5 rounded-full text-[#252925]/70 hover:text-[#E8412C] hover:bg-[#9CAF88]/20 transition"
+                    title="Delete track"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className={`p-1.5 rounded-full transition shrink-0 hover:bg-[#9CAF88]/20 ${
+                    isFavorite ? 'text-[#E8412C] fill-current' : 'text-[#252925]/70 hover:text-[#252925]'
+                  }`}
+                  title="Favorite track"
+                >
+                  <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current text-[#E8412C]' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Progress Bar & Timestamps */}
+            <div className="space-y-1">
+              <input
+                type="range"
+                min="0"
+                max={duration || 30}
+                step="0.1"
+                value={currentTime}
+                onChange={handleSeek}
+                className="w-full h-1 bg-[#9CAF88]/30 rounded-lg appearance-none cursor-pointer accent-[#E8412C]"
+              />
+              <div className="flex justify-between text-[9px] text-[#252925]/70 font-mono">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Playback Controls (Shuffle, Prev, Play/Pause, Next, Repeat) */}
+            <div className="flex items-center justify-between px-2 text-[#252925]">
               <button
                 type="button"
-                onClick={handleDeleteCurrentTrack}
-                className="p-1.5 rounded-full text-[#6B6F7B] hover:text-red-500 transition"
-                title="Delete track from vault"
+                onClick={() => setIsShuffle(!isShuffle)}
+                className={`p-1.5 rounded-full hover:bg-[#9CAF88]/20 transition ${
+                  isShuffle ? 'text-[#E8412C] font-bold' : 'text-[#252925]/70'
+                }`}
+                title="Shuffle"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Shuffle className="w-3.5 h-3.5" />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={handleToggleFavorite}
-              className={`p-1.5 rounded-full transition shrink-0 ${
-                isFavorite ? 'text-red-500 fill-current' : 'text-[#6B6F7B] hover:text-[#1F2430]'
-              }`}
-              title="Favorite track"
-            >
-              <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-            </button>
+
+              <button
+                type="button"
+                onClick={handlePrevious}
+                className="p-1.5 rounded-full hover:bg-[#9CAF88]/20 transition text-[#252925]"
+                title="Previous track"
+              >
+                <SkipBack className="w-4 h-4 fill-current" />
+              </button>
+
+              <button
+                type="button"
+                onClick={togglePlay}
+                className="w-10 h-10 rounded-full bg-[#E8412C] hover:bg-[#D03522] text-[#F7F5EF] flex items-center justify-center transition shadow-md active:scale-95"
+                title={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNext}
+                className="p-1.5 rounded-full hover:bg-[#9CAF88]/20 transition text-[#252925]"
+                title="Next track"
+              >
+                <SkipForward className="w-4 h-4 fill-current" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsRepeat(!isRepeat)}
+                className={`p-1.5 rounded-full hover:bg-[#9CAF88]/20 transition ${
+                  isRepeat ? 'text-[#E8412C] font-bold' : 'text-[#252925]/70'
+                }`}
+                title="Repeat track"
+              >
+                <Repeat className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Volume & "Analyse this song" Pipeline Bridge */}
+            <div className="pt-2 border-t border-[#252925]/20 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="text-[#252925]/70 hover:text-[#252925] shrink-0"
+                  title={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="w-3.5 h-3.5" />
+                  ) : (
+                    <Volume2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setVolume(v);
+                    setIsMuted(false);
+                    if (audioRef.current) audioRef.current.volume = v;
+                  }}
+                  className="w-16 h-1 bg-[#9CAF88]/30 rounded appearance-none cursor-pointer accent-[#E8412C]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAnalyseThisSong}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#252925] hover:bg-[#252925]/90 text-[#F7F5EF] border border-[#252925] font-georgia text-xs font-bold shadow-2xs transition active:scale-95 whitespace-nowrap shrink-0"
+                title="Inject audio buffer into SYNAPSE analytical pipeline for Fourier & Wavelet investigation"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Analyse this song</span>
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Thin Progress Line with Round Handle */}
-        <div className="space-y-1">
-          <div className="relative flex items-center">
-            <input
-              type="range"
-              min="0"
-              max={duration || 30}
-              step="0.1"
-              value={currentTime}
-              onChange={handleSeek}
-              className="w-full h-1 bg-[#DDD6C7] rounded-lg appearance-none cursor-pointer accent-[#1F2430]"
-            />
-          </div>
-          <div className="flex justify-between text-[9px] text-[#6B6F7B] font-mono">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-
-        {/* Minimal Controls Row (Shuffle, Prev, Play/Pause, Next, Repeat) */}
-        <div className="flex items-center justify-between px-1 text-[#1F2430]">
-          <button
-            type="button"
-            onClick={() => setIsShuffle(!isShuffle)}
-            className={`p-1.5 rounded-full hover:bg-[#EFE8CC] transition ${
-              isShuffle ? 'text-[#0F766E] font-bold' : 'text-[#6B6F7B]'
-            }`}
-            title="Shuffle"
-          >
-            <Shuffle className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrevious}
-            className="p-1.5 rounded-full hover:bg-[#EFE8CC] transition text-[#1F2430]"
-            title="Previous track"
-          >
-            <SkipBack className="w-4 h-4 fill-current" />
-          </button>
-
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="w-10 h-10 rounded-full bg-[#8FAE8B] hover:bg-[#7D9D79] text-[#1F2430] flex items-center justify-center transition shadow-sm active:scale-95"
-            title={isPlaying ? 'Pause' : 'Play'}
-          >
-            {isPlaying ? (
-              <Pause className="w-4 h-4 fill-current" />
-            ) : (
-              <Play className="w-4 h-4 fill-current ml-0.5" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNext}
-            className="p-1.5 rounded-full hover:bg-[#EFE8CC] transition text-[#1F2430]"
-            title="Next track"
-          >
-            <SkipForward className="w-4 h-4 fill-current" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsRepeat(!isRepeat)}
-            className={`p-1.5 rounded-full hover:bg-[#EFE8CC] transition ${
-              isRepeat ? 'text-[#0F766E] font-bold' : 'text-[#6B6F7B]'
-            }`}
-            title="Repeat track"
-          >
-            <Repeat className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Volume & "Analyse this song" Bridge Row */}
-        <div className="pt-2 border-t border-[#E6DFC6] flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1 min-w-0">
-            <button
-              type="button"
-              onClick={() => setIsMuted(!isMuted)}
-              className="text-[#6B6F7B] hover:text-[#1F2430] shrink-0"
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="w-3.5 h-3.5" />
-              ) : (
-                <Volume2 className="w-3.5 h-3.5" />
-              )}
-            </button>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={isMuted ? 0 : volume}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                setVolume(v);
-                setIsMuted(false);
-                if (audioRef.current) audioRef.current.volume = v;
-              }}
-              className="w-12 sm:w-16 h-1 bg-[#DDD6C7] rounded appearance-none cursor-pointer accent-[#1F2430]"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAnalyseThisSong}
-            className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#0F766E] hover:bg-[#0B5E58] text-white text-[10px] font-bold shadow-2xs transition active:scale-95 whitespace-nowrap shrink-0"
-            title="Inject audio buffer into SYNAPSE analytical pipeline for Fourier & Wavelet investigation"
-          >
-            <Activity className="w-3 h-3" />
-            <span>Analyse this song</span>
-          </button>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </>
   );
 };

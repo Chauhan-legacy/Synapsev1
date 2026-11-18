@@ -12,6 +12,13 @@ export interface SignalQuality {
   timestamps_linearized?: boolean;
   linearization_notice?: string;
   warnings: string[];
+  skip_summary?: {
+    nanCount: number;
+    emptyCount: number;
+    textCount: number;
+    infCount: number;
+    totalSkipped: number;
+  };
 }
 
 export interface SignalData {

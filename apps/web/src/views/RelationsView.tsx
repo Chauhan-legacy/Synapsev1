@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { Network } from 'lucide-react';
 import { useSignal } from '../context/SignalContext';
 import { InteractiveChart } from '../components/common/InteractiveChart';
 import { MeaningTable } from '../components/common/MeaningTable';
@@ -13,7 +14,7 @@ interface RelationsViewProps {
 }
 
 export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }) => {
-  const { activeSignal, resultsByModule } = useSignal();
+  const { activeSignal, resultsByModule, setCurrentView } = useSignal();
   const [activeTab, setActiveTab] = useState<'coherence' | 'crosscorr' | 'causality' | 'transfer_entropy' | 'dtw'>('coherence');
 
   const ch1Name = activeSignal.channelNames[0] || 'Channel 1';
@@ -80,11 +81,61 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
       grangerP = Math.min(grangerRes.pValueXtoY, grangerRes.pValueYtoX);
     }
 
+    // Real Dynamic Time Warping (DTW) with Sakoe-Chiba window constraint
     const dtwSub = 25;
-    const dtwPath: Array<{ x: number; y: number }> = [];
+    const step1 = Math.max(1, Math.floor(s1.length / dtwSub));
+    const step2 = Math.max(1, Math.floor(s2.length / dtwSub));
+    const seqA: number[] = [];
+    const seqB: number[] = [];
     for (let i = 0; i < dtwSub; i++) {
-      dtwPath.push({ x: i, y: Math.min(dtwSub - 1, i + (i > 8 && i < 16 ? 2 : 0)) });
+      seqA.push(s1[i * step1] ?? 0);
+      seqB.push(s2[i * step2] ?? 0);
     }
+
+    const D: number[][] = Array.from({ length: dtwSub }, () => new Array(dtwSub).fill(Infinity));
+    D[0][0] = Math.abs(seqA[0] - seqB[0]);
+
+    for (let i = 0; i < dtwSub; i++) {
+      for (let j = 0; j < dtwSub; j++) {
+        if (i === 0 && j === 0) continue;
+        // Sakoe-Chiba band |i - j| <= 6
+        if (Math.abs(i - j) > 6) continue;
+        const cost = Math.abs(seqA[i] - seqB[j]);
+        const m1 = i > 0 ? D[i - 1][j] : Infinity;
+        const m2 = j > 0 ? D[i][j - 1] : Infinity;
+        const m3 = i > 0 && j > 0 ? D[i - 1][j - 1] : Infinity;
+        D[i][j] = cost + Math.min(m1, m2, m3);
+      }
+    }
+
+    // Backtrack optimal warping path
+    const pathRev: Array<{ x: number; y: number }> = [];
+    let curI = dtwSub - 1;
+    let curJ = dtwSub - 1;
+    pathRev.push({ x: curI, y: curJ });
+
+    while (curI > 0 || curJ > 0) {
+      if (curI === 0) {
+        curJ--;
+      } else if (curJ === 0) {
+        curI--;
+      } else {
+        const diag = D[curI - 1][curJ - 1];
+        const up = D[curI - 1][curJ];
+        const left = D[curI][curJ - 1];
+        const minVal = Math.min(diag, up, left);
+        if (minVal === diag) {
+          curI--;
+          curJ--;
+        } else if (minVal === up) {
+          curI--;
+        } else {
+          curJ--;
+        }
+      }
+      pathRev.push({ x: curI, y: curJ });
+    }
+    const dtwPath = pathRev.reverse();
 
     return {
       lags,
@@ -189,7 +240,7 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
   }, [relationData, fs, resultsByModule]);
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto">
+    <div className="space-y-4 w-full">
       {/* View Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b">
         <div>
@@ -198,11 +249,22 @@ export const RelationsView: React.FC<RelationsViewProps> = ({ onOpenMethodCard }
             Spectral coherence, Carter significance bounds, Granger VAR causality, and DTW warping
           </p>
         </div>
-        <ExportBar
-          title="SYNAPSE_Relations_Report"
-          data={{ activeSignal: activeSignal.filename, relationData, relationsResults }}
-          csvContent={relationData.freqs.map((f, i) => `${f},${relationData.coherence[i]}`).join('\n')}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrentView('cdco')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E8412C] hover:bg-[#D03522] text-[#F7F5EF] border border-[#252925]/20 text-xs font-bold transition shadow-2xs font-georgia"
+            title="Launch full Cross-Dataset Correlation Observatory for multi-observation alignment & testing"
+          >
+            <Network className="w-3.5 h-3.5" />
+            <span>Cross-Dataset Observatory</span>
+          </button>
+          <ExportBar
+            title="SYNAPSE_Relations_Report"
+            data={{ activeSignal: activeSignal.filename, relationData, relationsResults }}
+            csvContent={relationData.freqs.map((f, i) => `${f},${relationData.coherence[i]}`).join('\n')}
+          />
+        </div>
       </div>
 
       <CollapsibleExplainer title="What am I looking at in Relations & Causality?">

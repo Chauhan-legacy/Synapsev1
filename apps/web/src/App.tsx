@@ -9,7 +9,7 @@ import { ShortcutsModal } from './components/shell/ShortcutsModal';
 import { Compass, Loader2 } from 'lucide-react';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { parseUniversalSignalCSV } from './utils/csvParser';
-import { parseCsvWithStreamingWorker } from './utils/streamingCsvParser';
+import { parseCsvWithStreamingWorker, ParseHandle } from './utils/streamingCsvParser';
 
 // Lazy-Loaded Views for Fast Initial Bundle
 const LandingHero = React.lazy(() =>
@@ -46,6 +46,9 @@ const DynamicsView = React.lazy(() =>
 );
 const RelationsView = React.lazy(() =>
   import('./views/RelationsView').then((m) => ({ default: m.default || m.RelationsView }))
+);
+const CrossDatasetObservatoryView = React.lazy(() =>
+  import('./views/CrossDatasetObservatoryView').then((m) => ({ default: m.CrossDatasetObservatoryView }))
 );
 const AstronomyLabView = React.lazy(() =>
   import('./views/AstronomyLabView').then((m) => ({ default: m.default || m.AstronomyLabView }))
@@ -151,6 +154,8 @@ const AppInner: React.FC = () => {
       hash.includes('anomalies') ||
       hash.includes('dynamics') ||
       hash.includes('relations') ||
+      hash.includes('cdco') ||
+      hash.includes('cross-dataset') ||
       hash.includes('astronomy') ||
       hash.includes('physics') ||
       hash.includes('biosignals') ||
@@ -194,6 +199,8 @@ const AppInner: React.FC = () => {
         hash.includes('anomalies') ||
         hash.includes('dynamics') ||
         hash.includes('relations') ||
+        hash.includes('cdco') ||
+        hash.includes('cross-dataset') ||
         hash.includes('astronomy') ||
         hash.includes('physics') ||
         hash.includes('biosignals') ||
@@ -271,23 +278,42 @@ const AppInner: React.FC = () => {
     [setCurrentView]
   );
 
-  // Real CSV Upload Handler with Papa Parse Web Worker Streaming
-  const [uploadProgress, setUploadProgress] = useState<{ percent: number; rows: number } | null>(null);
+  // Real CSV Upload Handler with Web Worker Chunk Streaming
+  const [uploadProgress, setUploadProgress] = useState<{ percent: number; rows: number; speedMBs?: number } | null>(null);
+  const currentParseHandleRef = useRef<ParseHandle | null>(null);
+
+  const handleCancelUpload = () => {
+    if (currentParseHandleRef.current) {
+      currentParseHandleRef.current.abort();
+      currentParseHandleRef.current = null;
+    }
+    setUploadProgress(null);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadProgress({ percent: 5, rows: 0 });
+    setUploadProgress({ percent: 5, rows: 0, speedMBs: 0 });
 
     const handle = parseCsvWithStreamingWorker(file, file.name, {
       onProgress: (prog) => {
-        setUploadProgress({ percent: prog.percent, rows: prog.rowsParsed });
+        setUploadProgress({ percent: prog.percent, rows: prog.rowsParsed, speedMBs: prog.speedMBs });
+      },
+      onPreviewReady: (preview) => {
+        loadCustomSignal(preview);
+        if (pageMode === 'hero') {
+          setPageMode('advanced');
+          setCurrentView('rack');
+          window.location.hash = '#/rack';
+        }
       },
     });
+    currentParseHandleRef.current = handle;
 
     handle.promise
       .then((parsed) => {
+        currentParseHandleRef.current = null;
         loadCustomSignal(parsed);
         setUploadProgress(null);
         if (pageMode === 'hero') {
@@ -297,6 +323,11 @@ const AppInner: React.FC = () => {
         }
       })
       .catch((err) => {
+        currentParseHandleRef.current = null;
+        if (err?.message?.includes('cancelled')) {
+          setUploadProgress(null);
+          return;
+        }
         console.warn('Papa Parse worker failed, attempting fallback parser:', err);
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -433,6 +464,8 @@ const AppInner: React.FC = () => {
         return <DynamicsView onOpenMethodCard={handleOpenMethodCard} />;
       case 'relations':
         return <RelationsView onOpenMethodCard={handleOpenMethodCard} />;
+      case 'cdco':
+        return <CrossDatasetObservatoryView onOpenMethodCard={handleOpenMethodCard} />;
       case 'astronomy':
         return <AstronomyLabView onOpenMethodCard={handleOpenMethodCard} />;
       case 'physics':
@@ -469,20 +502,35 @@ const AppInner: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F8F6F1] text-[#10141C] font-sans antialiased">
-      {/* Floating Streaming CSV Upload Progress */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F7F5EF] text-[#252925] font-georgia antialiased">
+      {/* Floating Streaming CSV Upload Progress with working Cancel button */}
       {uploadProgress && (
-        <div className="fixed top-3 right-4 z-50 flex items-center gap-3 px-4 py-2.5 bg-[#FFFDF9] border border-[#0F766E] rounded-xl shadow-lg font-mono text-xs">
-          <Loader2 className="w-4 h-4 text-[#0F766E] animate-spin" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-[#1F2430]">Streaming CSV Ingestion</span>
-              <span className="text-[#0F766E] font-bold">{uploadProgress.percent}%</span>
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 bg-[#F7F5EF] border border-[#252925]/30 rounded-xl shadow-lg font-georgia text-xs text-[#252925] animate-in fade-in slide-in-from-top-2">
+          <Loader2 className="w-4 h-4 text-[#E8412C] animate-spin shrink-0" />
+          <div className="min-w-[180px]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-bold text-[#252925]">Streaming CSV Ingestion</span>
+              <span className="text-[#E8412C] font-bold font-mono">{uploadProgress.percent}%</span>
             </div>
-            <div className="text-[10px] text-[#78716C]">
-              Papa Parse Web Worker &bull; {uploadProgress.rows.toLocaleString()} rows parsed
+            {/* Progress bar */}
+            <div className="w-full bg-[#252925]/10 h-1.5 rounded-full overflow-hidden my-1">
+              <div
+                className="bg-[#E8412C] h-full transition-all duration-150"
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+            <div className="text-[10px] text-[#252925]/70 font-mono">
+              Web Worker &bull; {uploadProgress.rows.toLocaleString()} rows{uploadProgress.speedMBs ? ` \u2022 ${uploadProgress.speedMBs} MB/s` : ''}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={handleCancelUpload}
+            className="px-2.5 py-1 text-[11px] font-bold text-[#E8412C] hover:bg-[#E8412C]/10 border border-[#E8412C]/30 rounded-md transition-colors shrink-0 font-georgia cursor-pointer"
+            title="Cancel CSV ingestion"
+          >
+            Cancel
+          </button>
         </div>
       )}
 
@@ -509,7 +557,7 @@ const AppInner: React.FC = () => {
       />
 
       {/* Main Workbench Area */}
-      <div className={`flex-1 flex flex-col min-w-0 overflow-hidden ${currentView === 'aporia' ? 'bg-[#EAE5DC]' : 'bg-[#F6F3EC]'}`}>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#F7F5EF]">
         {/* Top Bar (hidden in Aporia) */}
         {currentView !== 'aporia' && (
           <TopBar
@@ -533,8 +581,8 @@ const AppInner: React.FC = () => {
         )}
 
         {/* View Content Port */}
-        <main className={`flex-1 min-w-0 overflow-y-auto ${currentView === 'aporia' ? 'p-0 bg-[#EAE5DC] flex flex-col' : 'p-3 sm:p-6 bg-[#F6F3EC]'}`}>
-          <ErrorBoundary>
+        <main className={`flex-1 min-w-0 overflow-y-auto ${currentView === 'aporia' ? 'p-0 bg-[#F7F5EF] flex flex-col' : 'p-3 sm:p-6 bg-[#F7F5EF]'}`}>
+          <ErrorBoundary resetKey={currentView}>
             <Suspense fallback={<SkeletonLoader />}>
               {renderCurrentView()}
             </Suspense>

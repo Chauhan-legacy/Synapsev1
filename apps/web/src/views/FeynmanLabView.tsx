@@ -268,7 +268,7 @@ export const FeynmanLabView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-5 max-w-6xl mx-auto font-sans">
+    <div className="space-y-5 w-full font-georgia">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#DDD6C7]">
         <div>

@@ -1,64 +1,102 @@
 /**
- * SYNAPSE Central Design Tokens
- * Fixed Palette: Light Paper Teal
- * Professional, calm, scientific, WCAG AA compliant. No neon.
+ * SYNAPSE Central Design Tokens — BOTANICAL SIGNAL SYSTEM
+ * 
+ * Strict 60:30:10 Palette Distribution:
+ * - 60% Sage Green:    #9CAF88 (Primary visual colour and visual surfaces)
+ * - 30% Off-white:     #F7F5EF (Backgrounds and secondary surfaces)
+ * - 10% Signal Red:    #E8412C (Interactive accents and important highlights)
+ * 
+ * Structural Colour (Excluded from 60:30:10):
+ * - Deep Charcoal:     #252925 (Typography, navigation, icons, borders, contrast)
+ * 
+ * Strict Restrictions:
+ * - Zero grass textures, illustrations or botanical patterns.
+ * - Zero terracotta #C95743 or unapproved shades.
+ * - Consistent light-theme styling across all views.
  */
 
 :root {
-  /* Surfaces & Backgrounds */
-  --color-bg-page: #F6F3EC;
+  /* 60% Sage Green Primary Colour & Visual Surfaces */
+  --color-primary: #9CAF88;
+  --color-sage: #9CAF88;
+  --color-sage-accent: #9CAF88;
+  --color-sage-dark: #252925;
+  --color-bg-sidebar: #9CAF88;
+  --color-bg-header: #F7F5EF;
+  --color-surface-primary: #9CAF88;
+
+  /* 30% Off-white Backgrounds & Secondary Surfaces */
+  --color-bg-page: #F7F5EF;
+  --color-bg-workspace: #F7F5EF;
+  --color-bg-shell: #F7F5EF;
   --color-bg-panel: #FFFFFF;
-  --color-bg-tint: #EFEBE0;
-  --color-border: #DDD6C7;
-  --color-border-subtle: #E8E2D5;
+  --color-bg-secondary: #F7F5EF;
+  --color-bg-tint: #F7F5EF;
+  --color-cream: #F7F5EF;
+  --color-cream-border: rgba(37, 41, 37, 0.2);
 
-  /* Typography */
-  --color-text-ink: #1F2430;
-  --color-text-secondary: #4A5060;
-  --color-text-muted: #6B6F7B;
+  /* 10% Signal Red Interactive Accents & Important Highlights */
+  --color-accent: #E8412C;
+  --color-accent-hover: #D03522;
+  --color-accent-subtle: rgba(232, 65, 44, 0.12);
+  --color-accent-border: #E8412C;
+  --color-signal-red: #E8412C;
 
-  /* Primary Accent: Deep Teal */
-  --color-accent: #0F766E;
-  --color-accent-hover: #0B5E58;
-  --color-accent-subtle: #E6F4F2;
-  --color-accent-border: #99D1CB;
+  /* Structural Colour: Deep Charcoal #252925 */
+  --color-charcoal: #252925;
+  --color-pine: #252925;
+  --color-moss: #9CAF88;
+  --color-text-ink: #252925;
+  --color-text-primary: #252925;
+  --color-text-secondary: #252925;
+  --color-text-muted: #252925;
+  --color-text-on-dark: #252925;
+  --color-text-sage: #252925;
 
-  /* Sage & Cream (Music player and gentle accents) */
-  --color-sage: #8FAE8B;
-  --color-sage-dark: #6C8B68;
-  --color-cream: #F7F0D6;
-  --color-cream-border: #EADBBA;
+  --color-fg-dark-primary: #252925;
+  --color-fg-dark-secondary: #252925;
+  --color-fg-dark-muted: #252925;
+  --color-fg-light-primary: #252925;
+  --color-fg-light-secondary: #252925;
+  --color-fg-light-muted: #252925;
 
-  /* Semantic Status */
-  --color-status-success: #2E7D32;
-  --color-status-success-bg: #E8F5E9;
-  --color-status-success-border: #C8E6C9;
+  /* Structural Borders */
+  --color-border: rgba(37, 41, 37, 0.2);
+  --color-border-subtle: rgba(37, 41, 37, 0.15);
+  --color-border-card: rgba(37, 41, 37, 0.2);
 
-  --color-status-warning: #B7791F;
-  --color-status-warning-bg: #FEF3C7;
-  --color-status-warning-border: #FDE68A;
+  /* Semantic Status (Harmonized with Botanical Signal System) */
+  --color-status-success: #9CAF88;
+  --color-status-success-bg: #F7F5EF;
+  --color-status-success-border: #9CAF88;
 
-  --color-status-error: #C0392B;
-  --color-status-error-bg: #FDEDEC;
-  --color-status-error-border: #FADBD8;
+  --color-status-warning: #E8412C;
+  --color-status-warning-bg: #F7F5EF;
+  --color-status-warning-border: #E8412C;
 
-  --color-status-info: #1D6FA5;
-  --color-status-info-bg: #EBF5FB;
-  --color-status-info-border: #D4E6F1;
+  --color-status-error: #E8412C;
+  --color-status-error-bg: #F7F5EF;
+  --color-status-error-border: #E8412C;
 
-  /* Chart Series Colors (Colour-blind safe, strict order) */
-  --color-series-1: #0072B2; /* Blue */
-  --color-series-2: #E69F00; /* Orange */
-  --color-series-3: #009E73; /* Green */
-  --color-series-4: #D55E00; /* Vermilion */
-  --color-series-5: #7B5EA7; /* Purple */
-  --color-series-6: #56B4E9; /* Sky */
-  --color-series-7: #CC79A7; /* Pink */
-  --color-series-8: #B8960C; /* Gold */
+  --color-status-info: #9CAF88;
+  --color-status-info-bg: #F7F5EF;
+  --color-status-info-border: #9CAF88;
 
-  /* Primary Graph Trace (Ink Black) */
-  --color-chart-primary: #1F2430;
-  --color-chart-grid: #DDD6C7;
-  --color-chart-cursor: #0F766E;
+  /* Chart Series Colors */
+  --color-series-1: #252925;
+  /* Deep Charcoal */
+  --color-series-2: #E8412C;
+  /* Signal Red */
+  --color-series-3: #9CAF88;
+  /* Sage Green */
+  --color-series-4: #252925;
+  --color-series-5: #E8412C;
+  --color-series-6: #9CAF88;
+  --color-series-7: #252925;
+  --color-series-8: #9CAF88;
+
+  /* Graph Trace & Graticule */
+  --color-chart-primary: #252925;
+  --color-chart-grid: rgba(37, 41, 37, 0.12);
+  --color-chart-cursor: #E8412C;
 }
-

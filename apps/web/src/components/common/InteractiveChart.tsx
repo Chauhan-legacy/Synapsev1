@@ -1,6 +1,7 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { useAccessibility } from '../../context/AccessibilityContext';
-import { RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Download, ChevronDown, FileImage, FileCode, FileText } from 'lucide-react';
+import { exportSvgAsFile, exportSvgAsPng, exportSvgAsPdf } from '../../utils/chartExport';
 
 export interface ChartSeries {
   name: string;
@@ -61,6 +62,30 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   }, [xValues.length]);
 
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setIsExportOpen(false);
+      }
+    };
+    if (isExportOpen) document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isExportOpen]);
+
+  const handleExport = async (format: '1x' | '2x' | '4k' | 'svg' | 'pdf') => {
+    if (!svgRef.current) return;
+    setIsExportOpen(false);
+    if (format === 'svg') {
+      exportSvgAsFile(svgRef.current, title);
+    } else if (format === 'pdf') {
+      await exportSvgAsPdf(svgRef.current, title);
+    } else {
+      await exportSvgAsPng(svgRef.current, title, format);
+    }
+  };
 
   // Decimation for large arrays (> 4000 pts)
   const [startIdx, endIdx] = range;
@@ -187,6 +212,66 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           <span className="sr-only">{accessibleSummary}</span>
         </div>
         <div className="flex items-center gap-1.5 no-print">
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsExportOpen(!isExportOpen)}
+              className="flex items-center gap-1 px-2 py-0.5 rounded surface-subtle border border-[#252925]/20 text-[11px] font-medium text-primary hover:bg-[#F7F5EF] transition-colors"
+              title="Export chart as PNG, 4K, SVG, or PDF"
+              aria-label="Export chart options"
+            >
+              <Download className="w-3 h-3 text-[#0F766E]" />
+              <span>Export</span>
+              <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+            </button>
+
+            {isExportOpen && (
+              <div className="absolute right-0 top-full mt-1 w-44 bg-[#FFFFFF] border border-[#252925]/20 rounded-md shadow-lg z-30 py-1 text-xs font-sans">
+                <button
+                  type="button"
+                  onClick={() => handleExport('1x')}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#F7F5EF] flex items-center gap-2 text-primary"
+                >
+                  <FileImage className="w-3.5 h-3.5 text-muted" />
+                  <span>PNG (Standard 1x)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('2x')}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#F7F5EF] flex items-center gap-2 text-primary font-medium"
+                >
+                  <FileImage className="w-3.5 h-3.5 text-[#0F766E]" />
+                  <span>PNG (High-DPI 2x)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('4k')}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#F7F5EF] flex items-center gap-2 text-primary font-bold"
+                >
+                  <FileImage className="w-3.5 h-3.5 text-[#E8412C]" />
+                  <span>PNG (4K Ultra-HD)</span>
+                </button>
+                <div className="border-t border-[#252925]/10 my-1" />
+                <button
+                  type="button"
+                  onClick={() => handleExport('svg')}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#F7F5EF] flex items-center gap-2 text-primary"
+                >
+                  <FileCode className="w-3.5 h-3.5 text-muted" />
+                  <span>Vector SVG (.svg)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport('pdf')}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#F7F5EF] flex items-center gap-2 text-primary"
+                >
+                  <FileText className="w-3.5 h-3.5 text-muted" />
+                  <span>Publication PDF (.pdf)</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={handleZoomIn}

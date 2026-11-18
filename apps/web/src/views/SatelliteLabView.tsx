@@ -146,7 +146,7 @@ export const SatelliteLabView: React.FC<SatelliteLabViewProps> = ({ onOpenMethod
   }, [gnssData, attitudeData, insarData]);
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto font-sans pb-16">
+    <div className="space-y-4 w-full font-georgia pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#DDD6C7]">
         <div>

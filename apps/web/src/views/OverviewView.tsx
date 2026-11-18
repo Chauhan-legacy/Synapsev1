@@ -63,7 +63,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   }, [resultsByModule]);
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto">
+    <div className="space-y-4 w-full">
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b">
         <div>

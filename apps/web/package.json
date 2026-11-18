@@ -7,15 +7,18 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "npm run test:math",
-    "test:math": "tsc src/utils/signalMath.ts --outDir ../../tmp_math --module commonjs --target es2022 --skipLibCheck && node ../../scripts/test_math_benchmarks.js"
+    "test": "npm run test:math && npm run test:cdco",
+    "test:math": "tsc src/utils/signalMath.ts --outDir ../../tmp_math --module commonjs --target es2022 --skipLibCheck && node ../../scripts/test_math_benchmarks.js",
+    "test:cdco": "node ../../scripts/test_cross_dataset_benchmarks.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.5",
+    "@types/jszip": "^3.4.0",
     "@types/katex": "^0.16.8",
     "arquero": "^8.0.3",
     "fft.js": "^4.0.4",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.2",
     "katex": "^0.19.1",
     "lucide-react": "^0.383.0",
     "ml-matrix": "^6.15.1",

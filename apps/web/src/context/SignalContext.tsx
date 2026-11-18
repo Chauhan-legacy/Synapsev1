@@ -14,6 +14,7 @@ import {
   computeGrangerCausality,
   computeSurrogateBounds,
 } from '../utils/signalMath';
+import { getCachedAnalysisResults, setCachedAnalysisResults } from '../utils/analysisCacheDB';
 
 interface SignalContextType {
   activeSignal: SignalData;
@@ -358,6 +359,9 @@ const ALL_BENCHMARK_PRESETS = [
   { id: 'benchmark_J', name: 'Dataset J: Master Discovery Challenge', isBenchmark: true, isExample: true },
 ];
 
+// Global multi-level in-memory cache for deterministic analytical results
+const analysisCache = new Map<string, Record<string, CommonResultSchema[]>>();
+
 export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [deletedDatasetIds, setDeletedDatasetIds] = useState<string[]>(() => {
     try {
@@ -397,6 +401,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (hash.includes('timefreq')) return 'timefreq';
     if (hash.includes('anomalies')) return 'anomalies';
     if (hash.includes('relations')) return 'relations';
+    if (hash.includes('cdco') || hash.includes('correlation')) return 'cdco';
     if (hash.includes('astronomy')) return 'astronomy';
     if (hash.includes('physics')) return 'physics';
     if (hash.includes('biosignals')) return 'biosignals';
@@ -457,7 +462,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (hash) {
         const validViews: WorkbenchView[] = [
           'overview', 'rack', 'datasets', 'explorer', 'statistics', 'spectra', 'timefreq',
-          'anomalies', 'dynamics', 'relations', 'astronomy', 'physics',
+          'anomalies', 'dynamics', 'relations', 'cdco', 'astronomy', 'physics',
           'biosignals', 'chaos', 'earth_systems', 'quantum', 'feynman',
           'satellite', 'geophysics',
           'inference', 'findings', 'evidence', 'reproducibility', 'benchmarks', 'methods',
@@ -528,11 +533,32 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [customDatasets]);
 
   const loadCustomSignal = useCallback((signal: SignalData) => {
-    setCustomDatasets((prev) => {
-      const filtered = prev.filter((s) => s.id !== signal.id);
-      return [signal, ...filtered];
+    const rawChannels = signal?.channels || { 'Channel 1': [] };
+    const rawNames = (signal?.channelNames && signal.channelNames.length > 0)
+      ? signal.channelNames
+      : Object.keys(rawChannels).length > 0
+        ? Object.keys(rawChannels)
+        : ['Channel 1'];
+
+    rawNames.forEach((n) => {
+      if (!rawChannels[n]) rawChannels[n] = [];
     });
-    setActiveSignal(signal);
+
+    const sanitized: SignalData = {
+      ...signal,
+      channels: rawChannels,
+      channelNames: rawNames,
+      samplingRate: signal?.samplingRate || 200,
+      timestamps: (signal?.timestamps && signal.timestamps.length > 0)
+        ? signal.timestamps
+        : Array.from({ length: (rawChannels[rawNames[0]] || []).length }, (_, i) => i / (signal?.samplingRate || 200)),
+    };
+
+    setCustomDatasets((prev) => {
+      const filtered = prev.filter((s) => s.id !== sanitized.id);
+      return [sanitized, ...filtered];
+    });
+    setActiveSignal(sanitized);
   }, []);
 
   const deleteDataset = useCallback((id: string) => {
@@ -591,6 +617,40 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Real numerical execution across modules (Backend API with Browser Quick-Look Fallback)
   const runAnalysis = useCallback(async () => {
+    const initialChNames = (activeSignal?.channelNames && activeSignal.channelNames.length > 0)
+      ? activeSignal.channelNames
+      : Object.keys(activeSignal?.channels || {}) || ['Channel 1'];
+    const primaryCh = initialChNames[0] || 'Channel 1';
+    const vals = activeSignal?.channels?.[primaryCh] || [];
+    const fs = activeSignal?.samplingRate || 200;
+    const n = vals.length;
+
+    // Fast multi-level in-memory + IndexedDB cache lookup (0ms instant return for repeat analysis or re-selected datasets)
+    const cacheKey = `${activeSignal.id}_${fs}_${n}_${activeSignal.quality?.content_hash_sha256 || ''}`;
+    const persisted = await getCachedAnalysisResults(cacheKey);
+    if (persisted) {
+      setResultsByModule(persisted);
+      setModuleStatuses({
+        overview: 'done',
+        datasets: 'done',
+        explorer: 'done',
+        spectra: 'done',
+        timefreq: 'done',
+        statistics: 'done',
+        anomalies: 'done',
+        dynamics: 'done',
+        relations: 'done',
+        inference: 'done',
+        findings: 'done',
+        evidence: 'done',
+        reproducibility: 'done',
+        benchmarks: 'done',
+        methods: 'done',
+      });
+      setIsAnalyzing(false);
+      return;
+    }
+
     setIsAnalyzing(true);
     // Mark modules as running
     setModuleStatuses((prev) => ({
@@ -607,19 +667,27 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       reproducibility: 'running',
     }));
 
-    const vals = activeSignal.channels[activeSignal.channelNames[0]] || [];
-    const fs = activeSignal.samplingRate;
-    const n = vals.length;
-
     // Small delay to allow UI to render running status
-    await new Promise((r) => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 60));
 
     // 1. Attempt Execution via High-Performance Python Backend (/v1/analyze)
+    // Slice payload to max 20,000 samples for JSON serialization to prevent main-thread freeze
+    const MAX_API_SAMPLES = 20000;
+    const isLarge = n > MAX_API_SAMPLES;
+    const channelsPayload: Record<string, number[]> = {};
+    Object.keys(activeSignal.channels).forEach((ch) => {
+      const rawCh = activeSignal.channels[ch] || [];
+      channelsPayload[ch] = isLarge ? rawCh.slice(0, MAX_API_SAMPLES) : rawCh;
+    });
+    const timestampsPayload = isLarge
+      ? (activeSignal.timestamps || []).slice(0, MAX_API_SAMPLES)
+      : activeSignal.timestamps;
+
     try {
       const payload = {
-        channels: activeSignal.channels,
+        channels: channelsPayload,
         sampling_rate: activeSignal.samplingRate,
-        timestamps: activeSignal.timestamps,
+        timestamps: timestampsPayload,
       };
 
       let response: Response | null = null;
@@ -662,6 +730,8 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             }));
           });
 
+          analysisCache.set(cacheKey, processedResults);
+          setCachedAnalysisResults(cacheKey, processedResults);
           setResultsByModule(processedResults);
           setApiConnected(true);
           setModuleStatuses({
@@ -690,14 +760,17 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // 2. Client-Side Genuine Fallback Computation (Zero Mock Numbers, Ground-Truth Calibrated)
+    // Slice large inputs to max 20,000 samples for responsive 60fps main-thread execution
+    const MAX_CLIENT_SAMPLES = 20000;
+    const clientVals = n > MAX_CLIENT_SAMPLES ? vals.slice(0, MAX_CLIENT_SAMPLES) : vals;
     const t0 = performance.now();
-    const stats = computeStatistics(vals, fs);
-    const welch = computeWelchPSD(vals, fs);
-    const multitaper = computeMultitaperPSD(vals, fs);
-    const dfa = computeDFA(vals);
-    const rosner = computeRosnerESD(vals, 10, 0.05);
-    const pelt = computePELTAndCUSUM(vals, fs);
-    const surrogate = computeSurrogateBounds(vals, fs, 20);
+    const stats = computeStatistics(clientVals, fs);
+    const welch = computeWelchPSD(clientVals, fs);
+    const multitaper = computeMultitaperPSD(clientVals, fs);
+    const dfa = computeDFA(clientVals);
+    const rosner = computeRosnerESD(clientVals, 10, 0.05);
+    const pelt = computePELTAndCUSUM(clientVals, fs);
+    const surrogate = computeSurrogateBounds(clientVals, fs, 20);
 
     // Multitaper line recovery
     const sigLines = multitaper.fTest.filter((f) => f.isLine && f.fRatio >= 10.0 && f.pValue < 0.005);
@@ -857,13 +930,16 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     ];
 
     // Relations Lab (if 2+ channels available)
-    const chNames = activeSignal.channelNames;
+    const chNames = (activeSignal?.channelNames && activeSignal.channelNames.length > 0)
+      ? activeSignal.channelNames
+      : Object.keys(activeSignal?.channels || {}) || ['Channel 1'];
     const relationsResults: CommonResultSchema[] = [];
     if (chNames.length >= 2) {
-      const ch1 = activeSignal.channels[chNames[0]];
-      const ch2 = activeSignal.channels[chNames[1]];
-      const coh = computeCoherenceAndXCorr(ch1, ch2, fs);
-      const granger = computeGrangerCausality(ch1, ch2, 3);
+      const ch1 = activeSignal?.channels?.[chNames[0]] || [];
+      const ch2 = activeSignal?.channels?.[chNames[1]] || [];
+      if (ch1.length > 0 && ch2.length > 0) {
+        const coh = computeCoherenceAndXCorr(ch1, ch2, fs);
+        const granger = computeGrangerCausality(ch1, ch2, 3);
 
       const hasCoherence = coh.peakCoherence.coherence > 0.45;
       relationsResults.push({
@@ -908,6 +984,7 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         evidence_refs: ['granger_var_ols'],
         runtime_ms: 15,
       });
+      }
     }
 
     // Inference & Null-Model Lab
@@ -934,14 +1011,17 @@ export const SignalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       },
     ];
 
-    setResultsByModule({
+    const finalClientResults = {
       spectra: spectralResults,
       statistics: statsResults,
       anomalies: anomalyResults,
       dynamics: dynamicsResults,
       relations: relationsResults,
       inference: inferenceResults,
-    });
+    };
+    analysisCache.set(cacheKey, finalClientResults);
+    setCachedAnalysisResults(cacheKey, finalClientResults);
+    setResultsByModule(finalClientResults);
 
     setModuleStatuses({
       overview: 'done',

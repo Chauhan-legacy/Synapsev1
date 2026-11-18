@@ -11,7 +11,27 @@ export const SpacecraftAttitude3D: React.FC<SpacecraftAttitude3DProps> = ({
   jitterMicroRad,
   pointingErrorArcsec,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const handleResize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = container.clientWidth || 480;
+      const h = container.clientHeight || 288;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+    };
+
+    handleResize();
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -190,8 +210,8 @@ export const SpacecraftAttitude3D: React.FC<SpacecraftAttitude3DProps> = ({
   }, [wheelRpm, jitterMicroRad, pointingErrorArcsec]);
 
   return (
-    <div className="relative w-full h-72 rounded-md overflow-hidden border border-[#DDD6C7] bg-[#0F1319]">
-      <canvas ref={canvasRef} width={480} height={288} className="w-full h-full block" />
+    <div ref={containerRef} className="relative w-full h-full min-h-[220px] rounded-md overflow-hidden border border-[#252925]/20 bg-[#0F1319]">
+      <canvas ref={canvasRef} className="w-full h-full block" />
       <div className="absolute top-2 left-3 text-[10px] font-mono text-[#94A3B8] bg-[#0F1319]/80 px-2 py-0.5 rounded border border-[#334155]">
         3D Spacecraft Euler Dynamics &amp; RWA Flywheel
       </div>

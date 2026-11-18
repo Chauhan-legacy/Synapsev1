@@ -55,7 +55,7 @@ export const StatisticsLabView: React.FC<StatisticsLabViewProps> = ({ onOpenMeth
   const statsResults = resultsByModule['statistics'] || [];
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto">
+    <div className="space-y-4 w-full">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b">
         <div>
           <h1 className="text-base font-bold text-primary">Statistics Intelligence Laboratory</h1>

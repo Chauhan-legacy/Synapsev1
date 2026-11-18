@@ -32,6 +32,7 @@ import {
   Sparkles,
   Plus,
   Layers,
+  Network,
 } from 'lucide-react';
 import {
   CURATED_ARXIV_CATALOG,
@@ -84,7 +85,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   realTestCount = 83,
   initialTab = 'charts',
 }) => {
-  const { activeSignal, loadCustomSignal } = useSignal();
+  const { activeSignal, loadCustomSignal, setCurrentView } = useSignal();
   const [customData, setCustomData] = useState<CustomDataset | null>(null);
   const [activeTab, setActiveTab] = useState<WorkbenchTab>(initialTab);
 
@@ -720,6 +721,27 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
     };
   }, [customData, activeSignal]);
 
+  // Clean, non-overlapping tick intervals for charts
+  const timeTicks = useMemo(() => {
+    const d = stats.duration || 10;
+    const count = 5;
+    const ticks: number[] = [];
+    for (let i = 0; i <= count; i++) {
+      ticks.push(Number(((d / count) * i).toFixed(1)));
+    }
+    return ticks;
+  }, [stats.duration]);
+
+  const freqTicks = useMemo(() => {
+    const nyq = (stats.samplingRate || 200) / 2;
+    const count = 5;
+    const ticks: number[] = [];
+    for (let i = 0; i <= count; i++) {
+      ticks.push(Math.round((nyq / count) * i));
+    }
+    return ticks;
+  }, [stats.samplingRate]);
+
   // Handle Custom Dataset Upload with Streaming Worker
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -777,7 +799,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-[#F8F6F1] text-[#10141C] font-sans antialiased selection:bg-[#E6E1D6] overflow-y-auto">
+    <div className="flex flex-col min-h-screen w-full bg-[#F7F5EF] text-[#252925] font-georgia antialiased selection:bg-[#9CAF88]/30 overflow-y-auto">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -788,47 +810,47 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
       />
 
       {/* 1. TOP BAR */}
-      <header className="h-14 border-b border-[#E6E1D6] bg-[#FFFDF9] px-3 sm:px-6 flex items-center justify-between shrink-0 shadow-2xs z-20 sticky top-0">
+      <header className="h-14 border-b border-[#252925]/20 bg-[#F7F5EF] px-3 sm:px-6 flex items-center justify-between shrink-0 shadow-2xs z-20 sticky top-0 text-[#252925]">
         <div className="flex items-center space-x-2 sm:space-x-6 min-w-0">
           <div
             className="flex items-center space-x-2 cursor-pointer group shrink-0"
             onClick={onBackToHero}
             title="Return to Landing Portal"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#10141C] flex items-center justify-center text-[#F8F6F1] shadow-2xs group-hover:bg-[#25653F] transition-colors shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#252925] flex items-center justify-center text-[#F7F5EF] shadow-2xs transition-colors shrink-0">
               <Compass className="w-4 h-4" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center space-x-1.5 sm:space-x-2">
-                <span className="font-serif italic font-bold text-base sm:text-lg tracking-tight text-[#10141C]">
+                <span className="font-georgia font-bold text-base sm:text-lg tracking-tight text-[#252925]">
                   SYNAPSE
                 </span>
-                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#F2EFE9] text-[#78716C] border border-[#E6E1D6] font-semibold hidden sm:inline-block">
+                <span className="text-[10px] font-georgia uppercase px-2 py-0.5 rounded bg-[#9CAF88]/30 text-[#252925] border border-[#252925]/20 font-semibold hidden sm:inline-block">
                   Paper Workbench
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="hidden md:flex items-center space-x-2 text-xs font-mono text-[#57534E] truncate">
-            <span className="text-[#A8A29E]">&bull;</span>
-            <span className="font-semibold text-[#10141C] truncate">{stats.title}</span>
+          <div className="hidden md:flex items-center space-x-2 text-xs font-georgia text-[#252925]/80 truncate">
+            <span className="text-[#252925]/40">&bull;</span>
+            <span className="font-semibold text-[#252925] truncate">{stats.title}</span>
             {!customData && (
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-300 font-bold shrink-0">
+              <span className="text-[10px] font-georgia px-2 py-0.5 rounded bg-[#9CAF88]/30 text-[#252925] border border-[#252925]/20 font-bold shrink-0">
                 Example / simulator
               </span>
             )}
-            <span className="text-[#A8A29E] shrink-0">({stats.sampleCount} samples, {stats.samplingRate} Hz)</span>
+            <span className="text-[#252925]/70 font-mono shrink-0">({stats.sampleCount} samples, {stats.samplingRate} Hz)</span>
           </div>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls in Georgia */}
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {customData && (
             <button
               type="button"
               onClick={handleDeleteCustomData}
-              className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-xs font-mono font-medium text-[#8C2C1E] bg-[#FBEAE8] hover:bg-[#F5C6C2] border border-[#F5C6C2] rounded-md transition-colors"
+              className="flex items-center space-x-1 px-2.5 sm:px-3 py-1.5 text-xs font-georgia font-semibold text-[#E8412C] bg-red-50 hover:bg-red-100 border border-[#E8412C]/30 rounded-md transition-colors"
               title="Delete uploaded dataset and restore canonical research baseline"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -841,18 +863,18 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenAdvancedLab('aporia')}
-                className="hidden xl:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-[#2E4336] bg-[#F4F7F5] border border-[#82a18f]/40 rounded-md hover:bg-[#EBF1EE] transition-colors shadow-2xs"
+                className="hidden xl:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-georgia font-medium text-[#252925] bg-[#FFFFFF] border border-[#252925]/20 rounded-md hover:border-[#252925] transition-colors shadow-2xs"
                 title="Open Synthesized Thoughts"
               >
-                <span className="w-2 h-2 rounded-full bg-[#82a18f]" />
-                <span style={{ fontFamily: "'Haboro Contrast', 'Playfair Display', 'Georgia', serif" }}>Synthesized Thoughts</span>
+                <span className="w-2 h-2 rounded-full bg-[#E8412C]" />
+                <span>Synthesized Thoughts</span>
               </button>
               <button
                 type="button"
                 onClick={() => onOpenAdvancedLab('rack')}
-                className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[#1F2430] bg-[#FFFFFF] border border-[#DDD6C7] rounded-md hover:bg-[#EFEBE0] transition-colors shadow-2xs"
+                className="hidden lg:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-georgia font-medium text-[#252925] bg-[#FFFFFF] border border-[#252925]/20 rounded-md hover:border-[#252925] transition-colors shadow-2xs"
               >
-                <Sliders className="w-3.5 h-3.5 text-[#0F766E]" />
+                <Sliders className="w-3.5 h-3.5 text-[#252925]" />
                 <span>Full Instrument Rack</span>
               </button>
             </>
@@ -861,9 +883,9 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center space-x-1 bg-[#FFFDF9] hover:bg-[#F2EFE9] text-[#10141C] border border-[#E6E1D6] px-2 sm:px-3.5 py-1.5 rounded-md text-xs font-mono font-medium shadow-2xs transition-all active:scale-95 shrink-0"
+            className="flex items-center space-x-1 bg-[#FFFFFF] hover:bg-[#F7F5EF] text-[#252925] border border-[#252925]/30 px-2.5 sm:px-3.5 py-1.5 rounded-md text-xs font-georgia font-semibold shadow-2xs transition-all active:scale-95 shrink-0"
           >
-            <Upload className="w-3.5 h-3.5 text-[#B45F1B]" />
+            <Upload className="w-3.5 h-3.5 text-[#252925]" />
             <span className="hidden sm:inline">Upload CSV</span>
             <span className="sm:hidden">Upload</span>
           </button>
@@ -872,7 +894,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
             type="button"
             onClick={handleRunPipeline}
             disabled={isAnalyzing}
-            className="flex items-center space-x-1 sm:space-x-2 bg-[#10141C] hover:bg-[#25653F] text-white px-2.5 sm:px-4 py-1.5 rounded-md text-xs font-mono font-semibold shadow-xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
+            className="flex items-center space-x-1.5 sm:space-x-2 bg-[#E8412C] hover:bg-[#D03522] text-[#F7F5EF] px-3 sm:px-4 py-1.5 rounded-md text-xs font-georgia font-bold shadow-xs transition-all active:scale-95 disabled:opacity-50 shrink-0"
           >
             <Play className={`w-3.5 h-3.5 fill-current ${isAnalyzing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isAnalyzing ? 'Running Analysis...' : 'Run Pipeline'}</span>
@@ -881,24 +903,24 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
         </div>
       </header>
 
-      {/* 2. MAIN 3-COLUMN WORKBENCH */}
-      <div className="flex-1 flex overflow-visible">
-        {/* LEFT SIDEBAR: Active Signal Manager & Analytical Switcher */}
-        <aside className="w-64 border-r border-[#E6E1D6] bg-[#FFFDF9] p-4 flex flex-col justify-between shrink-0 hidden md:flex sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
-          <div className="space-y-6">
+      {/* 2. MAIN 3-COLUMN WORKBENCH (Balanced 256px / Flex / 280px Layout) */}
+      <div className="flex-1 flex overflow-visible bg-[#F7F5EF]">
+        {/* LEFT SIDEBAR: Active Signal Manager & Analytical Switcher (256px, 60% Sage Green Visual Surface) */}
+        <aside className="w-60 lg:w-64 shrink-0 border-r border-[#252925]/20 bg-[#9CAF88] p-3.5 flex flex-col justify-between hidden md:flex sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto text-[#252925] font-georgia">
+          <div className="space-y-5">
             {/* Active Dataset Card */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#78716C] tracking-wider">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-georgia uppercase font-bold text-[#252925] tracking-wider">
                 Active Research Signal
               </span>
-              <div className="p-3 rounded-lg border border-[#E6E1D6] bg-[#F8F6F1]/70 space-y-2">
+              <div className="p-2.5 rounded-lg border border-[#252925]/20 bg-[#F7F5EF] space-y-1.5">
                 <div className="flex items-start justify-between gap-1">
                   <div className="flex flex-col gap-0.5 truncate">
-                    <span className="font-mono text-xs font-bold text-[#10141C] truncate" title={stats.title}>
+                    <span className="font-georgia text-xs font-bold text-[#252925] truncate" title={stats.title}>
                       {customData ? customData.name : 'Canonical Research Signal'}
                     </span>
                     {!customData && (
-                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-500/10 text-amber-700 border border-amber-300 font-bold w-fit">
+                      <span className="text-[9px] font-georgia px-1.5 py-0.2 rounded bg-[#9CAF88]/30 text-[#252925] border border-[#252925]/20 font-bold w-fit">
                         Example / simulator
                       </span>
                     )}
@@ -907,7 +929,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                     <button
                       type="button"
                       onClick={handleDeleteCustomData}
-                      className="p-1 rounded text-[#8C2C1E] hover:bg-[#FBEAE8] transition-colors shrink-0"
+                      className="p-1 rounded text-[#E8412C] hover:bg-red-50 transition-colors shrink-0"
                       title="Delete uploaded dataset"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -915,22 +937,22 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   )}
                 </div>
 
-                <div className="font-mono text-[10px] text-[#78716C] space-y-0.5">
+                <div className="font-mono text-[9px] text-[#252925] space-y-0.5">
                   <div className="flex justify-between">
-                    <span>Sampling Rate:</span>
-                    <span className="font-semibold text-[#10141C]">{stats.samplingRate} Hz</span>
+                    <span className="font-georgia text-[#252925]/70">Rate:</span>
+                    <span className="font-semibold text-[#252925]">{stats.samplingRate} Hz</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Sample Count:</span>
-                    <span className="font-semibold text-[#10141C]">{stats.sampleCount}</span>
+                    <span className="font-georgia text-[#252925]/70">Count:</span>
+                    <span className="font-semibold text-[#252925]">{stats.sampleCount}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Nyquist Limit:</span>
-                    <span className="font-semibold text-[#10141C]">{(stats.samplingRate / 2).toFixed(1)} Hz</span>
+                    <span className="font-georgia text-[#252925]/70">Nyquist:</span>
+                    <span className="font-semibold text-[#252925]">{(stats.samplingRate / 2).toFixed(1)} Hz</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Precision:</span>
-                    <span className="font-semibold text-[#25653F]">Float64 (Uniform)</span>
+                    <span className="font-georgia text-[#252925]/70">Precision:</span>
+                    <span className="font-semibold text-[#E8412C]">Float64</span>
                   </div>
                 </div>
 
@@ -938,10 +960,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full mt-1 flex items-center justify-center space-x-1.5 py-1.5 px-2 rounded border border-dashed border-[#E6E1D6] hover:border-[#10141C] text-[11px] font-mono text-[#57534E] hover:text-[#10141C] transition-colors"
+                    className="w-full mt-1 flex items-center justify-center space-x-1 py-1 px-1.5 rounded border border-dashed border-[#252925]/40 hover:border-[#252925] text-[10px] font-georgia text-[#252925] hover:bg-[#FFFFFF]/50 transition-colors"
                   >
-                    <Upload className="w-3 h-3 text-[#B45F1B]" />
-                    <span>Upload Your Own CSV</span>
+                    <Upload className="w-3 h-3 text-[#252925]" />
+                    <span>Upload CSV</span>
                   </button>
                 )}
               </div>
@@ -949,104 +971,118 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
             {/* Analytical Planes Navigation */}
             <div className="space-y-1">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#78716C] tracking-wider">
+              <span className="text-[10px] font-georgia uppercase font-bold text-[#252925] tracking-wider">
                 Analytical Engines
               </span>
-              <div className="space-y-1 pt-1 font-mono text-xs">
+              <div className="space-y-1 pt-1 font-georgia text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab('charts')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'charts'
-                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'charts'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <LineChartIcon className="w-3.5 h-3.5 text-[#10141C]" />
-                  <span>Synchronous Charts</span>
+                  <LineChartIcon className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Synchronous Charts</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('phase_space')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'phase_space'
-                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'phase_space'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <Orbit className="w-3.5 h-3.5 text-[#B45F1B]" />
-                  <span>Phase Space &amp; Poincaré</span>
+                  <Orbit className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Phase Space &amp; Poincaré</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('bispectrum')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'bispectrum'
-                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'bispectrum'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <Cpu className="w-3.5 h-3.5 text-[#25653F]" />
-                  <span>Bispectrum &amp; Coupling</span>
+                  <Cpu className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Bispectrum &amp; Coupling</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('instantaneous')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'instantaneous'
-                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'instantaneous'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <Waves className="w-3.5 h-3.5 text-[#4F8A8B]" />
-                  <span>Hilbert Envelope</span>
+                  <Waves className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Hilbert Envelope</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('diagnostics')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'diagnostics'
-                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'diagnostics'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <Activity className="w-3.5 h-3.5 text-[#78716C]" />
-                  <span>ACF &amp; Complexity</span>
+                  <Activity className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">ACF &amp; Complexity</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('evidence')}
-                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors ${activeTab === 'evidence'
-                    ? 'bg-[#E6E1D6]/80 text-[#10141C] font-bold'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center space-x-2 px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'evidence'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <Share2 className="w-3.5 h-3.5 text-[#10141C]" />
-                  <span>Evidence Lineage DAG</span>
+                  <Share2 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Evidence Lineage</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveTab('papergraph')}
-                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-colors ${activeTab === 'papergraph'
-                    ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
-                    : 'text-[#57534E] hover:bg-[#F2EFE9]'
+                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-colors text-left ${activeTab === 'papergraph'
+                    ? 'bg-[#F7F5EF] text-[#252925] border-l-3 border-[#E8412C] font-bold shadow-xs'
+                    : 'text-[#252925] hover:bg-[#F7F5EF]/50'
                     }`}
                 >
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className={`w-3.5 h-3.5 ${activeTab === 'papergraph' ? 'text-white' : 'text-[#0F766E]'}`} />
-                    <span>PaperGraph Literature</span>
+                  <div className="flex items-center space-x-2 truncate">
+                    <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">PaperGraph</span>
                   </div>
-                  <span className={`px-1.5 py-0.2 rounded text-[9px] uppercase font-mono font-bold ${activeTab === 'papergraph' ? 'bg-white/20 text-white' : 'bg-[#E6F4F2] text-[#0F766E]'
-                    }`}>
+                  <span className="px-1.5 py-0.2 rounded text-[8px] uppercase font-mono font-bold shrink-0 bg-[#252925] text-[#F7F5EF]">
                     arXiv
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentView('cdco')}
+                  className="w-full flex items-center justify-between px-2.5 py-2 rounded-md transition-colors text-left text-[#252925] hover:bg-[#F7F5EF]/50"
+                  title="Launch Cross-Dataset Correlation Observatory for multi-observation alignment & testing"
+                >
+                  <div className="flex items-center space-x-2 truncate">
+                    <Network className="w-3.5 h-3.5 shrink-0 text-[#252925]" />
+                    <span className="truncate">Cross-Dataset Lab</span>
+                  </div>
+                  <span className="px-1.5 py-0.2 rounded text-[8px] uppercase font-mono font-bold shrink-0 bg-[#252925] text-[#F7F5EF]">
+                    CDCO
                   </span>
                 </button>
               </div>
             </div>
 
             {/* Audio Lab Ambient Player on Paper Workbench */}
-            <div className="pt-2">
+            <div className="pt-1">
               <MusicPlayer
                 onOpenAnalysis={() => setActiveTab('charts')}
                 collapsedSidebar={false}
@@ -1054,20 +1090,20 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#E6E1D6] font-mono text-[10px] text-[#78716C] space-y-1">
+          <div className="pt-3 border-t border-[#252925]/20 font-georgia text-[10px] text-[#252925]/70 space-y-1">
             <div className="flex justify-between">
               <span>Scientific Suite:</span>
-              <span className="text-[#25653F] font-bold">{realTestCount} tests passing</span>
+              <span className="text-[#E8412C] font-mono font-bold">{realTestCount} passing</span>
             </div>
             <div className="flex justify-between">
               <span>Data Protection:</span>
-              <span className="text-[#10141C] font-semibold">Immutable Trace</span>
+              <span className="text-[#252925] font-semibold">Immutable Trace</span>
             </div>
           </div>
         </aside>
 
-        {/* CENTRE: Analytical Views (Free Scrollable) */}
-        <main className="flex-1 p-6 space-y-6 overflow-y-visible">
+        {/* CENTRE: Analytical Views (Flexible Remaining Width, 30% Off-white Canvas) */}
+        <main className="flex-1 min-w-0 p-5 lg:p-6 space-y-5 overflow-y-visible bg-[#F7F5EF]">
           {(activeSignal?.timestampsLinearized || activeSignal?.quality?.timestamps_linearized) && (
             <div className="bg-[#FEF3C7] border border-[#F59E0B]/40 text-[#92400E] px-3.5 py-2 rounded-lg text-xs font-mono flex items-center justify-between shadow-2xs">
               <div className="flex items-center space-x-2">
@@ -1081,57 +1117,57 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           )}
 
           {/* Top 6 Key Telemetry Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-mono text-xs">
-            <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] uppercase font-bold text-[#78716C]">Dominant Peak</div>
-              <div className="text-base font-bold text-[#10141C] mt-0.5">{stats.dominantPeak.toFixed(2)} Hz</div>
-              <div className="text-[10px] text-[#25653F] font-semibold">Welch PSD Peak</div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+            <div className="bg-[#FFFFFF] border border-[#252925]/20 p-3.5 rounded-lg shadow-2xs flex flex-col justify-between min-h-[96px]">
+              <div className="font-georgia text-xs font-semibold text-[#252925]/70">Dominant Peak</div>
+              <div className="font-mono text-lg font-bold text-[#252925] my-0.5">{stats.dominantPeak.toFixed(2)} Hz</div>
+              <div className="font-georgia text-[11px] font-medium text-[#252925]/80">Welch PSD Peak</div>
             </div>
 
-            <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] uppercase font-bold text-[#78716C]">Peak Amplitude</div>
-              <div className="text-base font-bold text-[#10141C] mt-0.5">{stats.peak.toFixed(3)} V</div>
-              <div className="text-[10px] text-[#A8A29E]">Max absolute value</div>
+            <div className="bg-[#FFFFFF] border border-[#252925]/20 p-3.5 rounded-lg shadow-2xs flex flex-col justify-between min-h-[96px]">
+              <div className="font-georgia text-xs font-semibold text-[#252925]/70">Peak Amplitude</div>
+              <div className="font-mono text-lg font-bold text-[#252925] my-0.5">{stats.peak.toFixed(3)} V</div>
+              <div className="font-georgia text-[11px] font-medium text-[#252925]/80">Max absolute value</div>
             </div>
 
-            <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] uppercase font-bold text-[#78716C]">RMS Energy</div>
-              <div className="text-base font-bold text-[#10141C] mt-0.5">{stats.rms.toFixed(3)}</div>
-              <div className="text-[10px] text-[#A8A29E]">Root Mean Square</div>
+            <div className="bg-[#FFFFFF] border border-[#252925]/20 p-3.5 rounded-lg shadow-2xs flex flex-col justify-between min-h-[96px]">
+              <div className="font-georgia text-xs font-semibold text-[#252925]/70">RMS Energy</div>
+              <div className="font-mono text-lg font-bold text-[#252925] my-0.5">{stats.rms.toFixed(3)}</div>
+              <div className="font-georgia text-[11px] font-medium text-[#252925]/80">Root Mean Square</div>
             </div>
 
-            <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] uppercase font-bold text-[#78716C]">Max Z-Score</div>
-              <div className="text-base font-bold text-[#964E14] mt-0.5">+{stats.maxZ.toFixed(2)} σ</div>
-              <div className="text-[10px] text-[#964E14] font-semibold">Rosner ESD Outlier</div>
+            <div className="bg-[#FFFFFF] border border-[#252925]/20 p-3.5 rounded-lg shadow-2xs flex flex-col justify-between min-h-[96px]">
+              <div className="font-georgia text-xs font-semibold text-[#252925]/70">Max Z-Score</div>
+              <div className="font-mono text-lg font-bold text-[#E8412C] my-0.5">+{stats.maxZ.toFixed(2)} σ</div>
+              <div className="font-georgia text-[11px] font-medium text-[#E8412C]">Rosner ESD Outlier</div>
             </div>
 
-            <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] uppercase font-bold text-[#78716C]">Spectral Entropy</div>
-              <div className="text-base font-bold text-[#10141C] mt-0.5">{stats.spectralEntropy.toFixed(1)}%</div>
-              <div className="text-[10px] text-[#4F8A8B]">Information disorder</div>
+            <div className="bg-[#FFFFFF] border border-[#252925]/20 p-3.5 rounded-lg shadow-2xs flex flex-col justify-between min-h-[96px]">
+              <div className="font-georgia text-xs font-semibold text-[#252925]/70">Spectral Entropy</div>
+              <div className="font-mono text-lg font-bold text-[#252925] my-0.5">{stats.spectralEntropy.toFixed(1)}%</div>
+              <div className="font-georgia text-[11px] font-medium text-[#252925]/70">Information disorder</div>
             </div>
 
-            <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-3 rounded-lg shadow-2xs">
-              <div className="text-[10px] uppercase font-bold text-[#78716C]">RQA Determinism</div>
-              <div className="text-base font-bold text-[#25653F] mt-0.5">{dynamicMetrics.rqaDeterminism}%</div>
-              <div className="text-[10px] text-[#25653F] font-semibold">Non-Random Phase</div>
+            <div className="bg-[#FFFFFF] border border-[#252925]/20 p-3.5 rounded-lg shadow-2xs flex flex-col justify-between min-h-[96px]">
+              <div className="font-georgia text-xs font-semibold text-[#252925]/70">RQA Determinism</div>
+              <div className="font-mono text-lg font-bold text-[#252925] my-0.5">{dynamicMetrics.rqaDeterminism}%</div>
+              <div className="font-georgia text-[11px] font-medium text-[#252925]/80">Non-Random Phase</div>
             </div>
           </div>
 
-          {/* TAB 1: SYNCHRONOUS CHARTS (Pure Black Ink) */}
+          {/* TAB 1: SYNCHRONOUS CHARTS */}
           {activeTab === 'charts' && (
             <>
               {/* Chart 1: Time-Domain Oscillogram */}
-              <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-5 rounded-xl shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#E6E1D6]/70 pb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#10141C]" />
-                    <h2 className="font-serif italic text-base sm:text-lg text-[#10141C] font-semibold tracking-tight">
+              <div className="bg-[#FFFFFF] border border-[#252925]/20 p-5 rounded-xl shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#252925]/15 pb-2.5">
+                  <div className="flex items-center space-x-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E8412C]" />
+                    <h2 className="font-georgia text-base sm:text-lg text-[#252925] font-bold tracking-tight">
                       Time-Domain Oscillogram
                     </h2>
                   </div>
-                  <div className="flex items-center space-x-4 font-mono text-[11px] text-[#78716C]">
+                  <div className="flex items-center space-x-4 font-mono text-xs text-[#252925]/70">
                     <span>fs = {stats.samplingRate} Hz</span>
                     <span>&bull;</span>
                     <span>N = {stats.sampleCount}</span>
@@ -1143,49 +1179,55 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <div className="h-64 w-full pt-2">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeries} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                      <CartesianGrid stroke="#E6E1D6" strokeDasharray="3 3" vertical={false} />
+                      <CartesianGrid stroke="#252925" strokeOpacity={0.12} strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="time"
-                        tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                        tickLine={{ stroke: '#E6E1D6' }}
-                        axisLine={{ stroke: '#E6E1D6' }}
+                        type="number"
+                        domain={[0, stats.duration || 10]}
+                        ticks={timeTicks}
+                        tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                        tickLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        axisLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        tickFormatter={(t) => `${Number(t).toFixed(1)}s`}
                       />
                       <YAxis
-                        tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                        tickLine={{ stroke: '#E6E1D6' }}
-                        axisLine={{ stroke: '#E6E1D6' }}
+                        tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                        tickLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        axisLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#FFFDF9',
-                          borderColor: '#E6E1D6',
+                          backgroundColor: '#FFFFFF',
+                          borderColor: 'rgba(37, 41, 37, 0.2)',
                           borderRadius: '8px',
                           fontFamily: 'JetBrains Mono',
                           fontSize: '11px',
+                          color: '#252925',
                         }}
                       />
-                      <ReferenceLine y={0} stroke="#E6E1D6" />
+                      <ReferenceLine y={0} stroke="#252925" strokeOpacity={0.2} />
                       {!customData && (
                         <>
                           <ReferenceLine
                             x={1.25}
-                            stroke="#964E14"
+                            stroke="#E8412C"
                             strokeDasharray="3 3"
-                            label={{ value: 'Transient Outlier (1.25s)', fill: '#964E14', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }}
+                            label={{ value: 'Transient Outlier (1.25s)', fill: '#E8412C', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }}
                           />
                           <ReferenceLine
                             x={2.60}
-                            stroke="#78716C"
+                            stroke="#252925"
+                            strokeOpacity={0.6}
                             strokeDasharray="3 3"
-                            label={{ value: 'Regime Shift (2.60s)', fill: '#78716C', fontSize: 10, position: 'insideTopRight', fontFamily: 'JetBrains Mono' }}
+                            label={{ value: 'Regime Shift (2.60s)', fill: '#252925', fontSize: 10, position: 'insideTopRight', fontFamily: 'JetBrains Mono' }}
                           />
                         </>
                       )}
-                      {/* Plotted Line in Pure Black Ink */}
+                      {/* Plotted Line in Pure Ink */}
                       <Line
                         type="monotone"
                         dataKey="v"
-                        stroke="#10141C"
+                        stroke="#252925"
                         strokeWidth={1.8}
                         dot={false}
                         isAnimationActive={false}
@@ -1196,25 +1238,25 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
               </div>
 
               {/* Chart 2: Discrete Fourier Power Spectrum */}
-              <div className="bg-[#FFFDF9] border border-[#E6E1D6] p-5 rounded-xl shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#E6E1D6]/70 pb-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#10141C]" />
-                    <h2 className="font-serif italic text-base sm:text-lg text-[#10141C] font-semibold tracking-tight">
+              <div className="bg-[#FFFFFF] border border-[#252925]/20 p-5 rounded-xl shadow-xs space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-[#252925]/15 pb-2.5">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E8412C]" />
+                    <h2 className="font-georgia text-base sm:text-lg text-[#252925] font-bold tracking-tight">
                       Discrete Fourier Power Spectrum (Welch PSD)
                     </h2>
-                    <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#EFEBE0] text-[#0F766E] font-bold border border-[#DDD6C7]">
+                    <span className="font-mono text-xs px-2.5 py-0.5 rounded bg-[#9CAF88]/30 text-[#252925] font-bold border border-[#252925]/20">
                       {stats.dominantPeak.toFixed(2)} Hz Peak (Δf = {stats.frequencyResolution.toFixed(3)} Hz)
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3 font-mono text-[11px] text-[#78716C]">
-                    <div className="flex items-center border border-[#DDD6C7] rounded bg-[#EFEBE0] p-0.5">
+                  <div className="flex items-center space-x-3 text-xs text-[#252925]/70">
+                    <div className="flex items-center border border-[#252925]/20 rounded bg-[#F7F5EF] p-0.5 font-georgia">
                       <button
                         type="button"
                         onClick={() => setSpectrumScale('linear')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${spectrumScale === 'linear'
-                          ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
-                          : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                        className={`px-2.5 py-0.5 rounded text-xs font-semibold transition-colors ${spectrumScale === 'linear'
+                          ? 'bg-[#FFFFFF] text-[#252925] shadow-2xs font-bold'
+                          : 'text-[#252925]/70 hover:text-[#252925]'
                           }`}
                       >
                         Linear
@@ -1222,43 +1264,47 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <button
                         type="button"
                         onClick={() => setSpectrumScale('db')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${spectrumScale === 'db'
-                          ? 'bg-[#FFFFFF] text-[#1F2430] shadow-2xs'
-                          : 'text-[#6B6F7B] hover:text-[#1F2430]'
+                        className={`px-2.5 py-0.5 rounded text-xs font-semibold transition-colors ${spectrumScale === 'db'
+                          ? 'bg-[#FFFFFF] text-[#252925] shadow-2xs font-bold'
+                          : 'text-[#252925]/70 hover:text-[#252925]'
                           }`}
                       >
                         Log (dB)
                       </button>
                     </div>
                     <span>&bull;</span>
-                    <span>Nyquist [0, {(stats.samplingRate / 2).toFixed(0)} Hz]</span>
+                    <span className="font-mono">Nyquist [0, {(stats.samplingRate / 2).toFixed(0)} Hz]</span>
                   </div>
                 </div>
 
                 <div className="h-60 w-full pt-2">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={spectrumSeries} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                      <CartesianGrid stroke="#E6E1D6" strokeDasharray="3 3" vertical={false} />
+                      <CartesianGrid stroke="#252925" strokeOpacity={0.12} strokeDasharray="3 3" vertical={false} />
                       <XAxis
                         dataKey="freq"
-                        tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                        tickLine={{ stroke: '#E6E1D6' }}
-                        axisLine={{ stroke: '#E6E1D6' }}
-                        unit=" Hz"
+                        type="number"
+                        domain={[0, (stats.samplingRate || 200) / 2]}
+                        ticks={freqTicks}
+                        tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                        tickLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        axisLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        tickFormatter={(f) => `${Number(f).toFixed(0)} Hz`}
                       />
                       <YAxis
-                        tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                        tickLine={{ stroke: '#E6E1D6' }}
-                        axisLine={{ stroke: '#E6E1D6' }}
+                        tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                        tickLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        axisLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
                         unit={spectrumScale === 'db' ? ' dB' : ''}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#FFFDF9',
-                          borderColor: '#E6E1D6',
+                          backgroundColor: '#FFFFFF',
+                          borderColor: 'rgba(37, 41, 37, 0.2)',
                           borderRadius: '8px',
                           fontFamily: 'JetBrains Mono',
                           fontSize: '11px',
+                          color: '#252925',
                         }}
                         formatter={(val: any) => [
                           `${Number(val).toFixed(4)} ${spectrumScale === 'db' ? 'dB' : 'V²/Hz'}`,
@@ -1268,30 +1314,30 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       />
                       {!customData && (
                         <>
-                          <ReferenceLine x={5.0} stroke="#78716C" strokeDasharray="3 3" label={{ value: '5 Hz Peak', fill: '#10141C', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
-                          <ReferenceLine x={14.0} stroke="#78716C" strokeDasharray="3 3" label={{ value: '14 Hz Peak', fill: '#10141C', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
-                          <ReferenceLine x={35.0} stroke="#78716C" strokeDasharray="3 3" label={{ value: '35 Hz Peak', fill: '#10141C', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
+                          <ReferenceLine x={5.0} stroke="#252925" strokeOpacity={0.4} strokeDasharray="3 3" label={{ value: '5 Hz Peak', fill: '#252925', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
+                          <ReferenceLine x={14.0} stroke="#252925" strokeOpacity={0.4} strokeDasharray="3 3" label={{ value: '14 Hz Peak', fill: '#252925', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
+                          <ReferenceLine x={35.0} stroke="#252925" strokeOpacity={0.4} strokeDasharray="3 3" label={{ value: '35 Hz Peak', fill: '#252925', fontSize: 10, position: 'top', fontFamily: 'JetBrains Mono' }} />
                         </>
                       )}
                       {customData && stats.dominantPeak > 0 && (
                         <ReferenceLine
                           x={stats.dominantPeak}
-                          stroke="#0F766E"
+                          stroke="#E8412C"
                           strokeDasharray="3 3"
                           label={{
                             value: `Peak ${stats.dominantPeak.toFixed(2)} Hz`,
-                            fill: '#0F766E',
+                            fill: '#E8412C',
                             fontSize: 10,
                             position: 'top',
                             fontFamily: 'JetBrains Mono',
                           }}
                         />
                       )}
-                      {/* Plotted Line in Pure Black Ink */}
+                      {/* Plotted Line in Deep Charcoal */}
                       <Line
                         type="monotone"
                         dataKey={spectrumScale === 'db' ? 'powerDb' : 'power'}
-                        stroke="#10141C"
+                        stroke="#252925"
                         strokeWidth={1.8}
                         dot={false}
                         isAnimationActive={false}
@@ -1458,15 +1504,24 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <div className="h-64 w-full pt-2">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={hilbertSeries} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                      <CartesianGrid stroke="#E6E1D6" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="time" tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                      <YAxis tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#FFFDF9', borderColor: '#E6E1D6', fontFamily: 'JetBrains Mono' }} />
-                      <ReferenceLine y={0} stroke="#E6E1D6" />
-                      {/* Raw Trace in Light Graphite */}
-                      <Line type="monotone" dataKey="raw" stroke="#78716C" strokeWidth={1} dot={false} isAnimationActive={false} />
-                      {/* Hilbert Envelope in Solid Ink Black */}
-                      <Line type="monotone" dataKey="envelope" stroke="#10141C" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      <CartesianGrid stroke="#252925" strokeOpacity={0.12} strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="time"
+                        type="number"
+                        domain={[0, stats.duration || 10]}
+                        ticks={timeTicks}
+                        tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                        tickLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        axisLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        tickFormatter={(t) => `${Number(t).toFixed(1)}s`}
+                      />
+                      <YAxis tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(37, 41, 37, 0.2)', fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#252925' }} />
+                      <ReferenceLine y={0} stroke="#252925" strokeOpacity={0.2} />
+                      {/* Raw Trace in Light Sage/Graphite */}
+                      <Line type="monotone" dataKey="raw" stroke="#9CAF88" strokeWidth={1} dot={false} isAnimationActive={false} />
+                      {/* Hilbert Envelope in Solid Ink */}
+                      <Line type="monotone" dataKey="envelope" stroke="#252925" strokeWidth={2} dot={false} isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -1490,15 +1545,24 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 <div className="h-56 w-full pt-2">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={acfSeries} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-                      <CartesianGrid stroke="#E6E1D6" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="lag" tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }} />
-                      <YAxis tick={{ fill: '#78716C', fontSize: 10, fontFamily: 'JetBrains Mono' }} domain={[-0.5, 1]} />
-                      <Tooltip contentStyle={{ backgroundColor: '#FFFDF9', borderColor: '#E6E1D6' }} />
-                      <ReferenceLine y={0} stroke="#E6E1D6" />
-                      <ReferenceLine y={1.96 / Math.sqrt(stats.sampleCount)} stroke="#964E14" strokeDasharray="3 3" />
-                      <ReferenceLine y={-1.96 / Math.sqrt(stats.sampleCount)} stroke="#964E14" strokeDasharray="3 3" />
-                      {/* Plotted Line in Pure Black Ink */}
-                      <Line type="monotone" dataKey="r" stroke="#10141C" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                      <CartesianGrid stroke="#252925" strokeOpacity={0.12} strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="lag"
+                        type="number"
+                        domain={[0, 40]}
+                        ticks={[0, 10, 20, 30, 40]}
+                        tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+                        tickLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        axisLine={{ stroke: '#252925', strokeOpacity: 0.2 }}
+                        unit=" lag"
+                      />
+                      <YAxis tick={{ fill: '#252925', fontSize: 10, fontFamily: 'JetBrains Mono' }} domain={[-0.5, 1]} />
+                      <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: 'rgba(37, 41, 37, 0.2)', fontFamily: 'JetBrains Mono', fontSize: '11px', color: '#252925' }} />
+                      <ReferenceLine y={0} stroke="#252925" strokeOpacity={0.2} />
+                      <ReferenceLine y={1.96 / Math.sqrt(stats.sampleCount)} stroke="#E8412C" strokeDasharray="3 3" />
+                      <ReferenceLine y={-1.96 / Math.sqrt(stats.sampleCount)} stroke="#E8412C" strokeDasharray="3 3" />
+                      {/* Plotted Line in Pure Ink */}
+                      <Line type="monotone" dataKey="r" stroke="#252925" strokeWidth={1.8} dot={false} isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -1580,11 +1644,11 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[#E6E1D6] pb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-[#0F766E]" />
+                    <BookOpen className="w-5 h-5 text-[var(--color-accent)]" />
                     <h2 className="font-serif italic text-lg text-[#10141C] font-semibold">
                       PaperGraph™ Literature &amp; Citation Network
                     </h2>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/20">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-[#E6F4F2] text-[var(--color-accent)] border border-[var(--color-accent)]/20">
                       Open-Access ArXiv Link
                     </span>
                   </div>
@@ -1611,10 +1675,10 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   <button
                     type="button"
                     onClick={() => papersCsvInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] text-xs font-mono font-bold transition-all shadow-2xs"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#FAF8F5] border border-[var(--color-border)] hover:bg-[var(--color-bg-tint)] text-[var(--color-text-ink)] text-xs font-mono font-bold transition-all shadow-2xs"
                     title="Upload CSV list of research papers"
                   >
-                    <Upload className="w-4 h-4 text-[#0F766E]" />
+                    <Upload className="w-4 h-4 text-[var(--color-accent)]" />
                     <span>Upload Papers CSV</span>
                   </button>
 
@@ -1622,7 +1686,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   <button
                     type="button"
                     onClick={handleDownloadSamplePapersCsv}
-                    className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-[#FAF8F5] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#78716C] hover:text-[#1F2430] text-xs font-mono transition-all shadow-2xs"
+                    className="flex items-center gap-1 px-2.5 py-2 rounded-lg bg-[#FAF8F5] border border-[var(--color-border)] hover:bg-[var(--color-bg-tint)] text-[#78716C] hover:text-[var(--color-text-ink)] text-xs font-mono transition-all shadow-2xs"
                     title="Download sample research papers CSV template"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -1635,12 +1699,12 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                     onClick={() => setIsRackOpen(!isRackOpen)}
                     className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-mono font-bold transition-all shadow-2xs shrink-0 ${isRackOpen
                       ? 'bg-[#1F2430] text-white ring-2 ring-[#0F766E]'
-                      : 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E]/40 hover:bg-[#D4EBE7]'
+                      : 'bg-[#E6F4F2] text-[var(--color-accent)] border border-[var(--color-accent)]/40 hover:bg-[#D4EBE7]'
                       }`}
                   >
-                    <Layers className="w-4 h-4 text-[#0F766E]" />
+                    <Layers className="w-4 h-4 text-[var(--color-accent)]" />
                     <span>PaperGraph Rack</span>
-                    <span className="px-1.5 py-0.2 rounded-full bg-[#0F766E] text-white text-[10px] font-bold">
+                    <span className="px-1.5 py-0.2 rounded-full bg-[var(--color-accent)] text-white text-[10px] font-bold">
                       {activeSet?.papers.length || 0}
                     </span>
                   </button>
@@ -1654,7 +1718,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       setCopiedBibId('all');
                       setTimeout(() => setCopiedBibId(null), 3000);
                     }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0F766E] text-white hover:bg-[#0D655E] text-xs font-mono font-bold transition-all shadow-2xs shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--color-accent)] text-white hover:bg-[#0D655E] text-xs font-mono font-bold transition-all shadow-2xs shrink-0"
                   >
                     {copiedBibId === 'all' ? <Check className="w-4 h-4 text-emerald-300" /> : <Download className="w-4 h-4" />}
                     <span>{copiedBibId === 'all' ? 'Copied!' : 'Export All (.bib)'}</span>
@@ -1664,15 +1728,15 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
               {/* Status / Feedback Banner */}
               {graphifyNotice && (
-                <div className="p-3 bg-[#E6F4F2] border border-[#0F766E]/40 rounded-xl text-xs font-mono text-[#0F766E] flex items-center justify-between font-bold shadow-2xs">
+                <div className="p-3 bg-[#E6F4F2] border border-[var(--color-accent)]/40 rounded-xl text-xs font-mono text-[var(--color-accent)] flex items-center justify-between font-bold shadow-2xs">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#0F766E] shrink-0" />
+                    <Sparkles className="w-4 h-4 text-[var(--color-accent)] shrink-0" />
                     <span>{graphifyNotice}</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setGraphifyNotice(null)}
-                    className="p-1 text-[#0F766E] hover:text-[#0D655E] rounded"
+                    className="p-1 text-[var(--color-accent)] hover:text-[#0D655E] rounded"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1681,13 +1745,13 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
               {/* PaperGraph Staging Rack Panel */}
               {isRackOpen && (
-                <div className="bg-[#FFFFFF] border-2 border-[#0F766E]/40 rounded-xl p-4 shadow-sm space-y-4 font-mono text-xs">
+                <div className="bg-[#FFFFFF] border-2 border-[var(--color-accent)]/40 rounded-xl p-4 shadow-sm space-y-4 font-mono text-xs">
                   {/* Rack Header & Action Button */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#E6E1D6] pb-3">
                     <div className="flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-[#0F766E]" />
-                      <span className="font-bold text-[#1F2430] text-sm">PaperGraph™ Staging Rack</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
+                      <Layers className="w-4 h-4 text-[var(--color-accent)]" />
+                      <span className="font-bold text-[var(--color-text-ink)] text-sm">PaperGraph™ Staging Rack</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#E6F4F2] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]/20">
                         {paperGraphSets.length} Test Sets Available
                       </span>
                     </div>
@@ -1697,7 +1761,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <button
                         type="button"
                         onClick={handleImplementGraphify}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0F766E] hover:bg-[#0D655E] text-white text-xs font-mono font-bold shadow-xs transition-all ring-2 ring-[#0F766E]/20"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--color-accent)] hover:bg-[#0D655E] text-white text-xs font-mono font-bold shadow-xs transition-all ring-2 ring-[#0F766E]/20"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>Implement Graphify™ ({activeSet?.papers.length || 0} Papers)</span>
@@ -1706,7 +1770,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsRackOpen(false)}
-                        className="p-1 rounded text-[#78716C] hover:text-[#1F2430] hover:bg-[#EFEBE0]"
+                        className="p-1 rounded text-[#78716C] hover:text-[var(--color-text-ink)] hover:bg-[var(--color-bg-tint)]"
                         title="Close Rack"
                       >
                         <X className="w-4 h-4" />
@@ -1722,8 +1786,8 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         type="button"
                         onClick={() => setActiveSetId(s.id)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeSetId === s.id
-                          ? 'bg-[#0F766E] text-white shadow-2xs'
-                          : 'bg-[#FAF8F5] border border-[#DDD6C7] text-[#57534E] hover:bg-[#EFEBE0]'
+                          ? 'bg-[var(--color-accent)] text-white shadow-2xs'
+                          : 'bg-[#FAF8F5] border border-[var(--color-border)] text-[#57534E] hover:bg-[var(--color-bg-tint)]'
                           }`}
                       >
                         <span>{s.name}</span>
@@ -1740,7 +1804,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsCreatingNewSet(true)}
-                      className="px-2.5 py-1.5 rounded-lg border border-dashed border-[#0F766E] text-[#0F766E] hover:bg-[#E6F4F2] text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap"
+                      className="px-2.5 py-1.5 rounded-lg border border-dashed border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[#E6F4F2] text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>New Test Set</span>
@@ -1749,18 +1813,18 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
                   {/* Create New Set Form if active */}
                   {isCreatingNewSet && (
-                    <div className="p-3 bg-[#FAF8F5] border border-[#DDD6C7] rounded-lg flex items-center gap-2">
+                    <div className="p-3 bg-[#FAF8F5] border border-[var(--color-border)] rounded-lg flex items-center gap-2">
                       <input
                         type="text"
                         placeholder="Enter set name (e.g. Astrophysics Literature, Quantum Optics...)"
                         value={newSetNameInput}
                         onChange={(e) => setNewSetNameInput(e.target.value)}
-                        className="flex-1 px-3 py-1.5 bg-white border border-[#DDD6C7] rounded text-xs text-[#1F2430] focus:outline-none focus:ring-1 focus:ring-[#0F766E]"
+                        className="flex-1 px-3 py-1.5 bg-white border border-[var(--color-border)] rounded text-xs text-[var(--color-text-ink)] focus:outline-none focus:ring-1 focus:ring-[#0F766E]"
                       />
                       <button
                         type="button"
                         onClick={() => handleCreateNewSet(newSetNameInput)}
-                        className="px-3 py-1.5 bg-[#0F766E] text-white rounded text-xs font-bold hover:bg-[#0D655E]"
+                        className="px-3 py-1.5 bg-[var(--color-accent)] text-white rounded text-xs font-bold hover:bg-[#0D655E]"
                       >
                         Create Set
                       </button>
@@ -1770,7 +1834,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                           setIsCreatingNewSet(false);
                           setNewSetNameInput('');
                         }}
-                        className="px-2 py-1.5 text-[#78716C] hover:text-[#1F2430]"
+                        className="px-2 py-1.5 text-[#78716C] hover:text-[var(--color-text-ink)]"
                       >
                         Cancel
                       </button>
@@ -1778,16 +1842,16 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   )}
 
                   {/* Set Metadata Toolbar & Delete Actions */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[#FAF8F5] border border-[#DDD6C7] rounded-lg text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-[#FAF8F5] border border-[var(--color-border)] rounded-lg text-xs">
                     <div className="flex items-center gap-3">
-                      <span className="font-bold text-[#1F2430]">
-                        Active: <span className="text-[#0F766E]">{activeSet?.name}</span>
+                      <span className="font-bold text-[var(--color-text-ink)]">
+                        Active: <span className="text-[var(--color-accent)]">{activeSet?.name}</span>
                       </span>
                       <span className="text-[#78716C] text-[11px] flex items-center gap-1">
                         {activeSet?.isImplemented ? (
                           <>
-                            <span className="w-2 h-2 rounded-full bg-[#0F766E]" />
-                            <span className="text-[#0F766E] font-semibold">Graphify Active</span>
+                            <span className="w-2 h-2 rounded-full bg-[var(--color-accent)]" />
+                            <span className="text-[var(--color-accent)] font-semibold">Graphify Active</span>
                           </>
                         ) : (
                           <>
@@ -1802,16 +1866,16 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <button
                         type="button"
                         onClick={() => papersCsvInputRef.current?.click()}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] text-[11px] font-bold"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#FFFFFF] border border-[var(--color-border)] hover:bg-[var(--color-bg-tint)] text-[var(--color-text-ink)] text-[11px] font-bold"
                       >
-                        <Upload className="w-3 h-3 text-[#0F766E]" />
+                        <Upload className="w-3 h-3 text-[var(--color-accent)]" />
                         <span>Upload CSV to Set</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handleDownloadSamplePapersCsv}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#FFFFFF] border border-[#DDD6C7] hover:bg-[#EFEBE0] text-[#1F2430] text-[11px]"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#FFFFFF] border border-[var(--color-border)] hover:bg-[var(--color-bg-tint)] text-[var(--color-text-ink)] text-[11px]"
                         title="Download sample research papers CSV template"
                       >
                         <Download className="w-3 h-3 text-[#78716C]" />
@@ -1835,22 +1899,22 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                   {/* Staged Papers Cards in Active Set */}
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                     {!activeSet || activeSet.papers.length === 0 ? (
-                      <div className="p-6 text-center text-[#78716C] bg-[#FAF8F5] rounded-lg border border-dashed border-[#DDD6C7] space-y-2">
+                      <div className="p-6 text-center text-[#78716C] bg-[#FAF8F5] rounded-lg border border-dashed border-[var(--color-border)] space-y-2">
                         <div>No papers in this rack set yet.</div>
                         <div className="text-[11px]">
-                          Use the <span className="font-bold text-[#0F766E]">+ Add to Rack</span> button on search results below or <span className="font-bold text-[#0F766E]">Upload CSV</span>.
+                          Use the <span className="font-bold text-[var(--color-accent)]">+ Add to Rack</span> button on search results below or <span className="font-bold text-[var(--color-accent)]">Upload CSV</span>.
                         </div>
                       </div>
                     ) : (
                       activeSet.papers.map((p, idx) => (
                         <div
                           key={p.id || idx}
-                          className="p-2.5 bg-[#FAF8F5] border border-[#E6E1D6] rounded-lg flex items-center justify-between gap-3 hover:border-[#0F766E]/40 transition-colors"
+                          className="p-2.5 bg-[#FAF8F5] border border-[#E6E1D6] rounded-lg flex items-center justify-between gap-3 hover:border-[var(--color-accent)]/40 transition-colors"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-[#1F2430] truncate text-xs">{p.title}</span>
-                              <span className="px-1.5 py-0.2 rounded bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold shrink-0">
+                              <span className="font-bold text-[var(--color-text-ink)] truncate text-xs">{p.title}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-[#E6F4F2] text-[var(--color-accent)] text-[10px] font-bold shrink-0">
                                 {p.arxiv_id}
                               </span>
                             </div>
@@ -1884,7 +1948,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       placeholder="Search arXiv papers & PDFs: e.g. black hole, LIGO, exoplanet, Higgs, chaos, tokamak..."
                       value={arxivQuery}
                       onChange={(e) => setArxivQuery(e.target.value)}
-                      className="w-full pl-9 pr-24 py-2 text-xs bg-[#FFFFFF] border border-[#DDD6C7] rounded-lg text-[#10141C] placeholder:text-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#0F766E] shadow-2xs"
+                      className="w-full pl-9 pr-24 py-2 text-xs bg-[#FFFFFF] border border-[var(--color-border)] rounded-lg text-[#10141C] placeholder:text-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#0F766E] shadow-2xs"
                     />
                     {arxivQuery && (
                       <button
@@ -1897,8 +1961,8 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       </button>
                     )}
                     {isSearchingArxiv && (
-                      <div className="absolute right-8 top-2 text-[10px] text-[#0F766E] flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-[#0F766E] animate-ping" />
+                      <div className="absolute right-8 top-2 text-[10px] text-[var(--color-accent)] flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-ping" />
                         <span>Searching...</span>
                       </div>
                     )}
@@ -1917,8 +1981,8 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         type="button"
                         onClick={() => setArxivCategory(cat.id)}
                         className={`px-3 py-1.5 rounded-md transition-colors whitespace-nowrap text-xs ${arxivCategory === cat.id
-                          ? 'bg-[#0F766E] text-white font-bold shadow-2xs'
-                          : 'bg-[#F8F6F1] border border-[#E6E1D6] text-[#57534E] hover:text-[#10141C] hover:bg-[#EFEBE0]'
+                          ? 'bg-[var(--color-accent)] text-white font-bold shadow-2xs'
+                          : 'bg-[#F8F6F1] border border-[#E6E1D6] text-[#57534E] hover:text-[#10141C] hover:bg-[var(--color-bg-tint)]'
                           }`}
                       >
                         {cat.label}
@@ -1930,7 +1994,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 {/* Instant Topic Shortcut Pills */}
                 <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] pt-1">
                   <span className="text-[#78716C] mr-1 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-[#0F766E]" /> Quick Topics:
+                    <Sparkles className="w-3 h-3 text-[var(--color-accent)]" /> Quick Topics:
                   </span>
                   {[
                     { label: 'LIGO GW150914', q: 'GW150914' },
@@ -1949,8 +2013,8 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       type="button"
                       onClick={() => setArxivQuery(pill.q)}
                       className={`px-2 py-0.5 rounded text-[10px] border transition-all ${arxivQuery === pill.q
-                        ? 'bg-[#0F766E] text-white border-[#0F766E] font-bold'
-                        : 'bg-[#FFFFFF] border-[#DDD6C7] text-[#4A5060] hover:bg-[#EFEBE0] hover:text-[#1F2430]'
+                        ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] font-bold'
+                        : 'bg-[#FFFFFF] border-[var(--color-border)] text-[#4A5060] hover:bg-[var(--color-bg-tint)] hover:text-[var(--color-text-ink)]'
                         }`}
                     >
                       {pill.label}
@@ -1982,13 +2046,13 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
 
               {/* Filtered Peer-Reviewed Literature Catalog Cards */}
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono border-b border-[#DDD6C7] pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono border-b border-[var(--color-border)] pb-2">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-[#10141C]">
                       Verified Preprints &amp; Open-Access Articles ({totalFound} in catalog, showing {displayedPapers.length})
                     </span>
                     {arxivQuery && (
-                      <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[var(--color-accent)] text-[10px] font-bold">
                         Matching &ldquo;{arxivQuery}&rdquo;
                       </span>
                     )}
@@ -2000,15 +2064,15 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                 </div>
 
                 {displayedPapers.length === 0 ? (
-                  <div className="p-8 text-center bg-[#FFFFFF] rounded-xl border border-[#DDD6C7] space-y-3 font-mono text-xs">
-                    <div className="text-base text-[#1F2430] font-bold">No papers matched your search query.</div>
+                  <div className="p-8 text-center bg-[#FFFFFF] rounded-xl border border-[var(--color-border)] space-y-3 font-mono text-xs">
+                    <div className="text-base text-[var(--color-text-ink)] font-bold">No papers matched your search query.</div>
                     <p className="text-[#6B6F7B]">
-                      Try typing terms like <span className="text-[#0F766E] font-bold">LIGO</span>, <span className="text-[#0F766E] font-bold">gravitational</span>, <span className="text-[#0F766E] font-bold">black hole</span>, <span className="text-[#0F766E] font-bold">Higgs</span>, <span className="text-[#0F766E] font-bold">exoplanet</span>, or <span className="text-[#0F766E] font-bold">multitaper</span>.
+                      Try typing terms like <span className="text-[var(--color-accent)] font-bold">LIGO</span>, <span className="text-[var(--color-accent)] font-bold">gravitational</span>, <span className="text-[var(--color-accent)] font-bold">black hole</span>, <span className="text-[var(--color-accent)] font-bold">Higgs</span>, <span className="text-[var(--color-accent)] font-bold">exoplanet</span>, or <span className="text-[var(--color-accent)] font-bold">multitaper</span>.
                     </p>
                     <button
                       type="button"
                       onClick={() => setArxivQuery('')}
-                      className="px-3.5 py-1.5 bg-[#0F766E] text-white rounded-md font-bold hover:bg-[#0D655E]"
+                      className="px-3.5 py-1.5 bg-[var(--color-accent)] text-white rounded-md font-bold hover:bg-[#0D655E]"
                     >
                       Clear Search &amp; View All Papers
                     </button>
@@ -2019,7 +2083,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                       <div
                         key={paper.id}
                         className={`p-5 rounded-xl border transition-all space-y-3 ${selectedPaperId === paper.id
-                          ? 'border-[#0F766E] bg-[#FFFFFF] shadow-sm ring-1 ring-[#0F766E]/40'
+                          ? 'border-[var(--color-accent)] bg-[#FFFFFF] shadow-sm ring-1 ring-[#0F766E]/40'
                           : 'border-[#E6E1D6] bg-[#FFFFFF] hover:border-[#10141C]/30'
                           }`}
                       >
@@ -2027,7 +2091,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         <div className="space-y-1.5">
                           <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px]">
                             <div className="flex items-center gap-1.5">
-                              <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[#0F766E] font-bold border border-[#0F766E]/20">
+                              <span className="px-2 py-0.5 rounded bg-[#E6F4F2] text-[var(--color-accent)] font-bold border border-[var(--color-accent)]/20">
                                 arXiv:{paper.arxiv_id}
                               </span>
                               <span className="px-2 py-0.5 rounded bg-[#F2EFE9] text-[#57534E] border border-[#E6E1D6]">
@@ -2057,7 +2121,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                         {/* Methodology & Relevance to SYNAPSE */}
                         {paper.relevanceExplanation && (
                           <div className="p-3 rounded-lg bg-[#F8F6F1] border border-[#E6E1D6] text-xs font-sans space-y-1">
-                            <div className="font-mono text-[10px] uppercase font-bold text-[#0F766E]">
+                            <div className="font-mono text-[10px] uppercase font-bold text-[var(--color-accent)]">
                               Experimental Linkage to Active Signal:
                             </div>
                             <p className="text-[#3D414D] leading-relaxed">
@@ -2079,8 +2143,8 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                               type="button"
                               onClick={() => handleTogglePaperInRack(paper)}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono font-bold transition-all shadow-xs shrink-0 ${activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
-                                ? 'bg-[#E6F4F2] text-[#0F766E] border border-[#0F766E] hover:bg-[#D4EBE7]'
-                                : 'bg-[#0F766E] text-white hover:bg-[#0D655E]'
+                                ? 'bg-[#E6F4F2] text-[var(--color-accent)] border border-[var(--color-accent)] hover:bg-[#D4EBE7]'
+                                : 'bg-[var(--color-accent)] text-white hover:bg-[#0D655E]'
                                 }`}
                               title={
                                 activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id)
@@ -2090,7 +2154,7 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
                             >
                               {activeSet?.papers.some((p) => p.id === paper.id || p.arxiv_id === paper.arxiv_id) ? (
                                 <>
-                                  <Check className="w-3.5 h-3.5 text-[#0F766E]" />
+                                  <Check className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                                   <span>In Rack</span>
                                 </>
                               ) : (
@@ -2161,39 +2225,39 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
           )}
         </main>
 
-        {/* RIGHT PANEL: Validated Findings Column (Sticky & Scrollable) */}
-        <aside className="w-80 border-l border-[#E6E1D6] bg-[#FFFDF9] p-4 flex flex-col justify-between shrink-0 hidden lg:flex space-y-4 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E6E1D6] pb-2">
-              <h3 className="font-serif italic text-base text-[#10141C] font-semibold">
+        {/* RIGHT PANEL: Validated Findings Column (280px, Sticky & Scrollable) */}
+        <aside className="w-[280px] shrink-0 border-l border-[#252925]/20 bg-[#F7F5EF] p-4 flex flex-col justify-between hidden lg:flex space-y-4 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto font-georgia">
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between border-b border-[#252925]/20 pb-2.5">
+              <h3 className="font-georgia text-base text-[#252925] font-bold">
                 Validated Findings
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E8EFE9] text-[#25653F] border border-[#CDE0D0]">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-georgia font-semibold bg-[#9CAF88] text-[#252925] border border-[#252925]/20 shadow-2xs">
                 {findings.length} Validated
               </span>
             </div>
 
-            <div className="space-y-3 font-mono text-xs">
+            <div className="space-y-3">
               {findings.map((f) => (
                 <div
                   key={f.id}
-                  className="p-3.5 rounded-lg border border-[#E6E1D6] bg-[#F8F6F1]/50 space-y-2 hover:border-[#10141C]/40 transition-colors"
+                  className="p-3.5 rounded-xl border border-[#252925]/20 bg-[#FFFFFF] space-y-2 hover:border-[#9CAF88] transition-colors shadow-2xs"
                 >
-                  <div className="flex items-start justify-between gap-1">
-                    <span className="font-serif italic font-bold text-xs text-[#10141C]">{f.title}</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0 border ${f.statusStyle}`}>
+                  <div className="flex items-start justify-between gap-1.5">
+                    <span className="font-georgia font-bold text-xs text-[#252925]">{f.title}</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-georgia font-bold uppercase tracking-wider shrink-0 border ${f.statusStyle}`}>
                       {f.status}
                     </span>
                   </div>
 
-                  <div className="text-[10px] text-[#78716C] space-y-0.5">
-                    <div>{f.engine}</div>
-                    <div className="text-[#10141C] font-semibold">{f.statistic}</div>
-                    <div>Uncertainty: {f.uncertainty}</div>
-                    {f.crlb && <div className="text-[#25653F] font-semibold">{f.crlb}</div>}
+                  <div className="text-[10px] space-y-0.5">
+                    <div className="font-georgia text-[#252925]/70">{f.engine}</div>
+                    <div className="font-mono text-xs font-bold text-[#252925]">{f.statistic}</div>
+                    <div className="font-mono text-[#252925]/70">Uncertainty: {f.uncertainty}</div>
+                    {f.crlb && <div className="font-mono text-[#E8412C] font-semibold">{f.crlb}</div>}
                   </div>
 
-                  <p className="text-[11px] text-[#57534E] font-sans leading-relaxed pt-1 border-t border-[#E6E1D6]">
+                  <p className="text-xs text-[#252925]/85 font-georgia leading-relaxed pt-2 border-t border-[#252925]/15">
                     {f.meaning}
                   </p>
                 </div>
@@ -2201,16 +2265,16 @@ export const PaperWorkbench: React.FC<PaperWorkbenchProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#E6E1D6] font-mono text-[10px] text-[#78716C] space-y-1">
+          <div className="pt-3.5 border-t border-[#252925]/20 font-georgia text-xs text-[#252925]/70 space-y-1">
             <div className="flex items-center justify-between">
               <span>Provenance:</span>
-              <span className="text-[#25653F] font-bold">SHA-256 Verified</span>
+              <span className="text-[#252925] font-bold">SHA-256 Verified</span>
             </div>
-            <div className="text-[9px] text-[#A8A29E] leading-tight">
+            <div className="text-[10px] text-[#252925]/70 leading-tight">
               All findings satisfy Benjamini-Hochberg FDR criteria at q ≤ 0.05.
             </div>
             {(activeSignal?.timestampsLinearized || activeSignal?.quality?.timestamps_linearized) && (
-              <div className="text-[9px] text-[#B45309] leading-tight pt-1 border-t border-[#E6E1D6]/60">
+              <div className="text-[10px] text-[#E8412C] leading-tight pt-1 border-t border-[#252925]/15">
                 Notice: Continuous timeline linearization applied; raw telemetry SHA-256 hash intact.
               </div>
             )}

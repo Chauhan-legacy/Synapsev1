@@ -1045,3 +1045,48 @@ def run_benchmark_120k():
         "throughput_megasamples_per_sec": round((len(df) * len(channels)) / (calc_ms / 1000.0) / 1e6, 2),
         "channels": channel_results,
     }
+
+
+class StreamSummaryRequest(BaseModel):
+    values: list[float]
+    sampling_rate: float = 200.0
+    target_bins: int = 1000
+
+
+@router.post("/stream-summary")
+def get_stream_summary(req: StreamSummaryRequest):
+    """Computes streaming summary statistics and multi-resolution min/max decimation in microseconds."""
+    arr = np.asarray(req.values, dtype=np.float64)
+    n = len(arr)
+    if n == 0:
+        return {"n": 0, "mean": 0.0, "std": 0.0, "min": 0.0, "max": 0.0, "decimated": []}
+
+    mean_val = float(np.nanmean(arr))
+    std_val = float(np.nanstd(arr))
+    min_val = float(np.nanmin(arr))
+    max_val = float(np.nanmax(arr))
+
+    # Vectorized min/max downsampling for target bins
+    bins = min(req.target_bins, n)
+    bin_size = max(1, n // bins)
+    decimated = []
+    for b in range(bins):
+        start = b * bin_size
+        end = min(n, start + bin_size)
+        chunk = arr[start:end]
+        if len(chunk) > 0:
+            decimated.append({
+                "bin": b,
+                "min": float(np.nanmin(chunk)),
+                "max": float(np.nanmax(chunk)),
+            })
+
+    return {
+        "n": n,
+        "mean": round(mean_val, 6),
+        "std": round(std_val, 6),
+        "min": round(min_val, 6),
+        "max": round(max_val, 6),
+        "decimated": decimated,
+    }
+

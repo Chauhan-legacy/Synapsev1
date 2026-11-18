@@ -300,6 +300,8 @@ export function computeMultitaperPSD(
   upperBound95: number[];
   lowerBound95: number[];
   fTest: Array<{ frequency: number; fRatio: number; pValue: number; adjustedPValue?: number; isLine: boolean }>;
+  fStatistics: number[];
+  criticalF: number;
 } {
   const n = Math.min(raw.length, 512);
   const sub = raw.slice(0, n);
@@ -479,6 +481,8 @@ export function computeMultitaperPSD(
     upperBound95: upper95,
     lowerBound95: lower95,
     fTest: fTestResults,
+    fStatistics: fTestResults.map((t) => t.fRatio),
+    criticalF: 13.8,
   };
 }
 
@@ -488,6 +492,8 @@ export interface STFTResult {
   frequencies: number[];
   spectrogramMatrix: number[][]; // [timeIdx][freqIdx] dB power
   timeSlices: Array<{ time: number; dominantFreq: number; totalEnergy: number }>;
+  timeLabels: string[];
+  freqLabels: string[];
 }
 
 export function computeSTFT(
@@ -546,7 +552,14 @@ export function computeSTFT(
     });
   }
 
-  return { times, frequencies, spectrogramMatrix, timeSlices };
+  return {
+    times,
+    frequencies,
+    spectrogramMatrix,
+    timeSlices,
+    timeLabels: times.map((t) => `${t.toFixed(1)}s`),
+    freqLabels: frequencies.map((f) => `${f.toFixed(0)} Hz`),
+  };
 }
 
 // 4. Continuous Wavelet Transform (CWT Scalogram) with Morlet Wavelet
@@ -585,10 +598,28 @@ export function computeCWT(
     frequencies.push(parseFloat(pseudoFreq.toFixed(1)));
   }
 
+  // Pre-calculate Morlet filter bank per scale (avoids repeated transcendental math in hot loops)
+  const filterBank: Array<{ maxHalf: number; reKernel: Float64Array; imKernel: Float64Array }> = [];
+  for (let sIdx = 0; sIdx < numScales; sIdx++) {
+    const s = scales[sIdx];
+    const maxHalf = Math.floor(3 * s);
+    const kernelLen = 2 * maxHalf + 1;
+    const reKernel = new Float64Array(kernelLen);
+    const imKernel = new Float64Array(kernelLen);
+    for (let tau = -maxHalf; tau <= maxHalf; tau++) {
+      const eta = tau / s;
+      const gauss = Math.exp(-0.5 * eta * eta);
+      const idx = tau + maxHalf;
+      reKernel[idx] = gauss * Math.cos(w0 * eta);
+      imKernel[idx] = gauss * Math.sin(w0 * eta);
+    }
+    filterBank.push({ maxHalf, reKernel, imKernel });
+  }
+
   const scalogramMatrix: number[][] = [];
   const coi: number[] = [];
 
-  // Pre-calculate Morlet kernels and convolve
+  // Convolve precomputed Morlet kernels
   for (let t = 0; t < n; t++) {
     const row: number[] = [];
     const timeSec = times[t];
@@ -598,17 +629,16 @@ export function computeCWT(
 
     for (let sIdx = 0; sIdx < numScales; sIdx++) {
       const s = scales[sIdx];
+      const { maxHalf, reKernel, imKernel } = filterBank[sIdx];
       let reSum = 0;
       let imSum = 0;
-      const halfWidth = Math.min(Math.floor(3 * s), t, n - 1 - t);
+      const halfWidth = Math.min(maxHalf, t, n - 1 - t);
 
       for (let tau = -halfWidth; tau <= halfWidth; tau++) {
         const x = sub[t + tau];
-        const eta = tau / s;
-        // Morlet: pi^(-1/4) * exp(i * w0 * eta) * exp(-eta^2 / 2)
-        const gauss = Math.exp(-0.5 * eta * eta);
-        reSum += x * gauss * Math.cos(w0 * eta);
-        imSum += x * gauss * Math.sin(w0 * eta);
+        const kIdx = tau + maxHalf;
+        reSum += x * reKernel[kIdx];
+        imSum += x * imKernel[kIdx];
       }
 
       const power = (reSum * reSum + imSum * imSum) / Math.sqrt(s);
@@ -625,9 +655,11 @@ export interface HilbertAnalysisResult {
   times: number[];
   analyticSignalRe: number[];
   instantaneousAmplitude: number[];
+  envelope: number[];
   instantaneousPhase: number[];
   instantaneousFrequency: number[];
   meanFrequency: number;
+  decayRate: number;
 }
 
 export function computeHilbertAnalysis(raw: number[], fs: number = 200): HilbertAnalysisResult {
@@ -690,13 +722,24 @@ export function computeHilbertAnalysis(raw: number[], fs: number = 200): Hilbert
     sumFreq += freq;
   }
 
+  // Envelope decay rate: log ratio over duration
+  let decayRate = 0.0;
+  if (n > 20 && env.length > 20) {
+    const eStart = Math.max(1e-6, env.slice(0, 5).reduce((a, b) => a + b, 0) / 5);
+    const eEnd = Math.max(1e-6, env.slice(n - 5, n).reduce((a, b) => a + b, 0) / 5);
+    const dur = Math.max(0.01, (n - 1) * dt);
+    decayRate = Math.max(0, (Math.log(eStart) - Math.log(eEnd)) / dur);
+  }
+
   return {
     times,
     analyticSignalRe: analytic.re.slice(0, n),
     instantaneousAmplitude: env,
+    envelope: env,
     instantaneousPhase: phase,
     instantaneousFrequency: instFreq,
     meanFrequency: parseFloat((sumFreq / n).toFixed(2)),
+    decayRate: parseFloat(decayRate.toFixed(4)),
   };
 }
 
@@ -1303,20 +1346,36 @@ export function computeCoherenceAndXCorr(
   }
   const denom = Math.sqrt(normX * normY) || 1e-9;
 
+  // High-performance Wiener-Khinchin FFT cross-correlation: IFFT(FFT(x) * conj(FFT(y)))
+  const mFft = Math.pow(2, Math.ceil(Math.log2(2 * n)));
+  const xPadRe = new Float64Array(mFft);
+  const yPadRe = new Float64Array(mFft);
+  for (let i = 0; i < n; i++) {
+    xPadRe[i] = x[i] - meanX;
+    yPadRe[i] = y[i] - meanY;
+  }
+  const fftX = fft(Array.from(xPadRe));
+  const fftY = fft(Array.from(yPadRe));
+
+  // Cross-spectral density Z = X * conj(Y)
+  const zRe = new Float64Array(mFft);
+  const zIm = new Float64Array(mFft);
+  for (let i = 0; i < mFft; i++) {
+    const xr = fftX.re[i], xi = fftX.im[i];
+    const yr = fftY.re[i], yi = fftY.im[i];
+    zRe[i] = xr * yr + xi * yi;
+    zIm[i] = xi * yr - xr * yi;
+  }
+
+  const rawXCorr = ifft(Array.from(zRe), Array.from(zIm));
+
   for (let lag = -maxLag; lag <= maxLag; lag++) {
     const lagSec = lag / fs;
     lags.push(parseFloat(lagSec.toFixed(3)));
 
-    let sumProd = 0;
-    let count = 0;
-    for (let i = 0; i < n; i++) {
-      const j = i + lag;
-      if (j >= 0 && j < n) {
-        sumProd += (x[i] - meanX) * (y[j] - meanY);
-        count++;
-      }
-    }
-    const r = (sumProd / denom) * (n / (count || 1));
+    const count = n - Math.abs(lag);
+    const rawVal = lag >= 0 ? rawXCorr.re[lag] : rawXCorr.re[mFft + lag];
+    const r = (rawVal / denom) * (n / (count || 1));
     xcorr.push(parseFloat(r.toFixed(4)));
 
     if (Math.abs(r) > maxCorr) {
@@ -1746,14 +1805,15 @@ export function computeRosnerESD(
   alpha: number = 0.05
 ): {
   numOutliers: number;
-  outliers: Array<{ index: number; value: number; rStat: number; lambda: number }>;
+  outliers: Array<{ index: number; value: number; rStat: number; lambda: number; time: number }>;
+  criticalValue: number;
 } {
   const n0 = raw.length;
-  if (n0 < 15) return { numOutliers: 0, outliers: [] };
+  if (n0 < 15) return { numOutliers: 0, outliers: [], criticalValue: 3.85 };
 
   const arr = [...raw];
   const origIndices = Array.from({ length: n0 }, (_, i) => i);
-  const recordedOutliers: Array<{ index: number; value: number; rStat: number; lambda: number }> = [];
+  const recordedOutliers: Array<{ index: number; value: number; rStat: number; lambda: number; time: number }> = [];
   const R: number[] = [];
   const Lambda: number[] = [];
 
@@ -1792,6 +1852,7 @@ export function computeRosnerESD(
       value: arr[maxIdx],
       rStat: parseFloat(rStat.toFixed(2)),
       lambda: parseFloat(lam.toFixed(2)),
+      time: parseFloat((origIndices[maxIdx] / 200).toFixed(3)),
     });
 
     arr.splice(maxIdx, 1);
@@ -1809,6 +1870,7 @@ export function computeRosnerESD(
   return {
     numOutliers,
     outliers: recordedOutliers.slice(0, numOutliers),
+    criticalValue: Lambda[0] ? parseFloat(Lambda[0].toFixed(2)) : 3.85,
   };
 }
 

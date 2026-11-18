@@ -526,7 +526,7 @@ export const PhysicsLabView: React.FC<PhysicsLabViewProps> = ({ onOpenMethodCard
   }, []);
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto font-sans pb-20">
+    <div className="space-y-6 w-full font-georgia pb-20">
       {/* 1. Header with Generous Scientific Spacing */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#DDD6C7]">
         <div className="space-y-1">

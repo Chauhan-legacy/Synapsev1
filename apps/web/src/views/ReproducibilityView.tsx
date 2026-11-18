@@ -132,7 +132,7 @@ export const ReproducibilityView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto">
+    <div className="space-y-4 w-full">
       {/* View Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b">
         <div>

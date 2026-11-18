@@ -78,11 +78,10 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                   key={sz}
                   type="button"
                   onClick={() => updateSettings({ textSize: sz })}
-                  className={`py-2 px-3 rounded border text-center font-medium uppercase font-mono transition-colors ${
-                    settings.textSize === sz
-                      ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
-                      : 'surface-base border text-secondary hover:text-primary'
-                  }`}
+                  className={`py-2 px-3 rounded border text-center font-medium uppercase font-mono transition-colors ${settings.textSize === sz
+                    ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
+                    : 'surface-base border text-secondary hover:text-primary'
+                    }`}
                 >
                   {sz === 'sm' ? 'Small' : sz === 'md' ? 'Default' : sz === 'lg' ? 'Large' : 'X-Large'}
                 </button>
@@ -102,11 +101,10 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                     key={ls}
                     type="button"
                     onClick={() => updateSettings({ lineSpacing: ls })}
-                    className={`py-1.5 px-3 rounded border text-center capitalize ${
-                      settings.lineSpacing === ls
-                        ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
-                        : 'surface-base border text-secondary'
-                    }`}
+                    className={`py-1.5 px-3 rounded border text-center capitalize ${settings.lineSpacing === ls
+                      ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
+                      : 'surface-base border text-secondary'
+                      }`}
                   >
                     {ls}
                   </button>
@@ -124,11 +122,10 @@ export const AccessibilityModal: React.FC<AccessibilityModalProps> = ({
                     key={den}
                     type="button"
                     onClick={() => updateSettings({ density: den })}
-                    className={`py-1.5 px-3 rounded border text-center capitalize ${
-                      settings.density === den
-                        ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
-                        : 'surface-base border text-secondary'
-                    }`}
+                    className={`py-1.5 px-3 rounded border text-center capitalize ${settings.density === den
+                      ? 'border-[#0F766E] bg-[#E6F4F2] text-[#0F766E] font-bold'
+                      : 'surface-base border text-secondary'
+                      }`}
                   >
                     {den}
                   </button>
