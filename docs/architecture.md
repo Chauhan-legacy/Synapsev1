@@ -23,7 +23,7 @@ SYNAPSE/
 │   └── web/                  # React 18 + TypeScript + Tailwind Scientific Discovery Workbench (15 Labs)
 ├── benchmarks/               # Standardized benchmark library Datasets A through J with synthetic ground truth
 ├── docs/                     # Architectural audits, validation studies, and vector SVG power curves
-└── tests/                    # Analytical, unit, and numerical regression test suite (73 passing pytest tests)
+└── tests/                    # Analytical, unit, and numerical regression test suite (126 passing pytest tests)
 ```
 
 ## 2. Invariants & Data Integrity

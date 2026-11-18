@@ -7,7 +7,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.162-teal.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18.3-4338CA.svg)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178C6.svg)](https://www.typescriptlang.org)
-[![Tests: 83 Passed](https://img.shields.io/badge/Tests-83%20Passed-0F766E.svg)](tests/)
+[![Tests: 136 Passed](https://img.shields.io/badge/Tests-136%20Passed-0F766E.svg)](tests/)
 [![FDR Controlled](https://img.shields.io/badge/FDR%20Control-q%20%E2%89%A4%200.05-0F766E.svg)](BENCHMARKS.md)
 [![CI Status](https://github.com/Chauhan-legacy/Synapsev1/actions/workflows/ci.yml/badge.svg)](https://github.com/Chauhan-legacy/Synapsev1/actions)
 
@@ -73,7 +73,7 @@ SYNAPSE reconstructs the hidden multidimensional topology of scalar observations
 | What you need | How SYNAPSE handles it | Where to find it |
 |:---|:---|:---|
 | **Fast interactive exploration** | Runs in-browser via TypeScript & Web Workers. No server round-trip required for rapid inspection. | Paper Workbench |
-| **Heavy scientific computing** | Python FastAPI backend powered by NumPy, Numba, and statsmodels. Processes 350,000+ points/channel in milliseconds. | Analysis API |
+| **Heavy scientific computing** | Python FastAPI backend powered by NumPy, Numba, and statsmodels. Measured at 4.2 ms (Rosner ESD) to 57.1 ms (Multitaper PSD) on 30,000 samples, and 54.2 ms to 762.7 ms on 350,000 samples. | Analysis API |
 | **Statistical rigor** | Bounded by Benjamini-Hochberg FDR ($q \le 0.05$) and empirical null surrogates so noise doesn't trigger false discoveries. | Inference Lab |
 | **28 Synchronized instruments** | Oscilloscopes, scalograms, bispectrums, Poincaré sections, and Lyapunov diagnostics share a linked temporal scrubber. | Instrument Rack |
 | **Hypothesis formulation** | Distraction-free A4 journal with local autosave and 2x canvas image export. | Synthesized Thoughts |
@@ -98,7 +98,7 @@ SYNAPSE/
 │   └── synapse_inference/# IAAFT surrogates, Benjamini-Hochberg FDR, and bootstrap CIs
 ├── benchmarks/         # Reference datasets A through J with known ground truth
 ├── docs/               # System architecture, formal methods, and screenshots
-└── tests/              # 73 pytest tests + 10 in-browser TypeScript benchmarks
+└── tests/              # 126 pytest tests + 10 in-browser TypeScript benchmarks
 ```
 
 ---
@@ -137,7 +137,7 @@ npm --prefix apps/web ci
 
 ### 2. Run the test suite
 ```bash
-# Python regression tests (73 tests)
+# Python regression tests (126 tests)
 pytest tests/
 
 # In-browser TypeScript math benchmarks (10 benchmarks)
@@ -197,6 +197,9 @@ Detailed documentation:
 
 ## Known Limitations
 
+- **Low-Amplitude Transients in Louder Backgrounds**: A subtle transient buried inside louder background noise or strong harmonics is reliably caught when its approximate frequency band is known or filtered first; blind multi-scale detection without frequency hints remains an active area of refinement ([#142](https://github.com/Chauhan-legacy/Synapsev1/issues/142)).
+- **Matrix-Profile Discord Window Sensitivity**: STOMP matrix-profile discord search works best when the chosen window length is close to the expected physical duration of the pattern anomaly ([#143](https://github.com/Chauhan-legacy/Synapsev1/issues/143)).
+- **PELT Runtime on Very Long Records**: Pruned Exact Linear Time (PELT) changepoint detection scales linearly on homogeneous noise, but runtime can grow when regime changes are frequent or dense; records above 20,000 points utilize pre-partition decimation for interactive sub-second feedback ([#144](https://github.com/Chauhan-legacy/Synapsev1/issues/144)).
 - **Stationarity for Granger Causality**: Vector autoregression assumes covariance stationarity. Signals with strong polynomial trends should be detrended or differenced first.
 - **Rayleigh Resolution Limit**: In Thomson multitaper spectral estimation, spectral lines closer than $\Delta f < 2 NW / N$ cannot be resolved as separate peaks.
 - **Minimum Record Length**: Statistical tests (such as KPSS or Rosner ESD) require minimal degrees of freedom; inputs with $N < 8$ samples return a descriptive HTTP 422 error.

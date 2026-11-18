@@ -1,9 +1,9 @@
 {
   "version": "2.0.0-trustworthy",
   "test_counts": {
-    "python_pytest_tests": 73,
+    "python_pytest_tests": 126,
     "in_browser_math_benchmark_tests": 10,
-    "total_automated_tests": 83,
+    "total_automated_tests": 136,
     "test_pass_rate_percent": 100.0
   },
   "false_alarm_rate": {

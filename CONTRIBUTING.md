@@ -55,7 +55,7 @@ npm run build   # Type-checks and creates production bundle
 Before opening a pull request, ensure all tests pass:
 
 ```bash
-# Run all Python ground-truth & engine tests (49 tests)
+# Run all Python ground-truth & engine tests (126 tests)
 pytest -v tests/
 
 # Run the in-browser TypeScript math verification suite (10 benchmarks)
